@@ -50,8 +50,8 @@ const est = x => x <= 4.25e7 ? 20 * Math.pow(x / 4.25e7, 0.6) : 20 * Math.pow(x 
 const rnd = v => v < 100 ? Math.round(v) : v < 1000 ? Math.round(v/5)*5 : Math.round(v/50)*50;
 
 const fs = require("fs"), path = require("path");
-// Картинки: положите файл img/<id>.png (или .webp/.jpg), например img/dragon.png. Нет файла - показывается эмодзи.
-const localImg = id => { for (const ext of ["png", "webp", "jpg"]) if (fs.existsSync(path.join(__dirname, "img", id + "." + ext))) return "img/" + id + "." + ext; return undefined; };
+// Картинки: файл <id>.png (или .webp/.jpg), например dragon.png, в папке img/ ИЛИ прямо рядом с server.js. Нет файла - эмодзи.
+const localImg = id => { for (const ext of ["png", "webp", "jpg"]) { const f = id + "." + ext; if (fs.existsSync(path.join(__dirname, "img", f)) || fs.existsSync(path.join(__dirname, f))) return "img/" + f; } return undefined; };
 const ITEMS = {};
 for (const [id, name, r, inc, e] of ROWS)
   ITEMS[id] = { name, rarity: r, income: inc, value: Math.max(1, RUB[id] || rnd(est(inc))), e, c: COLORS[r], img: IMG[id] || localImg(id) };
