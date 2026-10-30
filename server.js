@@ -53,41 +53,29 @@ const getUser = id => {
 const CHANNEL = "@braincasegg";
 const SUB_REWARD = 10;
 const ALLIN_PRICE = 100;
-const DRAGON_CHANCE = 0.05;
 const DICE_PAYOUT = 1.92;
 const CRASH_K = 0.06;
 const UPGRADE_MULT = 0.8;
 
-const ITEMS = {
-  noobini:    { name: "Noobini Pizzanini", value: 8,    e: "🍕", c: "#9aa0b4" },
-  lirili:     { name: "Lirili Larila",     value: 18,   e: "🦒", c: "#7dd3fc" },
-  tungtung:   { name: "Tung Tung Sahur",   value: 35,   e: "🥁", c: "#fbbf24" },
-  tralalero:  { name: "Tralalero Tralala", value: 70,   e: "🦈", c: "#38bdf8" },
-  cappuccino: { name: "Cappuccino",        value: 120,  e: "☕", c: "#c4a574" },
-  ballerina:  { name: "Ballerina",         value: 180,  e: "🩰", c: "#f9a8d4" },
-  chimpanzini:{ name: "Chimpanzini",       value: 250,  e: "🍌", c: "#facc15" },
-  trippi:     { name: "Trippi Troppi",     value: 400,  e: "🐸", c: "#4ade80" },
-  cerberus:   { name: "Cerberus",          value: 550,  e: "🐺", c: "#fb7185" },
-  taco:       { name: "Taco",              value: 700,  e: "🌮", c: "#fb923c" },
-  lucky:      { name: "Lucky Block",       value: 900,  e: "🍀", c: "#22c55e" },
-  dragon:     { name: "Dragon Cannelloni", value: 1500, e: "🐉", c: "#ff7a00",
-    img: "https://static.wikia.nocookie.net/stealabr/images/a/a5/Dragon_Cannelloni.png/revision/latest/scale-to-width-down/1200" },
-  lavacca:    { name: "La Vacca Saturno",  value: 2500, e: "🐮", c: "#a855ff" },
+const { ITEMS, LEGACY } = require("./items");
+const CASE_RTP = 0.85; // средний возврат игроку от цены кейса (по цене продажи)
+const DRAGON_CHANCE = Math.min(0.5, (ALLIN_PRICE * CASE_RTP - 1) / (ITEMS.dragon.value - 1));
+const mkCase = (name, art, g, drops) => {
+  const tot = drops.reduce((s, d) => s + d[1], 0);
+  const ev = drops.reduce((s, [k, w]) => s + ITEMS[k].value * w / tot, 0);
+  return { name, art, g, drops, price: Math.max(1, Math.ceil(ev / CASE_RTP)) };
 };
-
 const CASES = {
-  nubini: { name: "NUBINI", price: 19, art: "🍕", g: "#7dd3fc",
-    drops: [["noobini", 62], ["lirili", 24], ["tungtung", 10], ["tralalero", 4]] },
-  cerber: { name: "CERBER", price: 137, art: "🐺", g: "#fb7185",
-    drops: [["tungtung", 42], ["cappuccino", 28], ["ballerina", 16], ["chimpanzini", 9], ["cerberus", 4], ["dragon", 1]] },
-  taco: { name: "TACO", price: 209, art: "🌮", g: "#fb923c",
-    drops: [["cappuccino", 36], ["ballerina", 28], ["chimpanzini", 20], ["trippi", 10], ["taco", 5], ["dragon", 1]] },
-  lucky: { name: "LUCKY BLOCK", price: 259, art: "🍀", g: "#22c55e",
-    drops: [["ballerina", 32], ["chimpanzini", 28], ["trippi", 20], ["cerberus", 12], ["lucky", 6], ["dragon", 2]] },
-  dragon: { name: "DRAGON", price: 500, art: "🐉", g: "#ff7a00",
-    drops: [["trippi", 38], ["cerberus", 28], ["taco", 16], ["lucky", 10], ["dragon", 6], ["lavacca", 2]] },
+  halloween: mkCase("HALLOWEEN", "🎃", "#ff7a00", [["pumpkino",25],["quackula",20],["jackospav",18],["frostvamp",12],["jackojack",9],["zombietr",6],["pumpkinispy",4],["casaboo",3],["draculino",2],["headless",1]]),
+  christmas: mkCase("CHRISTMAS", "🎄", "#39ffb0", [["pengtree",25],["sealo",20],["jingle",18],["yeti",12],["gingerglobo",8],["reindeertr",6],["santteo",5],["reinito",3],["dragonginger",2],["giftini",1]]),
+  nubini: mkCase("NUBINI", "🍕", "#7dd3fc", [["noobini",45],["lirili",25],["pipikiwi",14],["trippi",9],["bandito",5],["boneca",2]]),
+  cerber: mkCase("CERBER", "🐺", "#fb7185", [["cappuccino",30],["brrpatapim",25],["chimpanzini",20],["ballerina",14],["tralalero",8],["cerberus",3]]),
+  taco: mkCase("TACO", "🌮", "#fb923c", [["wombo",30],["sigma",25],["bombardiro",20],["tictic",13],["tralalero",8],["odin",4]]),
+  lucky: mkCase("LUCKY BLOCK", "🍀", "#22c55e", [["sigma",30],["toiletto",25],["tictic",20],["tralalero",12],["lavacca",8],["dragon",1]]),
+  dragon: mkCase("DRAGON", "🐉", "#ff7a00", [["tralalero",35],["lavacca",28],["cerberus",18],["dragon",12],["losdragons",6],["meowl",1]]),
   allin: { name: "ALL OR NOTHING", price: ALLIN_PRICE, art: "allin", g: "#ff7a00", special: "allin" },
 };
+for (const u of Object.values(db.users)) if (Array.isArray(u.inv)) u.inv = u.inv.map(k => ITEMS[k] ? k : (LEGACY[k] || k));
 
 const ADMIN_IDS = (process.env.ADMIN_IDS || "").split(",").map(x => x.trim()).filter(Boolean);
 const pendingSub = new Set();
@@ -302,7 +290,7 @@ const server = http.createServer(async (req, res) => {
 
   if (urlPath === "/api/invoice") {
     const amount = Math.floor(Number(body.amount));
-    if (!Number.isInteger(amount) || amount < 100 || amount > 100000) return send(400, { error: "Сумма от 100 до 100000 ⭐" });
+    if (!Number.isInteger(amount) || amount < 1 || amount > 100000) return send(400, { error: "Сумма от 1 до 100000 ⭐" });
     let r; try { r = await tgApi("createInvoiceLink", {
       title: `Депозит ${amount} ⭐`, description: `Вы получите ${amount} монет в Braincase`,
       payload: JSON.stringify({ uid, amount }), provider_token: "", currency: "XTR",

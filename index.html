@@ -98,7 +98,7 @@ nav button.on{color:var(--acc);background:var(--card)}
 <body>
 <header>
   <h1 class="logo">BRAINCASE</h1>
-  <div class="bal"><span id="bal">0 🪙</span><button id="plus" aria-label="Пополнить">+</button></div>
+  <div class="bal"><span id="bal">0 🪙</span><button id="plus" aria-label="Пополнить">+</button><button id="snd" aria-label="Звук" style="background:var(--line);color:var(--text);font-size:14px">🔊</button></div>
 </header>
 
 <main>
@@ -180,9 +180,9 @@ nav button.on{color:var(--acc);background:var(--card)}
 
 <div class="modal" id="mTop"><div class="sheet">
   <h2>Депозит</h2>
-  <p style="color:var(--muted);margin-bottom:6px">Оплата Telegram Stars ⭐<br>1 ⭐ = 1 🪙. Минимум 100 ⭐.</p>
+  <p style="color:var(--muted);margin-bottom:6px">Оплата Telegram Stars ⭐<br>1 ⭐ = 1 🪙. Минимум 1 ⭐.</p>
   <div class="pk" id="pk"></div>
-  <input id="amt" type="number" inputmode="numeric" min="100" step="1" placeholder="Своя сумма от 100">
+  <input id="amt" type="number" inputmode="numeric" min="1" step="1" placeholder="Своя сумма от 1">
   <div id="amtErr"></div>
   <div class="row"><button class="btn alt" id="topClose">Закрыть</button><button class="btn" id="payBtn">Пополнить</button></div>
 </div></div>
@@ -223,7 +223,7 @@ function pic(k){
 const card = k => `<div class="it" style="--rc:${item(k).c||'#9aa0b4'}"><div class="pic">${pic(k)}</div><small>${item(k).name}</small></div>`;
 
 function renderCases(){
-  const order = ["nubini","cerber","taco","lucky","dragon","allin"];
+  const order = ["halloween","christmas","nubini","cerber","taco","lucky","dragon","allin"];
   const cs = S.cfg.cases || {};
   let html = order.filter(id=>cs[id]).map(id=>{
     const c = cs[id];
@@ -252,6 +252,15 @@ function render(){
   if($("#v-up").classList.contains("on")) renderUp();
 }
 
+let AC, muted=false; try{ muted=localStorage.getItem("mute")==="1"; }catch(e){}
+function unlock(){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==="suspended") AC.resume(); }catch(e){} }
+function tone(f,t,d,type="sine",v=.12,f2){ if(muted||!AC) return; try{ const s=AC.currentTime+t,o=AC.createOscillator(),g=AC.createGain(); o.type=type; o.frequency.setValueAtTime(f,s); if(f2) o.frequency.exponentialRampToValueAtTime(f2,s+d); g.gain.setValueAtTime(v,s); g.gain.exponentialRampToValueAtTime(.001,s+d); o.connect(g); g.connect(AC.destination); o.start(s); o.stop(s+d+.02); }catch(e){} }
+function sndSpin(ms,n=36,rise=false){ for(let i=1;i<=n;i++) tone(rise?420+i*20:720,(1-Math.pow(1-i/n,1/3))*ms/1000,.04,"square",.05); }
+const sndWin=big=>{ [523,659,784,1047].forEach((f,i)=>tone(f,i*.09,.25,"triangle",.14)); if(big) [1047,1319,1568].forEach((f,i)=>tone(f,.4+i*.09,.4,"triangle",.14)); };
+const sndFail=()=>tone(300,0,.4,"sawtooth",.1,80);
+const setSnd=()=>{ $("#snd").textContent = muted?"🔇":"🔊"; };
+$("#snd").onclick=()=>{ muted=!muted; try{ localStorage.setItem("mute",muted?"1":"0"); }catch(e){} setSnd(); unlock(); };
+setSnd();
 let ready=false, lockSync=false;
 async function sync(){
   if(!API_URL || lockSync) return;
@@ -319,6 +328,7 @@ function openCase(id){
 }
 $("#openBtn").onclick = async () => {
   if(spinning) return;
+  unlock();
   const price = cur==="sub" ? 0 : ((S.cfg.cases||{})[cur]||{}).price || 0;
   if(cur!=="sub" && S.bal < price){ openTop(); return; }
   spinning = true; $("#openBtn").disabled = true;
@@ -336,12 +346,13 @@ function animate(win){
     const pool = ((S.cfg.cases||{})[cur]||{}).pool || ["dragon","coin"];
     const seq = Array.from({length:N},(_,i)=> i===STOP ? win : pool[i%pool.length]);
     strip.style.transition="none"; strip.style.transform="translateX(0)"; strip.innerHTML = seq.map(card).join("");
+    sndSpin(4200,34);
     const target = STOP*108 + 54 - stage.clientWidth/2 + (Math.random()-.5)*60;
     requestAnimationFrame(()=>requestAnimationFrame(()=>{ strip.style.transition="transform 4.2s cubic-bezier(.12,.7,.1,1)"; strip.style.transform=`translateX(${-target}px)`; }));
     setTimeout(res, 4400);
   });
 }
-function showWin(r){
+function showWin(r,silent){
   const k = r.win==="coins" || r.win==="coin" ? "coin" : r.win;
   $("#wPic").innerHTML = pic(k);
   if(r.win==="coins") $("#wName").textContent = `+${r.amount} монет`;
@@ -351,7 +362,9 @@ function showWin(r){
   else $("#wName").textContent = (item(r.win).name || r.win) + "!";
   $("#wVal").textContent = r.win==="coin"||r.win==="coins" ? "Зачислено на баланс" : (ITEMS_SELL(r.win));
   $("#mWin").classList.add("on");
-  if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred(r.win==="coin"||r.ok===false?"warning":"success");
+  const bad = r.win==="coin"||r.ok===false;
+  if(!silent){ bad ? sndFail() : sndWin(item(r.win).value>=1000); }
+  if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred(bad?"warning":"success");
 }
 function ITEMS_SELL(k){ const i=item(k); return i.value ? `Можно продать за ${fmt(i.value)} 🪙` : ""; }
 $("#wOk").onclick = () => $("#mWin").classList.remove("on");
@@ -393,6 +406,7 @@ function spinNeedle(roll,c){
     const cur=((needleAng%360)+360)%360;
     needleAng += ((target-cur+360)%360) + 360*5;   // всегда вперёд, 5 полных оборотов
     const dur = matchMedia("(prefers-reduced-motion:reduce)").matches ? 600 : 4800;
+    sndSpin(dur,40,true);
     n.style.transition=`transform ${dur}ms cubic-bezier(.15,.65,.08,1)`;
     n.style.transform=`rotate(${needleAng}deg)`;
     setTimeout(res, dur+150);
@@ -400,7 +414,7 @@ function spinNeedle(roll,c){
 }
 $("#upBtn").onclick = async () => {
   if(upSpin) return;
-  upSpin = true; lockSync = true; $("#upBtn").disabled = true;
+  unlock(); upSpin = true; lockSync = true; $("#upBtn").disabled = true;
   const wheel = $("#wheel"); wheel.classList.remove("win","lose");
   let r=null;
   try{
@@ -411,13 +425,14 @@ $("#upBtn").onclick = async () => {
     await spinNeedle(roll, c);
     wheel.classList.add(r.ok ? "win" : "lose");
     $("#wSub").textContent = r.ok ? "УСПЕХ" : "НЕУДАЧА";
+    r.ok ? sndWin(true) : sndFail();
     if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred(r.ok?"success":"error");
     await new Promise(x=>setTimeout(x,900));
   }catch(e){ alert(e.message); r=null; }
   finally{ upSpin=false; lockSync=false; }
   if(r){
     apply(r); upI=-1; upT=""; renderUp();
-    showWin({ win: r.ok ? r.win : "coin", ok: r.ok });
+    showWin({ win: r.ok ? r.win : "coin", ok: r.ok }, true);
     if(!r.ok){ $("#wName").textContent="Предмет сгорел"; $("#wVal").textContent="Апгрейд не удался"; $("#wPic").textContent="💥"; }
   }
   $("#upBtn").disabled = !(upI>=0 && upT);
@@ -486,7 +501,7 @@ async function playDice(side){
 $("#diceUnder").onclick = () => playDice("under");
 $("#diceOver").onclick = () => playDice("over");
 
-const MIN_DEP=100, MAX_DEP=100000, PACKS=[100,250,500,1000,2500,5000];
+const MIN_DEP=1, MAX_DEP=100000, PACKS=[1,5,10,50,100,500];
 $("#pk").innerHTML = PACKS.map(p=>`<button data-p="${p}">${fmt(p)} ⭐</button>`).join("");
 const markSel = () => document.querySelectorAll("#pk button").forEach(b=>b.classList.toggle("sel",+b.dataset.p===+$("#amt").value));
 function openTop(){ $("#amt").value=""; $("#amtErr").textContent=""; $("#amt").classList.remove("bad"); markSel(); $("#mTop").classList.add("on"); }
