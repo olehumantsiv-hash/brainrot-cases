@@ -5,6 +5,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { Pool } = require("pg");
+let botUsername = process.env.BOT_USERNAME || "";
 
 const TOKEN = process.env.BOT_TOKEN;
 const WEBAPP_URL = process.env.WEBAPP_URL;
@@ -14,12 +15,17 @@ if (!TOKEN) throw new Error("Задайте BOT_TOKEN");
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) throw new Error("Задайте DATABASE_URL из Supabase PostgreSQL");
 const pool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false }, max: 5, connectionTimeoutMillis: 10000 });
-let db = { users: {}, liveFeed: [] };
+let db = { users: {}, liveFeed: [], pendingStarPayments: {}, starPayments: {}, promos: {}, referrals: {}, partners: {} };
 let saveQueue = Promise.resolve();
 const normalizeDb = value => {
   const result = value && typeof value === "object" ? value : { users: {} };
   if (!result.users || typeof result.users !== "object") result.users = {};
   if (!Array.isArray(result.liveFeed)) result.liveFeed = [];
+  if (!result.pendingStarPayments || typeof result.pendingStarPayments !== "object") result.pendingStarPayments = {};
+  if (!result.starPayments || typeof result.starPayments !== "object") result.starPayments = {};
+  if (!result.promos || typeof result.promos !== "object") result.promos = {};
+  if (!result.referrals || typeof result.referrals !== "object") result.referrals = {};
+  if (!result.partners || typeof result.partners !== "object") result.partners = {};
   return result;
 };
 async function saveDb() {
@@ -45,10 +51,10 @@ async function initDb() {
   }
   await saveDb();
 }
-function recordOpen(user, caseName, rewardName) {
+function recordOpen(user, caseName, rewardName, rewardKey = "") {
   if (!Array.isArray(db.liveFeed)) db.liveFeed = [];
   const player = user.username ? `@${user.username}` : [user.first_name, user.last_name].filter(Boolean).join(" ") || "Игрок";
-  db.liveFeed.unshift({ player, caseName, rewardName, at: Date.now() });
+  db.liveFeed.unshift({ player, caseName, rewardName, rewardKey, at: Date.now() });
   if (db.liveFeed.length > 30) db.liveFeed.length = 30;
 }
 async function persistOrRespond(send) {
@@ -65,6 +71,72 @@ const tgApi = (method, body) =>
   fetch(`https://api.telegram.org/bot${TOKEN}/${method}`, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
   }).then(r => r.json());
+
+const MIN_STAR_TOPUP = 100;
+const MAX_STAR_TOPUP = 100000;
+const parseStarPayload = value => {
+  const match = /^braincase:([0-9]+):([a-f0-9]{32}):([0-9]+)$/.exec(String(value || ""));
+  return match ? { userId: match[1], nonce: match[2], stars: Number(match[3]) } : null;
+};
+const partnerPayload = partnerId => {
+  const p = db.partners[String(partnerId)];
+  if (!p) return null;
+  const referrals = Object.values(db.referrals).filter(r => r.partnerId === String(partnerId)).length;
+  return {
+    code: p.code,
+    link: botUsername ? `https://t.me/${botUsername}?start=${encodeURIComponent(p.code)}` : "",
+    referralCount: referrals,
+    referralStars: p.referralStars || 0,
+    commissionCents: p.commissionCents || 0,
+    availableCoins: Math.max(0, Math.floor((p.commissionCents || 0) / 100) - (p.withdrawnCoins || 0)),
+    withdrawnCoins: p.withdrawnCoins || 0,
+  };
+};
+async function handlePaymentUpdate(update) {
+  const query = update.pre_checkout_query;
+  if (query) {
+    const order = parseStarPayload(query.invoice_payload);
+    const pending = order && db.pendingStarPayments[order.nonce];
+    const valid = !!order && !!pending && pending.userId === String(query.from.id) && order.userId === String(query.from.id) &&
+      pending.stars === order.stars && Date.now() - Number(pending.createdAt || 0) <= 24 * 60 * 60 * 1000 &&
+      query.currency === "XTR" && query.total_amount === order.stars;
+    await tgApi("answerPreCheckoutQuery", valid
+      ? { pre_checkout_query_id: query.id, ok: true }
+      : { pre_checkout_query_id: query.id, ok: false, error_message: "Счёт недействителен или уже использован. Создайте новое пополнение." });
+    return;
+  }
+  const message = update.message;
+  const payment = message?.successful_payment;
+  if (!payment) return;
+  const order = parseStarPayload(payment.invoice_payload);
+  const chargeId = payment.telegram_payment_charge_id;
+  if (!order || !chargeId || payment.currency !== "XTR" || payment.total_amount !== order.stars || String(message.from?.id) !== order.userId) {
+    console.error("Rejected invalid Telegram Stars payment update", chargeId || "no-charge-id");
+    return;
+  }
+  if (db.starPayments[chargeId]) return;
+  const pending = db.pendingStarPayments[order.nonce];
+  if (!pending || pending.userId !== order.userId || pending.stars !== order.stars) {
+    console.error("Payment received without a valid pending order", chargeId);
+    return;
+  }
+  const before = JSON.stringify(db);
+  const u = getUser(order.userId);
+  u.balance += order.stars;
+  const referral = db.referrals[order.userId];
+  if (referral && referral.partnerId !== order.userId) {
+    const partner = db.partners[referral.partnerId];
+    if (partner) {
+      partner.referralStars = (partner.referralStars || 0) + order.stars;
+      partner.commissionCents = (partner.commissionCents || 0) + order.stars * Number(referral.percent || 20);
+    }
+  }
+  db.starPayments[chargeId] = { userId: order.userId, stars: order.stars, at: Date.now() };
+  delete db.pendingStarPayments[order.nonce];
+  try { await saveDb(); }
+  catch (error) { db = normalizeDb(JSON.parse(before)); throw error; }
+  await tgApi("sendMessage", { chat_id: message.chat.id, text: `Оплата ${order.stars} ⭐ подтверждена. Начислено ${order.stars} 🪙. Новый баланс: ${u.balance} 🪙.` });
+}
 
 function verifyInitData(initData) {
   try {
@@ -196,6 +268,7 @@ const subscriptionStatus = async uid => {
 const mePayload = (user, u) => ({
   balance: u.balance, inv: u.inv, subClaimed: !!u.subClaimed, bonusClaims: u.bonusClaims, stats: u.stats,
   liveFeed: db.liveFeed.slice(0, 20),
+  isAdmin: ADMIN_IDS.includes(String(user.id)), partner: partnerPayload(user.id),
   user: { username: user.username || "", first_name: user.first_name || "" },
   cfg: { bonusChannel: CHANNEL, bonusBotTag: BOT_TAG, bonusMin: BONUS_MIN, bonusMax: BONUS_MAX, upgradeMult: UPGRADE_MULT,
     items: publicItems(), cases: publicCases() },
@@ -230,6 +303,79 @@ const server = http.createServer(async (req, res) => {
   const isNewUser = !db.users[uid];
   const u = getUser(uid);
 
+  if (urlPath === "/api/stars/invoice") {
+    const stars = Number(body.stars);
+    if (!Number.isSafeInteger(stars) || stars < MIN_STAR_TOPUP || stars > MAX_STAR_TOPUP) {
+      return send(400, { error: `Укажите целое число от ${MIN_STAR_TOPUP} до ${MAX_STAR_TOPUP} ⭐` });
+    }
+    const now = Date.now();
+    for (const [nonce, order] of Object.entries(db.pendingStarPayments)) {
+      if (now - Number(order.createdAt || 0) > 48 * 60 * 60 * 1000) delete db.pendingStarPayments[nonce];
+    }
+    const nonce = crypto.randomBytes(16).toString("hex");
+    const payload = `braincase:${uid}:${nonce}:${stars}`;
+    db.pendingStarPayments[nonce] = { userId: uid, stars, createdAt: now };
+    try { await saveDb(); }
+    catch (error) {
+      console.error("Could not save pending Stars order:", error.message);
+      delete db.pendingStarPayments[nonce];
+      return send(503, { error: "Не удалось подготовить счёт. Попробуйте позже." });
+    }
+    try {
+      const invoice = await tgApi("createInvoiceLink", {
+        title: "Пополнение Braincase",
+        description: `${stars} виртуальных монет Braincase. Курс: 1 ⭐ = 1 🪙.`,
+        payload,
+        currency: "XTR",
+        prices: [{ label: `${stars} виртуальных монет`, amount: stars }],
+      });
+      if (!invoice?.ok || !invoice.result) throw new Error(invoice?.description || "Telegram не создал счёт");
+      return send(200, { invoiceUrl: invoice.result, stars, coins: stars });
+    } catch (error) {
+      delete db.pendingStarPayments[nonce];
+      await saveDb().catch(() => {});
+      console.error("Telegram Stars invoice failed:", error.message);
+      return send(502, { error: "Не удалось создать счёт в Telegram. Попробуйте ещё раз." });
+    }
+  }
+
+  if (urlPath === "/api/admin/promo/create") {
+    if (!ADMIN_IDS.includes(uid)) return send(403, { error: "Нет доступа к админ-панели" });
+    const rawCode = String(body.code || "").trim().toUpperCase();
+    const code = rawCode.replace(/[^A-Z0-9_-]/g, "");
+    if (code.length < 3 || code.length > 32 || code !== rawCode) return send(400, { error: "Код: от 3 до 32 символов, только латинские буквы, цифры, _ и -." });
+    const partnerUser = findByName(body.partner);
+    if (!partnerUser) return send(404, { error: "Игрок не найден. Он должен хотя бы раз открыть бота." });
+    const partnerId = String(partnerUser.id);
+    if (partnerId === uid) return send(400, { error: "Нельзя назначить партнёром самого себя." });
+    if (db.promos[code]) return send(409, { error: "Такой промокод уже существует." });
+    const before = JSON.stringify(db);
+    for (const [existingCode, promo] of Object.entries(db.promos)) {
+      if (promo.partnerId === partnerId) delete db.promos[existingCode];
+    }
+    db.promos[code] = { partnerId, percent: 20, createdAt: Date.now() };
+    const previous = db.partners[partnerId] || { referralStars: 0, commissionCents: 0, withdrawnCoins: 0 };
+    previous.code = code;
+    db.partners[partnerId] = previous;
+    try { await saveDb(); }
+    catch (error) { db = normalizeDb(JSON.parse(before)); console.error("Could not save promo:", error.message); return send(503, { error: "Не удалось сохранить промокод. Попробуйте ещё раз." }); }
+    return send(200, { ok: true, code, partnerId, partner: partnerPayload(partnerId) });
+  }
+
+  if (urlPath === "/api/partner/withdraw") {
+    const partner = db.partners[uid];
+    if (!partner) return send(403, { error: "Вы не являетесь партнёром." });
+    const amount = Math.max(0, Math.floor((partner.commissionCents || 0) / 100) - (partner.withdrawnCoins || 0));
+    if (!amount) return send(400, { error: "Пока нет доступных монет для перевода." });
+    const before = JSON.stringify(db);
+    partner.withdrawnCoins = (partner.withdrawnCoins || 0) + amount;
+    u.balance += amount;
+    u.stats.coinsEarned += amount;
+    try { await saveDb(); }
+    catch (error) { db = normalizeDb(JSON.parse(before)); console.error("Could not save partner withdrawal:", error.message); return send(503, { error: "Не удалось перевести монеты. Попробуйте ещё раз." }); }
+    return send(200, { balance: u.balance, inv: u.inv, stats: u.stats, partner: partnerPayload(uid) });
+  }
+
   if (urlPath === "/api/me") {
     try {
       await touch(uid, user.username);
@@ -262,7 +408,7 @@ const server = http.createServer(async (req, res) => {
       u.balance += amount;
       u.stats.casesOpened += 1;
       u.stats.coinsEarned += amount;
-      recordOpen(user, type === "subscription" ? "Бонус за подписку" : "Бонус за ник", `${amount} 🪙`);
+      recordOpen(user, type === "subscription" ? "Бонус за подписку" : "Бонус за ник", `${amount} 🪙`, "coin");
       if (!(await persistOrRespond(send))) return;
       return send(200, { amount, type, balance: u.balance, inv: u.inv, stats: u.stats, bonusClaims: u.bonusClaims });
     } finally { pendingBonus.delete(claimKey); }
@@ -281,7 +427,7 @@ const server = http.createServer(async (req, res) => {
     u.balance -= totalPrice;
     const wins = Array.from({ length: count }, () => pickDrop(c.drops));
     u.inv.push(...wins); u.stats.casesOpened += count;
-    for (const win of wins) recordOpen(user, c.name, ITEMS[win].name);
+    for (const win of wins) recordOpen(user, c.name, ITEMS[win].name, win);
     if (!(await persistOrRespond(send))) return;
     return send(200, { wins, balance: u.balance, inv: u.inv, stats: u.stats });
   }
@@ -322,22 +468,50 @@ const server = http.createServer(async (req, res) => {
   send(404, { error: "not found" });
 });
 let offset = 0;
+const paymentSupportAwaiting = new Set();
 async function poll() {
   await tgApi("deleteWebhook", {}).catch(() => {});
   for (;;) {
     try {
-      const r = await tgApi("getUpdates", { offset, timeout: 30, allowed_updates: ["message"] });
+      const r = await tgApi("getUpdates", { offset, timeout: 30, allowed_updates: ["message", "pre_checkout_query"] });
       if (!r.ok) { console.error("getUpdates:", r.description); await new Promise(x => setTimeout(x, 3000)); continue; }
       for (const upd of r.result) {
-        offset = upd.update_id + 1;
+        await handlePaymentUpdate(upd);
         if (upd.message?.from) await touch(upd.message.from.id, upd.message.from.username);
         const mtext = upd.message?.text || "";
-        if (/^\/myid\b/.test(mtext)) {
+        if (/^\/terms\b/.test(mtext)) {
+          await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: "Условия пополнения Braincase:\n• 1 Telegram Star = 1 виртуальная монета.\n• Монеты используются только внутри игры для открытия виртуальных кейсов и не имеют денежной стоимости.\n• Монеты нельзя вывести, обменять на деньги или передать другому игроку.\n• Для вопроса по оплате используйте /paysupport." });
+        } else if (/^\/paysupport\b/.test(mtext)) {
+          if (ADMIN_IDS.length) {
+            paymentSupportAwaiting.add(String(upd.message.from.id));
+            await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: "Опишите проблему следующим сообщением и приложите номер платежа из чека. Передам обращение поддержке." });
+          } else {
+            await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: "Поддержка платежей пока не настроена. Свяжитесь с владельцем бота и приложите номер платежа из чека." });
+          }
+        } else if (paymentSupportAwaiting.has(String(upd.message?.from?.id)) && mtext) {
+          const sender = upd.message.from;
+          const report = `Обращение по платежу от ${sender.username ? "@" + sender.username : sender.id} (Telegram ID ${sender.id}):\n${mtext}`;
+          for (const adminId of ADMIN_IDS) await tgApi("sendMessage", { chat_id: adminId, text: report });
+          paymentSupportAwaiting.delete(String(sender.id));
+          await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: "Обращение отправлено поддержке." });
+        } else if (/^\/myid\b/.test(mtext)) {
           await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: "Ваш Telegram ID: " + upd.message.from.id });
         } else if (/^\/(admin|give|take|giveitem|takeitem|user)(@\w+)?(\s|$)/.test(mtext)) {
           const reply = ADMIN_IDS.includes(String(upd.message.from.id)) ? await adminCmd(mtext) : "Нет доступа.";
           await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: reply });
         } else if (mtext.startsWith("/start") && WEBAPP_URL) {
+          const payloadMatch = /^\/start(?:@\w+)?\s+([A-Za-z0-9_-]{3,32})$/.exec(mtext.trim());
+          const referredId = String(upd.message.from.id);
+          if (payloadMatch && !db.referrals[referredId]) {
+            const code = payloadMatch[1].toUpperCase();
+            const promo = db.promos[code];
+            if (promo && promo.partnerId !== referredId) {
+              const before = JSON.stringify(db);
+              db.referrals[referredId] = { partnerId: promo.partnerId, code, percent: promo.percent || 20, createdAt: Date.now() };
+              try { await saveDb(); }
+              catch (error) { db = normalizeDb(JSON.parse(before)); throw error; }
+            }
+          }
           await tgApi("sendMessage", {
             chat_id: upd.message.chat.id, parse_mode: "HTML",
             text: "🎃 <b>Добро пожаловать в Braincase!</b>\n\n" +
@@ -346,6 +520,7 @@ async function poll() {
             reply_markup: { inline_keyboard: [[{ text: "Открыть Braincase", web_app: { url: WEBAPP_URL } }]] },
           });
         }
+        offset = upd.update_id + 1;
       }
     } catch (e) { console.error(e.message); await new Promise(r => setTimeout(r, 3000)); }
   }
@@ -354,6 +529,7 @@ async function poll() {
 async function start() {
   await initDb();
   server.listen(PORT, () => console.log("API на порту", PORT));
+  tgApi("getMe", {}).then(info => { if (info?.ok && info.result?.username) botUsername = info.result.username; }).catch(error => console.error("getMe:", error.message));
   poll();
 }
 start().catch(async error => {

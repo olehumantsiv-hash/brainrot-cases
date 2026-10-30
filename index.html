@@ -38,6 +38,8 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;pa
 .bonus-card .btn{font-size:14px;padding:12px}
 .bonus-state{font-size:12px;color:var(--green);margin-top:8px;min-height:18px}
 .feed{display:grid;gap:8px;margin:8px 0 18px}.feed-row{display:flex;justify-content:space-between;gap:12px;align-items:center;background:#1a1025;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12px}.feed-row b{color:#ffe0c2}.feed-row small{color:var(--muted);white-space:nowrap}.feed-reward{color:var(--green);text-align:right}
+.drop-scroller{display:flex;gap:9px;overflow-x:auto;padding:4px 3px 13px;margin:-2px 0 12px;scrollbar-width:thin;scrollbar-color:#62407a transparent}.drop-card{flex:0 0 112px;min-height:118px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;padding:8px 7px;background:linear-gradient(160deg,#20182d,#100b19);border:1px solid #49375a;border-bottom:2px solid #d5a83f;border-radius:5px;text-align:center;animation:dropIn .3s ease-out}.drop-pic{height:54px;width:100%;display:grid;place-items:center;font-size:34px;filter:drop-shadow(0 5px 10px #ffb64355)}.drop-pic img{max-width:100%;max-height:54px;object-fit:contain}.drop-name{font-size:10px;line-height:1.2;font-weight:600;max-height:24px;overflow:hidden}.drop-meta{font-size:9px;color:var(--muted);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}.partner-card,.admin-card{display:grid;gap:12px;padding:16px;border:1px solid #513d60;border-radius:16px;background:linear-gradient(150deg,#2a1a36,#17101f)}.partner-stat{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.partner-stat>div{padding:11px;border:1px solid var(--line);border-radius:11px;background:#100b19}.partner-stat b{display:block;color:#ffe0c2;font-size:18px}.partner-stat small{color:var(--muted);font-size:11px}.admin-card input{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:#100b19;color:var(--text);font:14px Rubik,sans-serif}.partner-msg{min-height:20px;color:var(--green);font-size:13px}
+.topup-card{background:linear-gradient(150deg,#2a1a36,#17101f);border:1px solid #513d60;border-radius:16px;padding:16px;display:grid;gap:12px}.topup-card label{font-size:13px;color:var(--muted)}.topup-card input[type=number]{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#110a19;color:var(--text);font:600 16px Rubik,sans-serif}.terms-check{display:flex;align-items:flex-start;gap:9px;color:var(--muted);font-size:12px}.terms-check input{margin-top:3px;accent-color:var(--acc)}.terms-copy{font-size:12px;color:var(--muted);padding:10px;background:#ffffff08;border-radius:10px}.topup-status{min-height:20px;color:var(--green);font-size:13px}
 .workspace{min-height:100vh;margin-left:276px}
 main{max-width:760px;margin:0 auto;padding:18px}
 #menuToggle{display:none;align-items:center;justify-content:center;width:38px;height:38px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font-size:20px;cursor:pointer}
@@ -45,8 +47,8 @@ main{max-width:760px;margin:0 auto;padding:18px}
 .view{display:none}.view.on{display:block}
 h2.t{font-size:18px;margin:0 0 12px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.case{background:linear-gradient(160deg,#241240,var(--card));border:1px solid var(--line);border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:4px;align-items:center;text-align:center;cursor:pointer;min-height:168px}
-.case:hover{border-color:var(--acc)}
+.case{background:linear-gradient(160deg,#241240,var(--card));border:1px solid var(--line);border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:4px;align-items:center;text-align:center;cursor:pointer;min-height:168px;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,filter .2s ease}
+.case:hover{border-color:var(--acc);transform:translateY(-4px) scale(1.015);box-shadow:0 12px 30px #0008,0 0 22px #ff7a0030;filter:brightness(1.1)}
 .case.wide{grid-column:1/-1;min-height:auto;flex-direction:row;gap:14px;text-align:left}
 .case .art{font-size:48px;line-height:1;filter:drop-shadow(0 6px 16px var(--g,#ff7a0088))}
 .case .art img{max-width:100%;max-height:90px;object-fit:contain}
@@ -205,7 +207,12 @@ h2.t{font-size:18px;margin:0 0 12px}
   #navScrim{position:fixed;inset:0;background:#0009;z-index:29}
   body.nav-open #navScrim{display:block}
 }
-@media (prefers-reduced-motion:reduce){.strip,.sidebar{transition:none!important}}
+@keyframes dropIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+button,.it,.bonus-card,.drop-card{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,filter .18s ease}
+button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
+.it:hover{transform:translateY(-3px) scale(1.025);box-shadow:0 8px 20px #0008}
+.bonus-card:hover,.drop-card:hover{transform:translateY(-3px);border-color:#a36cd0;box-shadow:0 10px 24px #0007}
+@media (prefers-reduced-motion:reduce){.strip,.sidebar,button,.it,.bonus-card,.drop-card,.case{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
@@ -216,6 +223,9 @@ h2.t{font-size:18px;margin:0 0 12px}
   <nav class="side-nav" aria-label="Разделы">
     <button data-go="cases" class="on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4.4 7.7 7.6 4.4 7.6-4.4M12 12v9"/></svg><span>Кейсы</span></button>
     <button data-go="bonus"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 7v14M12 7H7.5a2.5 2.5 0 1 1 2.5-2.5C10 6 12 7 12 7Zm0 0h4.5A2.5 2.5 0 1 0 14 4.5C14 6 12 7 12 7Z"/></svg><span>Бонусы</span></button>
+    <button data-go="topup"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 2.8 6.1 6.7.8-4.9 4.7 1.3 6.6L12 17l-5.9 3.2 1.3-6.6-4.9-4.7 6.7-.8L12 2Z"/></svg><span>Пополнение ⭐</span></button>
+    <button data-go="partner"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21c.7-4 3-6 7-6s6.3 2 7 6M17 8h5m-2.5-2.5v5"/></svg><span>Медиа / партнёры</span></button>
+    <button data-go="admin" id="adminNav" style="display:none"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 14 8l5 2-5 2-2 5-2-5-5-2 5-2 2-5Z"/><path d="M19 16v5m-2.5-2.5h5"/></svg><span>Админ-панель</span></button>
     <button data-go="up"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 2-9 12h7l-1 8 10-13h-7l.5-7Z"/></svg><span>Апгрейд</span></button>
     <button data-go="me" class="profile-link"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 3.5-6 8-6s7.2 2 8 6"/></svg><span>Профиль</span></button>
   </nav>
@@ -231,11 +241,11 @@ h2.t{font-size:18px;margin:0 0 12px}
   <div id="errBanner"></div>
   <section class="view on" id="v-cases">
     <h2 class="t">Кейсы</h2>
+    <h3 style="font:600 12px Unbounded,sans-serif;color:#d8c9ed;margin:0 0 5px">✦ Последние дропы</h3>
+    <div id="liveFeed" class="drop-scroller"></div>
     <div id="cbBox"></div>
     <div class="cats" id="cats"></div>
     <div class="grid" id="caseGrid"></div>
-    <h2 class="t" style="margin-top:18px">Лента открытий</h2>
-    <div id="liveFeed" class="feed"></div>
   </section>
 
   <section class="view" id="v-bonus">
@@ -243,6 +253,44 @@ h2.t{font-size:18px;margin:0 0 12px}
     <p class="info" style="text-align:left;margin:0 0 14px">Выполните задание, чтобы открыть бонус-кейс. Награда — от 1 до 10 виртуальных 🪙. Каждый бонус доступен один раз.</p>
     <p id="bonusMsg" class="info" style="margin:0 0 12px"></p>
     <div id="bonusGrid" class="bonus-grid"></div>
+  </section>
+
+  <section class="view" id="v-topup">
+    <h2 class="t">Пополнение ⭐</h2>
+    <div class="topup-card">
+      <p>1 Telegram Star = 1 виртуальная 🪙. Минимальное пополнение — 100 ⭐.</p>
+      <label for="starsAmount">Количество звёзд</label>
+      <input id="starsAmount" type="number" min="100" max="100000" step="1" value="100" inputmode="numeric">
+      <p id="topupCoins" class="info" style="margin:0">Начислим: 100 🪙</p>
+      <details><summary style="cursor:pointer;color:#ffc481">Условия пополнения</summary><p class="terms-copy">Монеты используются только внутри игры для открытия виртуальных кейсов. Они не имеют денежной стоимости, не выводятся, не обмениваются на деньги и не передаются другим игрокам. По вопросам оплаты используйте команду /paysupport в чате с ботом.</p></details>
+      <label class="terms-check"><input id="termsAccepted" type="checkbox"> Я прочитал и принимаю условия пополнения.</label>
+      <button class="btn" id="buyStarsBtn">Оплатить 100 ⭐</button>
+      <p id="topupStatus" class="topup-status"></p>
+    </div>
+  </section>
+
+  <section class="view" id="v-partner">
+    <h2 class="t">Медиа / партнёры</h2>
+    <div id="partnerEmpty" class="info" style="text-align:left">Вы не являетесь партнёром.</div>
+    <div id="partnerDashboard" class="partner-card" style="display:none">
+      <p>Ваш промокод и ссылка. Игрок должен впервые запустить бота по вашей ссылке. Вы получаете <b>20%</b> от его пополнений в виде виртуальных монет; привязка реферала одноразовая.</p>
+      <div class="row"><code id="partnerCode"></code><button class="btn alt" id="copyPartnerLink">Копировать ссылку</button></div>
+      <div class="partner-stat"><div><b id="partnerReferrals">0</b><small>Рефералов</small></div><div><b id="partnerStars">0 ⭐</b><small>Пополнения рефералов</small></div><div><b id="partnerDue">0 🪙</b><small>Доступно к переводу</small></div><div><b id="partnerWithdrawn">0 🪙</b><small>Переведено на баланс</small></div></div>
+      <button class="btn" id="partnerWithdraw">Перевести на игровой баланс</button>
+      <p id="partnerMsg" class="partner-msg"></p>
+      <p class="info" style="margin:0">Бонус нельзя вывести деньгами: он переводится только в игровой баланс.</p>
+    </div>
+  </section>
+
+  <section class="view" id="v-admin">
+    <h2 class="t">Админ-панель</h2>
+    <div class="admin-card">
+      <p>Создать промокод медиа-партнёру. За пополнения его рефералов начисляется 20% в игровых монетах.</p>
+      <label for="adminPartner">Telegram @username или ID игрока</label><input id="adminPartner" placeholder="@username или ID">
+      <label for="adminPromoCode">Промокод</label><input id="adminPromoCode" placeholder="например, CREATOR20" maxlength="32">
+      <button class="btn" id="createPromoBtn">Создать промокод</button>
+      <p id="adminPromoMsg" class="partner-msg"></p>
+    </div>
   </section>
 
   <section class="view" id="v-open">
@@ -320,7 +368,7 @@ const FALLBACK_ITEMS = {
   coin:{name:"1 монета",e:"🪙",c:"#ffd24a",value:1},
   dragon:{name:"Dragon Cannelloni",e:"🐉",c:"#ff7a00",value:1500}
 };
-const S = { bal:0, inv:[], liveFeed:[], subClaimed:false, bonusClaims:{subscription:false,nickname:false}, stats:{casesOpened:0,upgrades:0,coinsEarned:0}, user:{username:"",first_name:""},
+const S = { bal:0, inv:[], liveFeed:[], partner:null, isAdmin:false, subClaimed:false, bonusClaims:{subscription:false,nickname:false}, stats:{casesOpened:0,upgrades:0,coinsEarned:0}, user:{username:"",first_name:""},
   cfg:{ bonusChannel:"@braincasegg", bonusBotTag:"braincase_game", bonusMin:1, bonusMax:10, upgradeMult:0.8, items:FALLBACK_ITEMS, cases:{} } };
 const item = k => (S.cfg.items && S.cfg.items[k]) || FALLBACK_ITEMS[k] || {name:k,e:"❓",c:"#9aa0b4",value:0};
 
@@ -334,6 +382,8 @@ function apply(d){
   if(d.balance != null) S.bal = Number(d.balance) || 0;
   if(d.inv) S.inv = d.inv;
   if(d.liveFeed) S.liveFeed = d.liveFeed;
+  if(Object.prototype.hasOwnProperty.call(d,"partner")) S.partner = d.partner;
+  if(d.isAdmin != null) S.isAdmin = !!d.isAdmin;
   if(d.subClaimed != null) S.subClaimed = !!d.subClaimed;
   if(d.bonusClaims) S.bonusClaims = d.bonusClaims;
   if(d.stats) S.stats = d.stats;
@@ -373,16 +423,23 @@ function renderCases(){
 }
 function renderLiveFeed(){
   const box=$("#liveFeed"); if(!box) return;
+  const entries=S.liveFeed.slice(0,20);
+  const signature=JSON.stringify(entries);
+  if(box.dataset.feedSignature===signature) return;
+  box.dataset.feedSignature=signature;
   box.replaceChildren();
-  if(!S.liveFeed.length){ box.textContent="Здесь будут появляться последние открытия кейсов."; box.className="feed info"; return; }
-  box.className="feed";
-  for(const entry of S.liveFeed.slice(0,20)){
-    const row=document.createElement("div"); row.className="feed-row";
-    const left=document.createElement("div"); const who=document.createElement("b"); who.textContent=entry.player||"Игрок";
-    const what=document.createElement("div"); what.textContent=`открыл: ${entry.caseName||"Кейс"}`; left.append(who,what);
-    const right=document.createElement("div"); right.className="feed-reward"; right.textContent=entry.rewardName||"Награда";
-    const time=document.createElement("small"); time.textContent=entry.at?new Date(entry.at).toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}):"";
-    right.append(document.createElement("br"),time); row.append(left,right); box.append(row);
+  if(!entries.length){ const empty=document.createElement("div");empty.className="info";empty.textContent="Пока нет открытий";box.append(empty);return; }
+  box.className="drop-scroller";
+  for(const entry of entries){
+    const row=document.createElement("article"); row.className="drop-card";
+    const picBox=document.createElement("div"); picBox.className="drop-pic";
+    const reward=entry.rewardKey?item(entry.rewardKey):null;
+    if(reward?.img){ const img=document.createElement("img");img.src=reward.img;img.alt=entry.rewardName||reward.name;picBox.append(img); }
+    else picBox.textContent=reward?.e||"🎁";
+    const title=document.createElement("div");title.className="drop-name";title.textContent=entry.rewardName||reward?.name||"Награда";
+    const player=document.createElement("div");player.className="drop-meta";player.textContent=entry.player||"Игрок";
+    const time=document.createElement("div");time.className="drop-meta";time.textContent=entry.at?new Date(entry.at).toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}):entry.caseName||"Кейс";
+    row.append(picBox,title,player,time);box.append(row);
   }
 }
 
@@ -419,14 +476,81 @@ function render(){
   $("#uname").textContent = name; $("#sideName").textContent = name;
   $("#ava").textContent = $("#sideAva").textContent = (name.replace("@","")[0] || "?").toUpperCase();
   $("#statsBox").innerHTML = `Кейсов открыто: <b>${fmt(S.stats.casesOpened)}</b> · Апгрейдов: <b>${fmt(S.stats.upgrades)}</b><br>Виртуальных монет заработано: <b>${fmt(S.stats.coinsEarned)} 🪙</b>`;
+  $("#adminNav").style.display=S.isAdmin?"flex":"none";
   if($("#v-cases").classList.contains("on")) renderCases();
   if($("#v-bonus").classList.contains("on")) renderBonuses();
+  if($("#v-partner").classList.contains("on")) renderPartner();
+  if($("#v-admin").classList.contains("on")) renderAdmin();
   const box = $("#invBox");
   box.innerHTML = S.inv.length
     ? `<div class="row" style="margin:0 0 10px"><button class="btn red" id="sellAllBtn">Продать всё</button></div><div class="inv">${S.inv.map((k,i)=>card(k).replace('class="it"',`class="it" data-i="${i}"`)).join("")}</div><p class="info">Нажмите предмет, чтобы продать его отдельно</p>`
     : '<div class="empty">Пока пусто. Откройте первый кейс.</div>';
   if($("#v-up").classList.contains("on")) renderUp();
 }
+
+function renderPartner(){
+  const p=S.partner;
+  $("#partnerEmpty").style.display=p?"none":"block";
+  $("#partnerDashboard").style.display=p?"grid":"none";
+  if(!p) return;
+  $("#partnerCode").textContent=`Код: ${p.code}`;
+  $("#partnerReferrals").textContent=fmt(p.referralCount);
+  $("#partnerStars").textContent=`${fmt(p.referralStars)} ⭐`;
+  $("#partnerDue").textContent=`${fmt(p.availableCoins)} 🪙`;
+  $("#partnerWithdrawn").textContent=`${fmt(p.withdrawnCoins)} 🪙`;
+  $("#partnerWithdraw").disabled=!p.availableCoins;
+}
+function renderAdmin(){
+  if(!S.isAdmin){ $("#adminPromoMsg").textContent="Нет доступа."; $("#createPromoBtn").disabled=true; }
+  else $("#createPromoBtn").disabled=false;
+}
+async function copyPartnerLink(){
+  const link=S.partner?.link;
+  if(!link){ $("#partnerMsg").textContent="Ссылка пока недоступна: не определён username бота."; return; }
+  try{ if(navigator.clipboard&&window.isSecureContext) await navigator.clipboard.writeText(link); else {const t=document.createElement("textarea");t.value=link;t.style.position="fixed";t.style.opacity="0";document.body.append(t);t.select();document.execCommand("copy");t.remove();} $("#partnerMsg").textContent="Ссылка скопирована. Новые игроки привяжутся к вашему коду."; }
+  catch{ $("#partnerMsg").textContent=`Ссылка для копирования: ${link}`; }
+}
+$("#copyPartnerLink").onclick=copyPartnerLink;
+$("#partnerWithdraw").onclick=async()=>{
+  const button=$("#partnerWithdraw");button.disabled=true;$("#partnerMsg").textContent="Переводим монеты…";
+  try{apply(await api("/api/partner/withdraw",{}));$("#partnerMsg").textContent="Монеты переведены на игровой баланс.";}
+  catch(error){$("#partnerMsg").textContent=error.message;renderPartner();}
+};
+$("#createPromoBtn").onclick=async()=>{
+  const button=$("#createPromoBtn");button.disabled=true;$("#adminPromoMsg").textContent="Создаём код…";
+  try{
+    const r=await api("/api/admin/promo/create",{partner:$("#adminPartner").value,code:$("#adminPromoCode").value});
+    $("#adminPromoMsg").textContent=`Промокод ${r.code} создан для игрока ${r.partnerId}.`;
+    $("#adminPromoCode").value="";
+  }catch(error){$("#adminPromoMsg").textContent=error.message;}
+  finally{button.disabled=false;}
+};
+
+const starsInput=$("#starsAmount");
+starsInput.oninput=()=>{
+  const stars=Math.max(0,Math.floor(Number(starsInput.value)||0));
+  $("#topupCoins").textContent=`Начислим: ${fmt(stars)} 🪙`;
+  $("#buyStarsBtn").textContent=`Оплатить ${fmt(stars)} ⭐`;
+};
+$("#buyStarsBtn").onclick=async()=>{
+  const stars=Number(starsInput.value);
+  const status=$("#topupStatus");
+  if(!Number.isSafeInteger(stars)||stars<100||stars>100000){ status.textContent="Введите целое количество от 100 до 100 000 ⭐."; return; }
+  if(!$("#termsAccepted").checked){ status.textContent="Сначала подтвердите согласие с условиями."; return; }
+  if(!tg||typeof tg.openInvoice!=="function"){ status.textContent="Оплата доступна при открытии игры внутри Telegram."; return; }
+  const button=$("#buyStarsBtn"); button.disabled=true; status.textContent="Создаём счёт Telegram…";
+  try{
+    const invoice=await api("/api/stars/invoice",{stars});
+    status.textContent="Откройте счёт Telegram и подтвердите оплату.";
+    tg.openInvoice(invoice.invoiceUrl, result=>{
+      if(result==="paid"){ status.textContent="Платёж подтверждён. Начисляем монеты…"; sync(); }
+      else if(result==="pending") status.textContent="Платёж обрабатывается. Баланс обновится автоматически.";
+      else if(result==="cancelled") status.textContent="Оплата отменена.";
+      else if(result==="failed") status.textContent="Оплата не прошла. Попробуйте ещё раз.";
+      button.disabled=false;
+    });
+  }catch(error){ status.textContent=error.message; button.disabled=false; }
+};
 
 let AC, muted=false; try{ muted=localStorage.getItem("mute")==="1"; }catch(e){}
 function unlock(){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==="suspended") AC.resume(); }catch(e){} }
@@ -464,6 +588,9 @@ function show(v){
   if(tg) (v==="open"||v==="up") ? tg.BackButton.show() : tg.BackButton.hide();
   if(v==="cases") renderCases();
   if(v==="bonus") renderBonuses();
+  if(v==="topup") { $("#topupStatus").textContent=""; starsInput.oninput(); }
+  if(v==="partner") renderPartner();
+  if(v==="admin") renderAdmin();
   if(v==="up"){
     if(upI>=S.inv.length){ upI=-1; upT=""; }
     renderUp();
