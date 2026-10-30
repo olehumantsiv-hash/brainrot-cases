@@ -44,7 +44,13 @@ function verifyInitData(initData) {
     return JSON.parse(p.get("user"));
   } catch { return null; }
 }
-const getUser = id => { const u = (db.users[id] ||= { balance: 0 }); u.inv ||= []; return u; };
+const getUser = id => {
+  const uid = String(id);
+  const u = (db.users[uid] ||= { balance: 0 });
+  u.balance = Number(u.balance) || 0;
+  u.inv ||= [];
+  return u;
+};
 
 // ===== Игровая логика (всё считается на сервере) =====
 const CHANNEL = "@braincasegg";          // бот должен быть админом канала, иначе getChatMember не сработает
@@ -81,7 +87,8 @@ async function adminCmd(text) {
   if (!name) return "Укажите @username. /admin — список команд.";
   const f = findByName(name);
   if (!f) return `Игрок ${name} не найден. Он должен хотя бы раз открыть бота.`;
-  const { id, u } = f;
+  const id = String(f.id);
+  const u = getUser(id);
   if (cmd === "/user") return `@${u.username}: ${u.balance} 🪙, предметы: ${u.inv.length ? u.inv.join(", ") : "нет"}`;
   if (cmd === "/give" || cmd === "/take") {
     const n = Math.floor(Number(arg));
@@ -121,7 +128,7 @@ const server = http.createServer(async (req, res) => {
     } catch { res.writeHead(404); return res.end(); } // файла нет в репозитории: не падаем
   }
   if (req.method !== "POST") { // отдаём index.html
-    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
     return res.end(fs.readFileSync(path.join(__dirname, "index.html")));
   }
   let raw = ""; for await (const c of req) { raw += c; if (raw.length > 10000) return send(413, { error: "too large" }); }

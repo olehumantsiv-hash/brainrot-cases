@@ -137,6 +137,15 @@ async function api(path, data){
   const r = await fetch(API_URL + path, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({...data, initData: tg ? tg.initData : ""}) });
   const j = await r.json(); if(!r.ok) throw new Error(j.error || "Ошибка"); return j;
 }
+function apply(d){
+  if(!d) return;
+  if(d.balance != null) S.bal = Number(d.balance) || 0;
+  if(d.inv) S.inv = d.inv;
+  if(d.subClaimed != null) S.subClaimed = !!d.subClaimed;
+  if(d.user) S.user = d.user;
+  if(d.cfg) S.cfg = d.cfg;
+  render();
+}
 const pic = (k, h) => { const i = ITEMS[k]; return i.img ? `<img src="${i.img}" alt="${i.name}" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createTextNode('${i.e}'))">` : i.e; };
 const card = k => `<div class="it" style="--rc:${ITEMS[k].c}"><div class="pic">${pic(k)}</div><small>${ITEMS[k].name}</small></div>`;
 
@@ -155,8 +164,7 @@ async function sync(){
   if(!API_URL) return;
   try{
     const prev=S.bal;
-    Object.assign(S, await api("/api/me", {}));
-    render();
+    apply(await api("/api/me", {}));
     if(ready && S.bal!==prev && tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred(S.bal>prev?"success":"warning");
     ready=true;
   }catch(e){ console.warn(e); }
@@ -175,7 +183,7 @@ $("#back").onclick = () => show("cases"); if(tg) tg.BackButton.onClick(()=>show(
 $("#invBox").onclick = async e => {
   const el = e.target.closest(".it"); if(!el) return;
   if(!confirm(`Продать ${ITEMS[S.inv[+el.dataset.i]].name} за ${fmt(S.cfg.dragonValue)} 🪙?`)) return;
-  try{ Object.assign(S, await api("/api/sell", {index:+el.dataset.i})); render(); }catch(err){ alert(err.message); }
+  try{ apply(await api("/api/sell", {index:+el.dataset.i})); }catch(err){ alert(err.message); }
 };
 
 /* ===== Кейсы ===== */
@@ -206,7 +214,7 @@ $("#openBtn").onclick = async () => {
   try{
     const r = await api("/api/open", {case:cur});
     if(cur==="allin") await animate(r.win);
-    S.bal = r.balance; S.inv = r.inv; if(cur==="sub") S.subClaimed = true; render();
+    apply(r); if(cur==="sub") S.subClaimed = true; render();
     showWin(r);
   }catch(err){
     alert(err.message);
@@ -242,7 +250,7 @@ $("#topClose").onclick = () => $("#mTop").classList.remove("on");
 $("#pk").onclick = e => { const b=e.target.closest("button"); if(!b) return; $("#amt").value=b.dataset.p; $("#amt").classList.remove("bad"); markSel(); };
 $("#amt").oninput = () => { $("#amtErr").textContent=""; $("#amt").classList.remove("bad"); markSel(); };
 async function waitForCredit(prev){
-  for(let i=0;i<12;i++){ await new Promise(r=>setTimeout(r,1500)); try{ const me=await api("/api/me",{}); if(me.balance>prev){ Object.assign(S,me); render(); return true; } }catch(e){} }
+  for(let i=0;i<12;i++){ await new Promise(r=>setTimeout(r,1500)); try{ const me=await api("/api/me",{}); if(me.balance>prev){ apply(me); return true; } }catch(e){} }
   return false;
 }
 $("#payBtn").onclick = async () => {
