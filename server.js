@@ -43,7 +43,52 @@ const ALLIN_PRICE = 100;                 // цена кейса «Всё или 
 const DRAGON_CHANCE = 0.05;              // шанс дракона (5%). Меняйте под свою экономику
 const SUB_REWARD = 10;                   // награда за подписку (один раз на аккаунт)
 const ITEMS = { dragon: { name: "Dragon Cannelloni", value: 900 } };
+const ADMIN_IDS = (process.env.ADMIN_IDS || "").split(",").map(x => x.trim()).filter(Boolean); // Telegram ID админов через запятую
 const pendingSub = new Set();
+const touch = (id, username) => { // запоминаем @username, чтобы находить игрока по нику
+  const u = getUser(id), n = (username || "").toLowerCase();
+  if (n && u.username !== n) { u.username = n; saveDb(); }
+};
+const findByName = name => {
+  const n = name.replace(/^@/, "").toLowerCase();
+  const e = Object.entries(db.users).find(([, u]) => u.username === n);
+  return e ? { id: e[0], u: e[1] } : null;
+};
+const ADMIN_HELP = "🛠 Админ-команды:\n" +
+  "/give @username 500 — выдать монеты\n" +
+  "/take @username 500 — забрать монеты\n" +
+  "/giveitem @username dragon — выдать брейнрота\n" +
+  "/takeitem @username dragon — забрать брейнрота\n" +
+  "/user @username — баланс и инвентарь\n" +
+  "Брейнроты: " + Object.keys(ITEMS).join(", ") + "\n" +
+  "Игрок должен хотя бы раз открыть бота.";
+async function adminCmd(text) {
+  const [raw, name, arg] = text.trim().split(/\s+/);
+  const cmd = raw.split("@")[0].toLowerCase();
+  if (cmd === "/admin") return ADMIN_HELP;
+  if (!name) return "Укажите @username. /admin — список команд.";
+  const f = findByName(name);
+  if (!f) return `Игрок ${name} не найден. Он должен хотя бы раз открыть бота.`;
+  const { id, u } = f;
+  if (cmd === "/user") return `@${u.username}: ${u.balance} 🪙, предметы: ${u.inv.length ? u.inv.join(", ") : "нет"}`;
+  if (cmd === "/give" || cmd === "/take") {
+    const n = Math.floor(Number(arg));
+    if (!Number.isInteger(n) || n <= 0) return "Укажите сумму: /give @username 500";
+    u.balance = Math.max(0, u.balance + (cmd === "/give" ? n : -n)); saveDb();
+    if (cmd === "/give") tgApi("sendMessage", { chat_id: id, text: `🎁 Вам начислено ${n} 🪙. Баланс: ${u.balance} 🪙` }).catch(() => {});
+    return `✅ @${u.username}: баланс ${u.balance} 🪙`;
+  }
+  if (cmd === "/giveitem" || cmd === "/takeitem") {
+    const k = (arg || "").toLowerCase();
+    if (!ITEMS[k]) return "Нет такого брейнрота. Доступно: " + Object.keys(ITEMS).join(", ");
+    if (cmd === "/giveitem") { u.inv.push(k); }
+    else { const i = u.inv.indexOf(k); if (i < 0) return "У игрока нет этого предмета."; u.inv.splice(i, 1); }
+    saveDb();
+    if (cmd === "/giveitem") tgApi("sendMessage", { chat_id: id, text: `🎁 Вам выдан ${ITEMS[k].name}! Смотрите инвентарь.` }).catch(() => {});
+    return `✅ @${u.username}: ${cmd === "/giveitem" ? "выдан" : "забран"} ${ITEMS[k].name}`;
+  }
+  return "Неизвестная команда. /admin";
+}
 const isSubscribed = async uid => {
   const r = await tgApi("getChatMember", { chat_id: CHANNEL, user_id: uid }).catch(() => null);
   return !!(r && r.ok && ["creator", "administrator", "member"].includes(r.result.status));
@@ -52,6 +97,10 @@ const isSubscribed = async uid => {
 const server = http.createServer(async (req, res) => {
   const send = (code, obj) => { res.writeHead(code, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type" }); res.end(JSON.stringify(obj)); };
   if (req.method === "OPTIONS") return send(204, {});
+  if (req.method === "GET" && req.url.split("?")[0] === "/allin.png") {
+    res.writeHead(200, { "Content-Type": "image/png", "Cache-Control": "public, max-age=86400" });
+    return res.end(fs.readFileSync(path.join(__dirname, "allin.png")));
+  }
   if (req.method !== "POST") { // отдаём index.html
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
     return res.end(fs.readFileSync(path.join(__dirname, "index.html")));
@@ -62,6 +111,7 @@ const server = http.createServer(async (req, res) => {
   if (!user) return send(401, { error: "bad initData" });
 
   if (req.url === "/api/me") {
+    touch(user.id, user.username);
     const u = getUser(user.id);
     return send(200, { balance: u.balance, inv: u.inv, subClaimed: !!u.subClaimed,
       user: { username: user.username || "", first_name: user.first_name || "" },
@@ -123,7 +173,14 @@ let offset = 0;
       if (!r.ok) { console.error("getUpdates:", r.description); await new Promise(x => setTimeout(x, 3000)); continue; }
       for (const u of r.result) {
         offset = u.update_id + 1;
-        if (u.pre_checkout_query) {
+        if (u.message?.from) touch(u.message.from.id, u.message.from.username);
+        const mtext = u.message?.text || "";
+        if (/^\/myid\b/.test(mtext)) {
+          await tgApi("sendMessage", { chat_id: u.message.chat.id, text: "Ваш Telegram ID: " + u.message.from.id });
+        } else if (/^\/(admin|give|take|giveitem|takeitem|user)(@\w+)?(\s|$)/.test(mtext)) {
+          const reply = ADMIN_IDS.includes(String(u.message.from.id)) ? await adminCmd(mtext) : "Нет доступа.";
+          await tgApi("sendMessage", { chat_id: u.message.chat.id, text: reply });
+        } else if (u.pre_checkout_query) {
           await tgApi("answerPreCheckoutQuery", { pre_checkout_query_id: u.pre_checkout_query.id, ok: true });
         } else if (u.message?.successful_payment) {
           const pay = u.message.successful_payment, id = pay.telegram_payment_charge_id;

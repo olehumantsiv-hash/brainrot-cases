@@ -20,10 +20,11 @@ header{display:flex;align-items:center;justify-content:space-between;padding:14p
 main{max-width:640px;margin:0 auto;padding:16px}
 .view{display:none}.view.on{display:block}
 h2.t{font-size:18px;margin:0 0 12px}
-.case{background:linear-gradient(160deg,#241240,var(--card));border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:14px;display:flex;gap:14px;align-items:center;cursor:pointer}
+.case{background:linear-gradient(160deg,#241240,var(--card));border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:14px;display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center;cursor:pointer}
 .case:hover{border-color:var(--acc)}
-.case .art{width:96px;height:96px;flex:none;display:flex;align-items:center;justify-content:center;font-size:56px;filter:drop-shadow(0 6px 16px var(--g,#ff7a0088))}
-.case .art img{width:100%;height:100%;object-fit:contain}
+.case .art{width:100%;flex:none;display:flex;align-items:center;justify-content:center;font-size:56px;filter:drop-shadow(0 6px 16px var(--g,#ff7a0088))}
+.case .art img{max-width:100%;max-height:260px;object-fit:contain}
+.oart{display:none;max-height:170px;margin:0 auto 6px}
 .case b{font-family:Unbounded,sans-serif;font-size:15px;display:block}
 .case small{color:var(--muted);display:block;margin:2px 0 8px}
 .tag{display:inline-block;background:#0000004d;border-radius:999px;padding:4px 12px;font-weight:600;color:var(--acc)}
@@ -76,8 +77,8 @@ nav button.on{color:var(--acc);background:var(--card)}
   <section class="view on" id="v-cases">
     <h2 class="t">Кейсы</h2>
     <div class="case" data-id="allin" style="--g:#ff7a00aa">
-      <div class="art"><img id="allinImg" alt="Dragon Cannelloni"></div>
-      <div><b>ALL OR NOTHING</b><small id="allinSub"></small><span class="tag" id="allinPrice"></span></div>
+      <div class="art"><img src="allin.png" alt="All or Nothing"></div>
+      <div><small id="allinSub"></small><span class="tag" id="allinPrice"></span></div>
     </div>
     <div class="case" data-id="sub" style="--g:#39ffb0aa">
       <div class="art">📣</div>
@@ -88,6 +89,7 @@ nav button.on{color:var(--acc);background:var(--card)}
   <section class="view" id="v-open">
     <button class="back" id="back">‹ Все кейсы</button>
     <h2 class="t" id="oTitle"></h2>
+    <img class="oart" id="oArt" src="allin.png" alt="">
     <div class="stage"><div class="strip" id="strip"></div></div>
     <div class="row"><button class="btn" id="openBtn"></button></div>
     <p class="info" id="oInfo"></p>
@@ -142,7 +144,6 @@ function render(){
   $("#bal").textContent = fmt(S.bal) + " 🪙"; $("#ubal").textContent = "Баланс: " + fmt(S.bal) + " 🪙";
   const name = S.user.username ? "@" + S.user.username : (S.user.first_name || "Игрок");
   $("#uname").textContent = name; $("#ava").textContent = (S.user.username || S.user.first_name || "?")[0].toUpperCase();
-  $("#allinImg").src = DRAGON_IMG; $("#allinImg").onerror = e => e.target.replaceWith(document.createTextNode("🐉"));
   $("#allinSub").textContent = `Дракон Cannelloni (${fmt(S.cfg.dragonValue)} 🪙) или 1 монета`;
   $("#allinPrice").textContent = fmt(S.cfg.allinPrice) + " 🪙";
   $("#subTag").textContent = S.subClaimed ? "Получено ✓" : `Бесплатно · +${S.cfg.subReward} 🪙`;
@@ -169,7 +170,7 @@ $("#invBox").onclick = async e => {
 let cur=null, spinning=false;
 document.querySelectorAll(".case").forEach(el=>el.onclick=()=>openCase(el.dataset.id));
 function openCase(id){
-  cur = id; const strip = $("#strip"); strip.style.transition="none"; strip.style.transform="translateX(0)";
+  cur = id; $("#oArt").style.display = id==="allin" ? "block" : "none"; const strip = $("#strip"); strip.style.transition="none"; strip.style.transform="translateX(0)";
   if(id==="allin"){
     $("#oTitle").textContent = "ALL OR NOTHING";
     $("#openBtn").textContent = `Открыть за ${fmt(S.cfg.allinPrice)} 🪙`;
