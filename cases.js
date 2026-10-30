@@ -9,12 +9,13 @@ const CASE_RTP = 0.85, MAX_WIN_X = 10, MAX_LOSS_X = 3;
 
 // [id, название, картинка, цвет, [брейнроты]]
 const LINEUP = [
-  ["grave",  "ПРОКЛЯТАЯ ПЛИТА",   "🪦", "#9aa0b4", ["lospooky","lojolly","hotspotsitos","losbros","moneyreindeer","tictac","ketchuru","spaghetti","garama","casaboo","draculino","cooki"]],
-  ["vamp",   "СКЛЕП ВАМПИРА",     "🧛", "#fb7185", ["ketchuru","orcaledon","spaghetti","garama","casaboo","fragola","draculino","reinito","cooki","cerberus"]],
-  ["hound",  "АДСКИЙ ПЁС",        "🐺", "#a855ff", ["spaghetti","garama","casaboo","fragola","draculino","reinito","cooki","cerberus","dragon"]],
-  ["lair",   "ЛОГОВО ДРАКОНОВ",   "🐉", "#ff7a00", ["casaboo","fragola","draculino","reinito","cooki","cerberus","dragon","dragonginger","losdragons","skibidi"]],
-  ["king",   "КОРОЛЬ ХЭЛЛОУИНА",  "👑", "#ffd24a", ["cerberus","dragon","dragonginger","losdragons","skibidi","headless","meowl","strawberry"]],
-  ["throne", "ТРОН ТЬМЫ",         "🕯️", "#ff4ecd", ["dragon","dragonginger","losdragons","skibidi","headless","meowl","strawberry","spyderelephant"]],
+  ["grave",  "ПРОКЛЯТАЯ ПЛИТА",   "🪦", "#9aa0b4", ["lospooky","lojolly","hotspotsitos","losbros","moneyreindeer","tictac","spaghetti","ketchuru","orcaledon","garama","capitano","fragrama","spookypumpky","cooki"]],
+  ["deep",   "ТЁМНЫЕ ГЛУБИНЫ",    "🌊", "#38bdf8", ["tralaledon","mobybros","orcaledon","capitano"]],
+  ["vamp",   "СКЛЕП ВАМПИРА",     "🧛", "#fb7185", ["spaghetti","ketchuru","orcaledon","garama","capitano","fragrama","spookypumpky","draculino","reinito","cerberus","casaboo"]],
+  ["hound",  "АДСКИЙ ПЁС",        "🐺", "#a855ff", ["garama","capitano","fragrama","spookypumpky","fragola","draculino","reinito","cooki","cerberus","casaboo","dragon"]],
+  ["lair",   "ЛОГОВО ДРАКОНОВ",   "🐉", "#ff7a00", ["fragrama","spookypumpky","fragola","draculino","reinito","cooki","cerberus","casaboo","dragon","dragonginger","lasupreme","losdragons"]],
+  ["king",   "КОРОЛЬ ХЭЛЛОУИНА",  "👑", "#ffd24a", ["cerberus","casaboo","dragon","dragonginger","lasupreme","losdragons","headless","meowl","strawberry"]],
+  ["throne", "ТРОН ТЬМЫ",         "🕯️", "#ff4ecd", ["dragon","dragonginger","lasupreme","losdragons","headless","meowl","strawberry","skibidi","spyderelephant"]],
 ];
 
 function buildCase(ITEMS, id, name, art, g, keys) {
