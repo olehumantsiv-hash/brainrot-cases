@@ -47,6 +47,7 @@ const getUser = id => {
   const u = (db.users[uid] ||= { balance: 0 });
   u.balance = Number(u.balance) || 0;
   u.inv ||= [];
+  u.spent = Number(u.spent) || 0; u.prize = Number(u.prize) || 0; u.cbClaimed = Number(u.cbClaimed) || 0;
   return u;
 };
 
@@ -56,6 +57,8 @@ const ALLIN_PRICE = 100;
 const DICE_PAYOUT = 1.92;
 const CRASH_K = 0.06;
 const UPGRADE_MULT = 0.8;
+const CASHBACK_RATE = 0.10; // кэшбэк: 10% от суммарного проигрыша в кейсах (потрачено минус стоимость выпавших призов), открыто показывается игроку
+const cashbackAvail = u => Math.max(0, Math.floor(((u.spent || 0) - (u.prize || 0)) * CASHBACK_RATE) - (u.cbClaimed || 0));
 
 const { ITEMS, LEGACY } = require("./items");
 const { buildCases, CASE_RTP } = require("./cases"); // CASE_RTP: средний возврат игроку от цены кейса
@@ -71,10 +74,17 @@ const pendingSub = new Set();
 const crashGames = new Map();
 
 const publicItems = () => Object.fromEntries(Object.entries(ITEMS).map(([k, v]) => [k, { name: v.name, value: v.value, e: v.e, c: v.c, img: v.img || null }]));
-const publicCases = () => Object.fromEntries(Object.entries(CASES).map(([id, c]) => [id, {
-  name: c.name, price: c.price, art: c.art, g: c.g, special: c.special || null,
-  pool: c.drops ? [...new Set(c.drops.map(d => d[0]))] : ["dragon", "coin"],
-}]));
+const publicCases = () => Object.fromEntries(Object.entries(CASES).map(([id, c]) => {
+  const tot = c.drops ? c.drops.reduce((s, d) => s + d[1], 0) : 0;
+  return [id, {
+    name: c.name, price: c.price, art: c.art, g: c.g, special: c.special || null, cat: c.cat || "special",
+    pool: c.drops ? [...new Set(c.drops.map(d => d[0]))] : ["dragon", "coin"],
+    count: c.drops ? c.drops.length : 2,
+    rtp: c.stats ? Math.round(c.stats.rtp * 1000) / 10 : null,
+    maxX: c.stats ? Math.round(c.stats.maxX * 100) / 100 : null,
+    chances: c.drops ? Object.fromEntries(c.drops.map(([k, w]) => [k, Math.round(w / tot * 10000) / 100])) : null,
+  }];
+}));
 
 function pickDrop(drops) {
   const total = drops.reduce((s, d) => s + d[1], 0);
@@ -150,9 +160,9 @@ const isSubscribed = async uid => {
 };
 
 const mePayload = (user, u) => ({
-  balance: u.balance, inv: u.inv, subClaimed: !!u.subClaimed,
+  balance: u.balance, inv: u.inv, subClaimed: !!u.subClaimed, cashback: cashbackAvail(u),
   user: { username: user.username || "", first_name: user.first_name || "" },
-  cfg: { allinPrice: ALLIN_PRICE, dragonChance: DRAGON_CHANCE, subReward: SUB_REWARD,
+  cfg: { cashbackRate: CASHBACK_RATE, allinPrice: ALLIN_PRICE, dragonChance: DRAGON_CHANCE, subReward: SUB_REWARD,
     dicePayout: DICE_PAYOUT, crashK: CRASH_K, upgradeMult: UPGRADE_MULT,
     items: publicItems(), cases: publicCases() },
 });
@@ -203,6 +213,7 @@ const server = http.createServer(async (req, res) => {
       u.balance -= ALLIN_PRICE;
       const win = crypto.randomInt(1_000_000) < DRAGON_CHANCE * 1_000_000;
       if (win) u.inv.push("dragon"); else u.balance += 1;
+      u.spent += ALLIN_PRICE; u.prize += win ? ITEMS.dragon.value : 1;
       saveDb();
       return send(200, { win: win ? "dragon" : "coin", balance: u.balance, inv: u.inv });
     }
@@ -221,6 +232,7 @@ const server = http.createServer(async (req, res) => {
     if (u.balance < c.price) return send(400, { error: "Недостаточно монет" });
     u.balance -= c.price;
     const win = pickDrop(c.drops);
+    u.spent += c.price; u.prize += ITEMS[win].value;
     u.inv.push(win); saveDb();
     return send(200, { win, balance: u.balance, inv: u.inv });
   }
@@ -288,6 +300,13 @@ const server = http.createServer(async (req, res) => {
     u.balance += win; saveDb();
     crashGames.delete(uid);
     return send(200, { crashed: false, cash, win, balance: u.balance, inv: u.inv });
+  }
+
+  if (urlPath === "/api/cashback") {
+    const avail = cashbackAvail(u);
+    if (avail < 1) return send(400, { error: "Кэшбэка пока нет" });
+    u.balance += avail; u.cbClaimed += avail; saveDb();
+    return send(200, { balance: u.balance, inv: u.inv, cashback: 0 });
   }
 
   if (urlPath === "/api/invoice") {

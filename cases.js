@@ -7,18 +7,18 @@
 // Допустимый разброс цен предметов в одном кейсе: макс/мин <= 30.
 const CASE_RTP = 0.85, MAX_WIN_X = 10, MAX_LOSS_X = 3;
 
-// [id, название, картинка, цвет, [брейнроты]]
+// [id, название, картинка, цвет, [брейнроты], категория]  категории: halloween | water | dragon
 const LINEUP = [
-  ["grave",  "ПРОКЛЯТАЯ ПЛИТА",   "🪦", "#9aa0b4", ["lospooky","lojolly","hotspotsitos","losbros","moneyreindeer","tictac","spaghetti","ketchuru","orcaledon","garama","capitano","fragrama","spookypumpky","cooki"]],
-  ["deep",   "ТЁМНЫЕ ГЛУБИНЫ",    "🌊", "#38bdf8", ["tralaledon","mobybros","orcaledon","capitano"]],
-  ["vamp",   "СКЛЕП ВАМПИРА",     "🧛", "#fb7185", ["spaghetti","ketchuru","orcaledon","garama","capitano","fragrama","spookypumpky","draculino","reinito","cerberus","casaboo"]],
-  ["hound",  "АДСКИЙ ПЁС",        "🐺", "#a855ff", ["garama","capitano","fragrama","spookypumpky","fragola","draculino","reinito","cooki","cerberus","casaboo","dragon"]],
-  ["lair",   "ЛОГОВО ДРАКОНОВ",   "🐉", "#ff7a00", ["fragrama","spookypumpky","fragola","draculino","reinito","cooki","cerberus","casaboo","dragon","dragonginger","lasupreme","losdragons"]],
-  ["king",   "КОРОЛЬ ХЭЛЛОУИНА",  "👑", "#ffd24a", ["cerberus","casaboo","dragon","dragonginger","lasupreme","losdragons","headless","meowl","strawberry"]],
-  ["throne", "ТРОН ТЬМЫ",         "🕯️", "#ff4ecd", ["dragon","dragonginger","lasupreme","losdragons","headless","meowl","strawberry","skibidi","spyderelephant"]],
+  ["grave",  "ПРОКЛЯТАЯ ПЛИТА",   "🪦", "#9aa0b4", ["lospooky","lojolly","hotspotsitos","losbros","moneyreindeer","tictac","spaghetti","ketchuru","orcaledon","garama","capitano","fragrama","spookypumpky","cooki"], "halloween"],
+  ["deep",   "ТЁМНЫЕ ГЛУБИНЫ",    "🌊", "#38bdf8", ["tralaledon","mobybros","orcaledon","capitano"], "water"],
+  ["vamp",   "СКЛЕП ВАМПИРА",     "🧛", "#fb7185", ["spaghetti","ketchuru","orcaledon","garama","capitano","fragrama","spookypumpky","draculino","reinito","cerberus","casaboo"], "halloween"],
+  ["hound",  "АДСКИЙ ПЁС",        "🐺", "#a855ff", ["garama","capitano","fragrama","spookypumpky","fragola","draculino","reinito","cooki","cerberus","casaboo","dragon"], "halloween"],
+  ["lair",   "ЛОГОВО ДРАКОНОВ",   "🐉", "#ff7a00", ["fragrama","spookypumpky","fragola","draculino","reinito","cooki","cerberus","casaboo","dragon","dragonginger","lasupreme","losdragons"], "dragon"],
+  ["king",   "КОРОЛЬ ХЭЛЛОУИНА",  "👑", "#ffd24a", ["cerberus","casaboo","dragon","dragonginger","lasupreme","losdragons","headless","meowl","strawberry"], "halloween"],
+  ["throne", "ТРОН ТЬМЫ",         "🕯️", "#ff4ecd", ["dragon","dragonginger","lasupreme","losdragons","headless","meowl","strawberry","skibidi","spyderelephant"], "dragon"],
 ];
 
-function buildCase(ITEMS, id, name, art, g, keys) {
+function buildCase(ITEMS, id, name, art, g, keys, cat) {
   keys = [...new Set(keys)].filter(k => ITEMS[k]);
   if (keys.length < 2) { console.error(`Кейс ${id}: мало предметов, пропущен`); return null; }
   const vals = keys.map(k => ITEMS[k].value);
@@ -41,13 +41,13 @@ function buildCase(ITEMS, id, name, art, g, keys) {
   const drops = keys.map((key, i) => [key, Math.max(1, Math.round(ws[i] / sum * 1e6))]);
   const tot = drops.reduce((s, d) => s + d[1], 0);
   const rtp = drops.reduce((s, [key, w]) => s + ITEMS[key].value * w / tot, 0) / price;
-  return { name, art, g, drops, price, stats: { minX: min / price, maxX: max / price, rtp } };
+  return { name, art, g, cat, drops, price, stats: { minX: min / price, maxX: max / price, rtp } };
 }
 
 function buildCases(ITEMS) {
   const out = {};
-  for (const [id, name, art, g, keys] of LINEUP) {
-    const c = buildCase(ITEMS, id, name, art, g, keys);
+  for (const [id, name, art, g, keys, cat] of LINEUP) {
+    const c = buildCase(ITEMS, id, name, art, g, keys, cat);
     if (c) out[id] = c;
   }
   return out;

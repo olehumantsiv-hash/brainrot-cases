@@ -1,6 +1,6 @@
 // Каталог брейнротов (список: gameboost.com/blog/all-brainrots-steal-a-brainrot).
 // Цена value = рубли. Реальные цены — в RUB ниже (они всегда главнее). Остальные — ОЦЕНКА по доходу (est()),
-// подогнанная под реальные цены: Ketchuru 20, Garama 40, Dragon Cannelloni 900 (1 монета = 1 ₽).
+// подогнанная под реальные цены: Ketchuru 20, Garama 40, Dragon Cannelloni 900 (в монетах).
 const RUB = { dragon: 900, garama: 40, ketchuru: 20, spaghetti: 18, orcaledon: 25, casaboo: 500, skibidi: 14000, lasupreme: 2000, spookypumpky: 140, fragrama: 110, capitano: 100 }; // реальные цены в монетах; остальные - оценка
 
 const COLORS = { common:"#9aa0b4", rare:"#38bdf8", epic:"#a855ff", legendary:"#fbbf24", mythic:"#fb7185", god:"#ff7a00", secret:"#ff4ecd", og:"#ffd24a" };
@@ -45,7 +45,7 @@ const ROWS = [
 ];
 const IMG = { dragon: "https://static.wikia.nocookie.net/stealabr/images/a/a5/Dragon_Cannelloni.png/revision/latest/scale-to-width-down/1200" };
 
-// Оценка ₽ по доходу. До 42.5M/с цена растёт плавно, выше (Ketchuru 20 ₽ -> Dragon 900 ₽) - круче, как на рынке.
+// Оценка цены (в монетах) по доходу. До 42.5M/с цена растёт плавно, выше (Ketchuru 20 -> Dragon 900) - круче, как на рынке.
 const est = x => x <= 4.25e7 ? 20 * Math.pow(x / 4.25e7, 0.6) : 20 * Math.pow(x / 4.25e7, 2.12);
 const rnd = v => v < 100 ? Math.round(v) : v < 1000 ? Math.round(v/5)*5 : Math.round(v/50)*50;
 

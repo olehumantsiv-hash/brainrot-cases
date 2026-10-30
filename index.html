@@ -31,6 +31,26 @@ h2.t{font-size:18px;margin:0 0 12px}
 .case small{color:var(--muted);display:block;font-size:12px}
 .tag{display:inline-block;background:#0000004d;border-radius:999px;padding:3px 10px;font-weight:600;color:var(--acc);margin-top:4px;font-size:13px}
 .tag.free{color:var(--green)}
+.cats{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:none}
+.cats::-webkit-scrollbar{display:none}
+.cat{flex:0 0 auto;background:#ffffff10;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:8px 14px;font:600 13px Rubik,sans-serif;cursor:pointer;white-space:nowrap}
+.cat.on{background:linear-gradient(135deg,#ff7a00,#ff3d00);border-color:transparent;color:#fff}
+.grid .cc{position:relative;min-height:236px;padding:16px 10px 12px;justify-content:space-between;gap:0;background:radial-gradient(120% 80% at 50% 40%,color-mix(in srgb,var(--g) 34%,transparent),transparent 70%),linear-gradient(180deg,#1c0f2e,#120a1f);border-color:color-mix(in srgb,var(--g) 50%,#2a1840);border-radius:22px;overflow:visible}
+.cc::before{content:"🕸️";position:absolute;left:8px;top:6px;font-size:22px;opacity:.28;pointer-events:none}
+.cc.water::before{content:"🫧"}
+.cc .cname{font-family:Unbounded,sans-serif;font-size:12.5px;letter-spacing:.02em;text-transform:uppercase;margin-top:10px;text-shadow:0 2px 10px #000}
+.cc .art{font-size:84px;margin:6px 0 2px;filter:drop-shadow(0 10px 22px var(--g))}
+.cc .badge{position:absolute;right:-6px;top:-10px;background:linear-gradient(135deg,#ff8a00,#ff4d00);color:#fff;font:800 12px Unbounded,sans-serif;padding:5px 10px;border-radius:12px 12px 4px 12px;box-shadow:0 4px 14px #ff6a0066;transform:rotate(4deg)}
+.cc .pill{position:relative;margin-top:-14px;background:#1a0f2bf2;border:1.5px solid var(--acc);color:#ffd9a8;font:600 12px Rubik,sans-serif;padding:4px 12px;border-radius:999px;box-shadow:0 4px 14px #0008}
+.cc .cfoot{display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:12px;padding:0 4px;font-size:11.5px;color:var(--muted)}
+.cc .cprice{display:flex;align-items:center;gap:5px;font:600 15px Rubik,sans-serif;color:#fff}
+.cb{display:flex;justify-content:space-between;align-items:center;gap:10px;background:linear-gradient(135deg,#2a1450,#1a0f2b);border:1px solid #4a2a7a;border-radius:16px;padding:10px 12px;margin-bottom:12px}
+.cb b{font-size:14px}.cb small{display:block;color:var(--muted);font-size:11.5px}
+.cb button{background:var(--green);color:#052;border:0;border-radius:12px;padding:9px 12px;font:600 13px Rubik,sans-serif;cursor:pointer}.cb button:disabled{background:#ffffff18;color:var(--muted);cursor:default}
+.drops2{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.dr{display:flex;flex-direction:column;gap:3px;min-width:0}.dr .it{flex:none;width:100%;min-width:0}
+.dr .ch{text-align:center;font-size:11px;color:var(--muted)}
+.rtpbox{margin-top:10px;font-size:12.5px;color:var(--muted);text-align:center}
 .gcard{background:linear-gradient(160deg,#241240,var(--card));border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:10px;cursor:pointer}
 .gcard:hover{border-color:var(--acc)}
 .gcard b{font-family:Unbounded,sans-serif;font-size:16px;display:block}
@@ -164,6 +184,8 @@ nav button.on{color:var(--acc);background:var(--card)}
   <div id="errBanner"></div>
   <section class="view on" id="v-cases">
     <h2 class="t">Кейсы</h2>
+    <div id="cbBox"></div>
+    <div class="cats" id="cats"></div>
     <div class="grid" id="caseGrid"></div>
   </section>
 
@@ -173,6 +195,8 @@ nav button.on{color:var(--acc);background:var(--card)}
     <div class="stage"><div class="strip" id="strip"></div></div>
     <div class="row"><button class="btn" id="openBtn"></button></div>
     <p class="info" id="oInfo"></p>
+    <div class="rtpbox" id="oRtp"></div>
+    <div class="drops2" id="oDrops"></div>
   </section>
 
   <section class="view" id="v-games">
@@ -186,7 +210,7 @@ nav button.on{color:var(--acc);background:var(--card)}
    <div class="upgrade-screen">
     <button class="back" data-to="games">‹ Игры</button>
     <h2 class="t">Апгрейд</h2>
-    <p class="info">Цена в ₽ — ориентир FunPay. Выбери предмет и цель.</p>
+    <p class="info">Цены в монетах 🪙. Выбери предмет и цель.</p>
     <div class="wheelBox"><div class="wheel" id="wheel">
       <svg viewBox="0 0 200 200" aria-hidden="true">
         <defs><linearGradient id="upgradeArc" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff8a35"/><stop offset="1" stop-color="#bd79ff"/></linearGradient></defs>
@@ -286,6 +310,7 @@ function apply(d){
   if(d.balance != null) S.bal = Number(d.balance) || 0;
   if(d.inv) S.inv = d.inv;
   if(d.subClaimed != null) S.subClaimed = !!d.subClaimed;
+  if(d.cashback != null) S.cashback = Number(d.cashback) || 0;
   if(d.user) S.user = d.user;
   if(d.cfg) S.cfg = Object.assign({}, S.cfg, d.cfg);
   render();
@@ -294,22 +319,42 @@ function pic(k){
   const i = item(k);
   return i.img ? `<img src="${i.img}" alt="${i.name}" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createTextNode('${i.e}'))">` : (i.e || "❓");
 }
-const card = k => `<div class="it" style="--rc:${item(k).c||'#9aa0b4'}"><div class="pic">${pic(k)}</div><small>${item(k).name}</small><span class="item-price" title="Ориентировочная цена; предложения FunPay меняются">≈ ${fmt(item(k).value)} ₽</span></div>`;
+const card = k => `<div class="it" style="--rc:${item(k).c||'#9aa0b4'}"><div class="pic">${pic(k)}</div><small>${item(k).name}</small><span class="item-price" title="Цена продажи в монетах">${fmt(item(k).value)} 🪙</span></div>`;
 
+const CATS = [["all","Все"],["halloween","🎃 Хэллоуин"],["water","🌊 Водные"],["dragon","🐉 Драконы"]];
+let catFilter = "all";
+const xfmt = n => String(Math.round(Number(n)*10)/10).replace(".", ",");
+async function claimCashback(){
+  try{ apply(await api("/api/cashback", {})); if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success"); }
+  catch(err){ alert(err.message); }
+}
 function renderCases(){
   const order = ["grave","deep","vamp","hound","lair","king","throne","allin"];
   const cs = S.cfg.cases || {};
-  let html = order.filter(id=>cs[id]).map(id=>{
+  $("#cats").innerHTML = CATS.map(([id,t])=>`<button class="cat ${id===catFilter?"on":""}" data-cat="${id}">${t}</button>`).join("");
+  $("#cats").onclick = e => { const b=e.target.closest(".cat"); if(b){ catFilter=b.dataset.cat; renderCases(); } };
+  const rate = Math.round((S.cfg.cashbackRate||0)*100), avail = S.cashback||0;
+  $("#cbBox").innerHTML = rate ? `<div class="cb"><div><b>Кэшбэк ${rate}%</b><small>возвращаем часть проигранного в кейсах</small></div><button id="cbBtn" ${avail<1?"disabled":""}>Забрать ${fmt(avail)} 🪙</button></div>` : "";
+  const cbb = $("#cbBtn"); if(cbb) cbb.onclick = claimCashback;
+  const all = catFilter==="all";
+  let html = order.filter(id=>cs[id] && (cs[id].special ? all : (all || cs[id].cat===catFilter))).map(id=>{
     const c = cs[id];
-    const art = c.art==="allin" ? `<img src="allin.png" alt="">` : c.art;
-    return `<div class="case ${id==="allin"?"wide":""}" data-id="${id}" style="--g:${c.g||"#ff7a00aa"}">
-      <div class="art">${art}</div>
-      <div><b>${c.name}</b><span class="tag">${fmt(c.price)} 🪙</span></div></div>`;
+    if(c.special){
+      const art = c.art==="allin" ? `<img src="allin.png" alt="">` : c.art;
+      return `<div class="case wide" data-id="${id}" style="--g:${c.g||"#ff7a00aa"}"><div class="art">${art}</div><div><b>${c.name}</b><span class="tag">${fmt(c.price)} 🪙</span></div></div>`;
+    }
+    return `<div class="case cc ${c.cat==="water"?"water":""}" data-id="${id}" style="--g:${c.g||"#ff7a00"}">
+      <span class="badge">x${xfmt(c.maxX)}</span>
+      <b class="cname">${c.name}</b>
+      <div class="art">${c.art}</div>
+      <span class="pill">RTP ${xfmt(c.rtp)}%</span>
+      <div class="cfoot"><span>${c.count} предм.</span><span class="cprice">🪙 ${fmt(c.price)}</span></div></div>`;
   }).join("");
-  html += `<div class="case" data-id="sub" style="--g:#39ffb0aa">
+  if(all) html += `<div class="case" data-id="sub" style="--g:#39ffb0aa">
     <div class="art">📣</div>
     <div><b>CHANNEL</b><small>@braincasegg</small>
     <span class="tag free">${S.subClaimed ? "Получено ✓" : "Бесплатно · +"+S.cfg.subReward+" 🪙"}</span></div></div>`;
+  if(!html) html = `<p class="info" style="grid-column:1/-1">В этой категории пока нет кейсов.</p>`;
   $("#caseGrid").innerHTML = html;
   $("#caseGrid").onclick = e => { const el=e.target.closest(".case"); if(el) openCase(el.dataset.id); };
 }
@@ -402,7 +447,12 @@ function openCase(id){
     const pool = (c && c.pool) || ["dragon"];
     $("#oInfo").textContent = id==="allin" ? `Шанс дракона: ${+(S.cfg.dragonChance*100).toFixed(2)}%. Иначе 1 монета.` : "Приз считается на сервере.";
     strip.innerHTML = Array(10).fill(0).map((_,i)=>card(pool[i%pool.length])).join("");
+    if(c && c.chances){
+      $("#oRtp").textContent = `RTP ${xfmt(c.rtp)}%: в среднем игрокам возвращается ${xfmt(c.rtp)}% от цены кейса. Самый дешёвый приз стоит 1/3 цены, самый дорогой — до x${xfmt(c.maxX)}.`;
+      $("#oDrops").innerHTML = Object.entries(c.chances).sort((a,b)=>item(b[0]).value-item(a[0]).value).map(([k,p])=>`<div class="dr">${card(k)}<span class="ch">${String(p).replace(".", ",")}%</span></div>`).join("");
+    } else { $("#oRtp").textContent=""; $("#oDrops").innerHTML=""; }
   }
+  if(id==="sub"){ $("#oRtp").textContent=""; $("#oDrops").innerHTML=""; }
   show("open");
 }
 $("#openBtn").onclick = async () => {
@@ -445,7 +495,7 @@ function showWin(r,silent){
   if(!silent){ bad ? sndFail() : sndWin(item(r.win).value>=1000); }
   if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred(bad?"warning":"success");
 }
-function ITEMS_SELL(k){ const i=item(k); return i.value ? `≈ ${fmt(i.value)} ₽ · продать за ${fmt(i.value)} 🪙` : ""; }
+function ITEMS_SELL(k){ const i=item(k); return i.value ? `${fmt(i.value)} 🪙 · продать за ${fmt(i.value)} 🪙` : ""; }
 $("#wOk").onclick = () => $("#mWin").classList.remove("on");
 
 let upI=-1, upT="", upSpin=false, needleAng=180;
@@ -463,9 +513,9 @@ function renderUp(){
   if(srcSlot){
     const k=S.inv[upI];
     srcSlot.classList.toggle("selected",!!k);
-    srcSlot.innerHTML=k?`<div class="pic">${pic(k)}</div><span>${item(k).name}</span><small class="item-price">≈ ${fmt(item(k).value)} ₽</small>`:"<span>Твой предмет</span>";
+    srcSlot.innerHTML=k?`<div class="pic">${pic(k)}</div><span>${item(k).name}</span><small class="item-price">${fmt(item(k).value)} 🪙</small>`:"<span>Твой предмет</span>";
     tgtSlot.classList.toggle("selected",!!upT);
-    tgtSlot.innerHTML=upT?`<div class="pic">${pic(upT)}</div><span>${item(upT).name}</span><small class="item-price">≈ ${fmt(item(upT).value)} ₽</small>`:"<span>Цель</span>";
+    tgtSlot.innerHTML=upT?`<div class="pic">${pic(upT)}</div><span>${item(upT).name}</span><small class="item-price">${fmt(item(upT).value)} 🪙</small>`:"<span>Цель</span>";
   }
   const src = $("#upSrc");
   src.innerHTML = S.inv.length
