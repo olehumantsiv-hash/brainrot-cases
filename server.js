@@ -255,7 +255,7 @@ const server = http.createServer(async (req, res) => {
     u.inv.splice(i, 1);
     if (ok) u.inv.push(tgtKey);
     saveDb();
-    return send(200, { ok, chance, win: ok ? tgtKey : null, balance: u.balance, inv: u.inv });
+    return send(200, { ok, chance, roll, win: ok ? tgtKey : null, balance: u.balance, inv: u.inv });
   }
 
   if (urlPath === "/api/dice") {

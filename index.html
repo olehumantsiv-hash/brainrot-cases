@@ -79,6 +79,19 @@ nav button.on{color:var(--acc);background:var(--card)}
 .tgts .it.on{outline:2px solid var(--acc)}
 #errBanner{display:none;background:#ff446622;border:1px solid var(--red);color:#ffb3c0;padding:10px 14px;border-radius:12px;margin-bottom:12px;font-size:13px}
 :focus-visible{outline:2px solid var(--acc2);outline-offset:2px}
+.wheelBox{display:flex;justify-content:center;margin:6px 0 14px}
+.wheel{position:relative;width:min(280px,76vw);aspect-ratio:1}
+.wheel>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.wzone{transition:filter .3s}
+.wheel.win .wzone{filter:drop-shadow(0 0 10px var(--green))}
+.wheel.lose .wtrack{stroke:#5a1530}
+.needle{position:absolute;inset:0;transform:rotate(180deg);will-change:transform;pointer-events:none}
+.needle svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 0 6px var(--acc))}
+.wcenter{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;pointer-events:none}
+.wcenter b{font:800 30px/1 Unbounded,sans-serif}
+.wcenter small{color:var(--muted);font-size:12px}
+.wheel.win .wcenter b,.wheel.win .wcenter small{color:var(--green)}
+.wheel.lose .wcenter b,.wheel.lose .wcenter small{color:var(--red)}
 @media (prefers-reduced-motion:reduce){.strip{transition:none!important}}
 </style>
 </head>
@@ -114,6 +127,14 @@ nav button.on{color:var(--acc);background:var(--card)}
     <button class="back" data-to="games">‹ Игры</button>
     <h2 class="t">Апгрейд</h2>
     <p class="info" style="margin:0 0 10px">Сначала предмет из инвентаря, потом цель дороже.</p>
+    <div class="wheelBox"><div class="wheel" id="wheel">
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <circle class="wtrack" cx="100" cy="100" r="80" fill="none" stroke="#33214f" stroke-width="18"/>
+        <circle class="wzone" id="wZone" cx="100" cy="100" r="80" fill="none" stroke="#39ffb0" stroke-width="18" stroke-dasharray="0 503" transform="rotate(-90 100 100)"/>
+      </svg>
+      <div class="needle" id="needle"><svg viewBox="0 0 200 200" aria-hidden="true"><polygon points="90,46 110,46 100,20" fill="#ff7a00"/></svg></div>
+      <div class="wcenter"><b id="wPct">—</b><small id="wSub">Выберите предметы</small></div>
+    </div></div>
     <div id="upSrc"></div>
     <div class="tgts" id="upTgt"></div>
     <p class="info" id="upChance">Шанс: —</p>
@@ -231,9 +252,9 @@ function render(){
   if($("#v-up").classList.contains("on")) renderUp();
 }
 
-let ready=false;
+let ready=false, lockSync=false;
 async function sync(){
-  if(!API_URL) return;
+  if(!API_URL || lockSync) return;
   try{
     const prev=S.bal;
     apply(await api("/api/me", {}));
@@ -335,36 +356,71 @@ function showWin(r){
 function ITEMS_SELL(k){ const i=item(k); return i.value ? `Можно продать за ${fmt(i.value)} 🪙` : ""; }
 $("#wOk").onclick = () => $("#mWin").classList.remove("on");
 
-let upI=-1, upT="";
+let upI=-1, upT="", upSpin=false, needleAng=180;
+const WC = 2*Math.PI*80;
+function setWheel(c){
+  const z=$("#wZone");
+  if(c==null){ z.setAttribute("stroke-dasharray",`0 ${WC}`); z.setAttribute("transform","rotate(-90 100 100)"); $("#wPct").textContent="—"; return; }
+  z.setAttribute("stroke-dasharray",`${c*WC} ${WC}`);
+  z.setAttribute("transform",`rotate(${-90-c*180} 100 100)`); // зона по центру сверху
+  $("#wPct").textContent=(c*100).toFixed(1)+"%";
+}
 function renderUp(){
+  if(upSpin) return;
   const src = $("#upSrc");
   src.innerHTML = S.inv.length
     ? `<div class="inv">${S.inv.map((k,i)=>card(k).replace('class="it"',`class="it ${upI===i?"on":""}" data-i="${i}"`)).join("")}</div>`
     : '<div class="empty">Нет предметов для апгрейда</div>';
-  src.onclick = e => { const el=e.target.closest(".it"); if(!el) return; upI=+el.dataset.i; upT=""; renderUp(); };
+  src.onclick = e => { if(upSpin) return; const el=e.target.closest(".it"); if(!el) return; upI=+el.dataset.i; upT=""; renderUp(); };
   const keys = Object.keys(S.cfg.items||{}).filter(k=>k!=="coin");
   const srcVal = S.inv[upI] ? item(S.inv[upI]).value : 0;
   $("#upTgt").innerHTML = keys.filter(k=>item(k).value>srcVal).map(k=>
     card(k).replace('class="it"',`class="it ${upT===k?"on":""}" data-k="${k}"`)
   ).join("") || '<div class="empty" style="grid-column:1/-1">Выберите предмет</div>';
-  $("#upTgt").onclick = e => { const el=e.target.closest("[data-k]"); if(!el) return; upT=el.dataset.k; renderUp(); };
-  let ch="—";
-  if(upI>=0 && upT){
-    const c = Math.min(0.9, Math.max(0.01, (item(S.inv[upI]).value / item(upT).value) * (S.cfg.upgradeMult||0.8)));
-    ch = (c*100).toFixed(1)+"%";
-  }
-  $("#upChance").textContent = "Шанс: "+ch;
+  $("#upTgt").onclick = e => { if(upSpin) return; const el=e.target.closest("[data-k]"); if(!el) return; upT=el.dataset.k; renderUp(); };
+  let c=null;
+  if(upI>=0 && upT) c = Math.min(0.9, Math.max(0.01, (item(S.inv[upI]).value / item(upT).value) * (S.cfg.upgradeMult||0.8)));
+  $("#upChance").textContent = "Шанс: "+(c==null?"—":(c*100).toFixed(1)+"%");
+  $("#wheel").classList.remove("win","lose");
+  $("#wSub").textContent = c==null ? "Выберите предметы" : "Шанс апгрейда";
+  setWheel(c);
   $("#upBtn").disabled = !(upI>=0 && upT);
 }
+function spinNeedle(roll,c){
+  return new Promise(res=>{
+    const n=$("#needle");
+    const target=(((roll-c/2)*360)%360+360)%360;   // 0° = верх, зона: ±c·180°
+    const cur=((needleAng%360)+360)%360;
+    needleAng += ((target-cur+360)%360) + 360*5;   // всегда вперёд, 5 полных оборотов
+    const dur = matchMedia("(prefers-reduced-motion:reduce)").matches ? 600 : 4800;
+    n.style.transition=`transform ${dur}ms cubic-bezier(.15,.65,.08,1)`;
+    n.style.transform=`rotate(${needleAng}deg)`;
+    setTimeout(res, dur+150);
+  });
+}
 $("#upBtn").onclick = async () => {
-  $("#upBtn").disabled = true;
+  if(upSpin) return;
+  upSpin = true; lockSync = true; $("#upBtn").disabled = true;
+  const wheel = $("#wheel"); wheel.classList.remove("win","lose");
+  let r=null;
   try{
-    const r = await api("/api/upgrade", {index:upI, target:upT});
+    r = await api("/api/upgrade", {index:upI, target:upT});
+    const c = r.chance;
+    setWheel(c); $("#wSub").textContent = "Крутим…";
+    const roll = typeof r.roll==="number" ? r.roll : (r.ok ? Math.random()*c : c+Math.random()*(1-c));
+    await spinNeedle(roll, c);
+    wheel.classList.add(r.ok ? "win" : "lose");
+    $("#wSub").textContent = r.ok ? "УСПЕХ" : "НЕУДАЧА";
+    if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred(r.ok?"success":"error");
+    await new Promise(x=>setTimeout(x,900));
+  }catch(e){ alert(e.message); r=null; }
+  finally{ upSpin=false; lockSync=false; }
+  if(r){
     apply(r); upI=-1; upT=""; renderUp();
     showWin({ win: r.ok ? r.win : "coin", ok: r.ok });
     if(!r.ok){ $("#wName").textContent="Предмет сгорел"; $("#wVal").textContent="Апгрейд не удался"; $("#wPic").textContent="💥"; }
-  }catch(e){ alert(e.message); }
-  finally{ $("#upBtn").disabled = !(upI>=0 && upT); }
+  }
+  $("#upBtn").disabled = !(upI>=0 && upT);
 };
 
 let crashTimer=null, crashStart=0;
