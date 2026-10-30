@@ -13,7 +13,7 @@ if (!TOKEN) throw new Error("Задайте BOT_TOKEN");
 
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) throw new Error("Задайте DATABASE_URL из Supabase PostgreSQL");
-const pool = new Pool({ connectionString: DATABASE_URL, ssl: true, max: 5, connectionTimeoutMillis: 10000 });
+const pool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false }, max: 5, connectionTimeoutMillis: 10000 });
 let db = { users: {} };
 let saveQueue = Promise.resolve();
 const normalizeDb = value => {
