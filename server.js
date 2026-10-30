@@ -58,21 +58,10 @@ const CRASH_K = 0.06;
 const UPGRADE_MULT = 0.8;
 
 const { ITEMS, LEGACY } = require("./items");
-const CASE_RTP = 0.85; // средний возврат игроку от цены кейса (по цене продажи)
+const { buildCases, CASE_RTP } = require("./cases"); // CASE_RTP: средний возврат игроку от цены кейса
 const DRAGON_CHANCE = Math.min(0.5, (ALLIN_PRICE * CASE_RTP - 1) / (ITEMS.dragon.value - 1));
-const mkCase = (name, art, g, drops) => {
-  const tot = drops.reduce((s, d) => s + d[1], 0);
-  const ev = drops.reduce((s, [k, w]) => s + ITEMS[k].value * w / tot, 0);
-  return { name, art, g, drops, price: Math.max(1, Math.ceil(ev / CASE_RTP)) };
-};
 const CASES = {
-  halloween: mkCase("HALLOWEEN", "🎃", "#ff7a00", [["pumpkino",25],["quackula",20],["jackospav",18],["frostvamp",12],["jackojack",9],["zombietr",6],["pumpkinispy",4],["casaboo",3],["draculino",2],["headless",1]]),
-  christmas: mkCase("CHRISTMAS", "🎄", "#39ffb0", [["pengtree",25],["sealo",20],["jingle",18],["yeti",12],["gingerglobo",8],["reindeertr",6],["santteo",5],["reinito",3],["dragonginger",2],["giftini",1]]),
-  nubini: mkCase("NUBINI", "🍕", "#7dd3fc", [["noobini",45],["lirili",25],["pipikiwi",14],["trippi",9],["bandito",5],["boneca",2]]),
-  cerber: mkCase("CERBER", "🐺", "#fb7185", [["cappuccino",30],["brrpatapim",25],["chimpanzini",20],["ballerina",14],["tralalero",8],["cerberus",3]]),
-  taco: mkCase("TACO", "🌮", "#fb923c", [["wombo",30],["sigma",25],["bombardiro",20],["tictic",13],["tralalero",8],["odin",4]]),
-  lucky: mkCase("LUCKY BLOCK", "🍀", "#22c55e", [["sigma",30],["toiletto",25],["tictic",20],["tralalero",12],["lavacca",8],["dragon",1]]),
-  dragon: mkCase("DRAGON", "🐉", "#ff7a00", [["tralalero",35],["lavacca",28],["cerberus",18],["dragon",12],["losdragons",6],["meowl",1]]),
+  ...buildCases(ITEMS),
   allin: { name: "ALL OR NOTHING", price: ALLIN_PRICE, art: "allin", g: "#ff7a00", special: "allin" },
 };
 for (const u of Object.values(db.users)) if (Array.isArray(u.inv)) u.inv = u.inv.map(k => ITEMS[k] ? k : (LEGACY[k] || k));
@@ -177,6 +166,13 @@ const server = http.createServer(async (req, res) => {
       const img = fs.readFileSync(path.join(__dirname, "allin.png"));
       res.writeHead(200, { "Content-Type": "image/png", "Cache-Control": "public, max-age=86400" });
       return res.end(img);
+    } catch { res.writeHead(404); return res.end(); }
+  }
+  if (req.method === "GET" && /^\/img\/[a-z0-9_-]+\.(png|webp|jpg)$/.test(urlPath)) {
+    try {
+      const ext = urlPath.split(".").pop();
+      res.writeHead(200, { "Content-Type": ext === "jpg" ? "image/jpeg" : "image/" + ext, "Cache-Control": "public, max-age=86400" });
+      return res.end(fs.readFileSync(path.join(__dirname, urlPath)));
     } catch { res.writeHead(404); return res.end(); }
   }
   if (req.method !== "POST") {

@@ -297,7 +297,7 @@ function pic(k){
 const card = k => `<div class="it" style="--rc:${item(k).c||'#9aa0b4'}"><div class="pic">${pic(k)}</div><small>${item(k).name}</small><span class="item-price" title="Ориентировочная цена; предложения FunPay меняются">≈ ${fmt(item(k).value)} ₽</span></div>`;
 
 function renderCases(){
-  const order = ["halloween","christmas","nubini","cerber","taco","lucky","dragon","allin"];
+  const order = ["grave","vamp","hound","lair","king","throne","allin"];
   const cs = S.cfg.cases || {};
   let html = order.filter(id=>cs[id]).map(id=>{
     const c = cs[id];
