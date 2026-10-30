@@ -14,11 +14,12 @@ if (!TOKEN) throw new Error("Задайте BOT_TOKEN");
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) throw new Error("Задайте DATABASE_URL из Supabase PostgreSQL");
 const pool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false }, max: 5, connectionTimeoutMillis: 10000 });
-let db = { users: {} };
+let db = { users: {}, liveFeed: [] };
 let saveQueue = Promise.resolve();
 const normalizeDb = value => {
   const result = value && typeof value === "object" ? value : { users: {} };
   if (!result.users || typeof result.users !== "object") result.users = {};
+  if (!Array.isArray(result.liveFeed)) result.liveFeed = [];
   return result;
 };
 async function saveDb() {
@@ -43,6 +44,12 @@ async function initDb() {
     catch (error) { throw new Error(`Не удалось прочитать старый файл ${legacyFile}: ${error.message}`); }
   }
   await saveDb();
+}
+function recordOpen(user, caseName, rewardName) {
+  if (!Array.isArray(db.liveFeed)) db.liveFeed = [];
+  const player = user.username ? `@${user.username}` : [user.first_name, user.last_name].filter(Boolean).join(" ") || "Игрок";
+  db.liveFeed.unshift({ player, caseName, rewardName, at: Date.now() });
+  if (db.liveFeed.length > 30) db.liveFeed.length = 30;
 }
 async function persistOrRespond(send) {
   try { await saveDb(); return true; }
@@ -188,6 +195,7 @@ const subscriptionStatus = async uid => {
 
 const mePayload = (user, u) => ({
   balance: u.balance, inv: u.inv, subClaimed: !!u.subClaimed, bonusClaims: u.bonusClaims, stats: u.stats,
+  liveFeed: db.liveFeed.slice(0, 20),
   user: { username: user.username || "", first_name: user.first_name || "" },
   cfg: { bonusChannel: CHANNEL, bonusBotTag: BOT_TAG, bonusMin: BONUS_MIN, bonusMax: BONUS_MAX, upgradeMult: UPGRADE_MULT,
     items: publicItems(), cases: publicCases() },
@@ -244,7 +252,7 @@ const server = http.createServer(async (req, res) => {
       if (type === "subscription") {
         const subscribed = await subscriptionStatus(uid);
         if (subscribed === null) return send(503, { error: `Не удалось проверить подписку. Убедитесь, что бот добавлен администратором канала ${CHANNEL}.` });
-        if (!subscribed) return send(403, { error: `Подпишитесь на ${CHANNEL}, затем нажмите «Проверить и получить».` });
+        if (!subscribed) return send(403, { error: `Вы не подписаны на ${CHANNEL}. Подпишитесь и нажмите «Повторить проверку».` });
       } else {
         const profileName = `${user.first_name || ""} ${user.last_name || ""}`.toLowerCase();
         if (!profileName.includes(BOT_TAG)) return send(403, { error: `Добавьте ${BOT_TAG} в имя Telegram-профиля, затем закройте и снова откройте приложение.` });
@@ -254,6 +262,7 @@ const server = http.createServer(async (req, res) => {
       u.balance += amount;
       u.stats.casesOpened += 1;
       u.stats.coinsEarned += amount;
+      recordOpen(user, type === "subscription" ? "Бонус за подписку" : "Бонус за ник", `${amount} 🪙`);
       if (!(await persistOrRespond(send))) return;
       return send(200, { amount, type, balance: u.balance, inv: u.inv, stats: u.stats, bonusClaims: u.bonusClaims });
     } finally { pendingBonus.delete(claimKey); }
@@ -272,6 +281,7 @@ const server = http.createServer(async (req, res) => {
     u.balance -= totalPrice;
     const wins = Array.from({ length: count }, () => pickDrop(c.drops));
     u.inv.push(...wins); u.stats.casesOpened += count;
+    for (const win of wins) recordOpen(user, c.name, ITEMS[win].name);
     if (!(await persistOrRespond(send))) return;
     return send(200, { wins, balance: u.balance, inv: u.inv, stats: u.stats });
   }

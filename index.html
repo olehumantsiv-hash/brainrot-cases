@@ -37,6 +37,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;pa
 .bonus-card .row{align-items:center}
 .bonus-card .btn{font-size:14px;padding:12px}
 .bonus-state{font-size:12px;color:var(--green);margin-top:8px;min-height:18px}
+.feed{display:grid;gap:8px;margin:8px 0 18px}.feed-row{display:flex;justify-content:space-between;gap:12px;align-items:center;background:#1a1025;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12px}.feed-row b{color:#ffe0c2}.feed-row small{color:var(--muted);white-space:nowrap}.feed-reward{color:var(--green);text-align:right}
 .workspace{min-height:100vh;margin-left:276px}
 main{max-width:760px;margin:0 auto;padding:18px}
 #menuToggle{display:none;align-items:center;justify-content:center;width:38px;height:38px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font-size:20px;cursor:pointer}
@@ -233,6 +234,8 @@ h2.t{font-size:18px;margin:0 0 12px}
     <div id="cbBox"></div>
     <div class="cats" id="cats"></div>
     <div class="grid" id="caseGrid"></div>
+    <h2 class="t" style="margin-top:18px">Лента открытий</h2>
+    <div id="liveFeed" class="feed"></div>
   </section>
 
   <section class="view" id="v-bonus">
@@ -317,7 +320,7 @@ const FALLBACK_ITEMS = {
   coin:{name:"1 монета",e:"🪙",c:"#ffd24a",value:1},
   dragon:{name:"Dragon Cannelloni",e:"🐉",c:"#ff7a00",value:1500}
 };
-const S = { bal:0, inv:[], subClaimed:false, bonusClaims:{subscription:false,nickname:false}, stats:{casesOpened:0,upgrades:0,coinsEarned:0}, user:{username:"",first_name:""},
+const S = { bal:0, inv:[], liveFeed:[], subClaimed:false, bonusClaims:{subscription:false,nickname:false}, stats:{casesOpened:0,upgrades:0,coinsEarned:0}, user:{username:"",first_name:""},
   cfg:{ bonusChannel:"@braincasegg", bonusBotTag:"braincase_game", bonusMin:1, bonusMax:10, upgradeMult:0.8, items:FALLBACK_ITEMS, cases:{} } };
 const item = k => (S.cfg.items && S.cfg.items[k]) || FALLBACK_ITEMS[k] || {name:k,e:"❓",c:"#9aa0b4",value:0};
 
@@ -330,6 +333,7 @@ function apply(d){
   if(!d) return;
   if(d.balance != null) S.bal = Number(d.balance) || 0;
   if(d.inv) S.inv = d.inv;
+  if(d.liveFeed) S.liveFeed = d.liveFeed;
   if(d.subClaimed != null) S.subClaimed = !!d.subClaimed;
   if(d.bonusClaims) S.bonusClaims = d.bonusClaims;
   if(d.stats) S.stats = d.stats;
@@ -365,39 +369,47 @@ function renderCases(){
   if(!html) html = `<p class="info" style="grid-column:1/-1">В этой категории пока нет кейсов.</p>`;
   $("#caseGrid").innerHTML = html;
   $("#caseGrid").onclick = e => { const el=e.target.closest(".case"); if(el) openCase(el.dataset.id); };
+  renderLiveFeed();
+}
+function renderLiveFeed(){
+  const box=$("#liveFeed"); if(!box) return;
+  box.replaceChildren();
+  if(!S.liveFeed.length){ box.textContent="Здесь будут появляться последние открытия кейсов."; box.className="feed info"; return; }
+  box.className="feed";
+  for(const entry of S.liveFeed.slice(0,20)){
+    const row=document.createElement("div"); row.className="feed-row";
+    const left=document.createElement("div"); const who=document.createElement("b"); who.textContent=entry.player||"Игрок";
+    const what=document.createElement("div"); what.textContent=`открыл: ${entry.caseName||"Кейс"}`; left.append(who,what);
+    const right=document.createElement("div"); right.className="feed-reward"; right.textContent=entry.rewardName||"Награда";
+    const time=document.createElement("small"); time.textContent=entry.at?new Date(entry.at).toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}):"";
+    right.append(document.createElement("br"),time); row.append(left,right); box.append(row);
+  }
 }
 
 function renderBonuses(){
   if(!$("#v-bonus").classList.contains("on")) return;
   const channel=S.cfg.bonusChannel||"@braincasegg", tag=S.cfg.bonusBotTag||"braincase_game";
   const tasks=[
-    {type:"subscription",title:"Кейс за подписку",description:`Подпишитесь на канал ${channel}. После этого нажмите кнопку проверки.`,claimed:!!S.bonusClaims.subscription,label:"Проверить подписку и открыть"},
-    {type:"nickname",title:"Кейс за ник",description:`Добавьте ${tag} в имя профиля Telegram. После изменения закройте и снова откройте Mini App, затем проверьте задание.`,claimed:!!S.bonusClaims.nickname,label:"Проверить ник и открыть"},
+    {type:"subscription",title:"Кейс за подписку",description:`Подпишитесь на канал ${channel}. Откройте кейс и нажмите проверку.`,claimed:!!S.bonusClaims.subscription},
+    {type:"nickname",title:"Кейс за ник",description:`Добавьте ${tag} в имя профиля Telegram и откройте кейс.`,claimed:!!S.bonusClaims.nickname},
   ];
   $("#bonusGrid").innerHTML=tasks.map(t=>`<article class="bonus-card">
     <h3>🎁 ${t.title}</h3><p>${t.description}${t.type==="subscription"?` <a href="https://t.me/${channel.replace(/^@/,"")}" data-bonus-channel>Открыть канал</a>.`:""}</p>
-    <button class="btn ${t.claimed?"alt":""}" data-claim-bonus="${t.type}" ${t.claimed?"disabled":""}>${t.claimed?"Бонус получен ✓":t.label}</button>
+    <div class="row"><button class="btn ${t.claimed?"alt":""}" data-open-bonus="${t.type}">${t.claimed?"Кейс получен ✓":"Перейти к кейсу"}</button>${t.type==="nickname"?`<button class="btn alt" data-copy-tag>Скопировать @${tag}</button>`:""}</div>
   </article>`).join("");
   $("#bonusGrid").onclick=e=>{
     const link=e.target.closest("[data-bonus-channel]");
     if(link && tg){ e.preventDefault(); tg.openTelegramLink(`https://t.me/${channel.replace(/^@/,"")}`); return; }
-    const button=e.target.closest("[data-claim-bonus]");
-    if(button && !button.disabled) claimBonus(button.dataset.claimBonus);
+    const copy=e.target.closest("[data-copy-tag]");
+    if(copy){ copyBotTag(); return; }
+    const button=e.target.closest("[data-open-bonus]");
+    if(button) openCase(`bonus-${button.dataset.openBonus}`);
   };
 }
-async function claimBonus(type){
-  $("#bonusMsg").textContent="Проверяем задание…";
-  const button=$(`[data-claim-bonus="${type}"]`);
-  if(button) button.disabled=true;
-  try{
-    const r=await api("/api/bonus/claim",{type});
-    apply(r);
-    $("#bonusMsg").textContent="";
-    showWin({win:"coins",amount:r.amount});
-  }catch(error){
-    $("#bonusMsg").textContent=error.message;
-    renderBonuses();
-  }
+async function copyBotTag(){
+  const value="@"+(S.cfg.bonusBotTag||"braincase_game");
+  try{ if(navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(value); else { const t=document.createElement("textarea");t.value=value;t.style.position="fixed";t.style.opacity="0";document.body.append(t);t.select();document.execCommand("copy");t.remove(); } $("#bonusMsg").textContent=`${value} скопирован. Вставьте его в имя профиля Telegram.`; }
+  catch{ $("#bonusMsg").textContent=`Скопируйте текст вручную: ${value}`; }
 }
 
 function render(){
@@ -495,6 +507,17 @@ function openCase(id){
     strip.innerHTML = Array(8).fill(card("coin")).join("");
     const ch=$("#chLink"); if(ch) ch.onclick = e => { if(tg){ e.preventDefault(); tg.openTelegramLink("https://t.me/braincasegg"); } };
   } else {
+    if(id.startsWith("bonus-")){
+      const type=id.slice(6), isSub=type==="subscription", channel=S.cfg.bonusChannel||"@braincasegg", tag=S.cfg.bonusBotTag||"braincase_game";
+      const claimed=!!S.bonusClaims[type];
+      $("#oTitle").textContent=isSub?"КЕЙС ЗА ПОДПИСКУ":"КЕЙС ЗА НИК";
+      $("#batchBox").innerHTML=""; strip.innerHTML=Array(8).fill(card("coin")).join("");
+      $("#openBtn").textContent=claimed?"Бонус уже получен":"Повторить проверку и открыть"; $("#openBtn").disabled=claimed;
+      $("#oInfo").innerHTML=isSub?`Подпишитесь на <a href="https://t.me/${channel.replace(/^@/,"")}" style="color:var(--acc2)" id="chLink">${channel}</a>, затем нажмите «Повторить проверку». Награда: от 1 до 10 🪙.`:`Добавьте <b>@${tag}</b> в имя профиля Telegram и нажмите проверку. <button class="btn alt" id="copyTagDetail" style="margin-top:8px">Скопировать @${tag}</button><br>Награда: от 1 до 10 🪙.`;
+      const ch=$("#chLink"); if(ch) ch.onclick=e=>{if(tg){e.preventDefault();tg.openTelegramLink(`https://t.me/${channel.replace(/^@/,"")}`);}};
+      const cp=$("#copyTagDetail"); if(cp) cp.onclick=copyBotTag;
+      $("#oRtp").textContent="Все награды виртуальные."; $("#oDrops").innerHTML=""; show("open"); return;
+    }
     $("#oTitle").textContent = (c && c.name) || id.toUpperCase();
     updateOpenButton();
     $("#openBtn").disabled = false;
@@ -513,18 +536,22 @@ function updateOpenButton(){ const c=(S.cfg.cases||{})[cur]; const total=(c?.pri
 $("#openBtn").onclick = async () => {
   if(spinning) return;
   unlock();
-  const price = cur==="sub" ? 0 : (((S.cfg.cases||{})[cur]||{}).price || 0) * batchCount;
+  const bonusType=cur&&cur.startsWith("bonus-")?cur.slice(6):null;
+  const price = (cur==="sub"||bonusType) ? 0 : (((S.cfg.cases||{})[cur]||{}).price || 0) * batchCount;
   if(cur!=="sub" && S.bal < price){ alert("Недостаточно виртуальных монет"); return; }
   spinning = true; $("#openBtn").disabled = true;
   try{
+    if(bonusType){
+      const r=await api("/api/bonus/claim",{type:bonusType}); apply(r); $("#openBtn").textContent="Бонус получен ✓"; $("#openBtn").disabled=true; $("#oInfo").textContent=`Вы получили ${r.amount} 🪙. Монеты добавлены на баланс.`; showWin({win:"coins",amount:r.amount}); return;
+    }
     const r = await api("/api/open", {case:cur, count:batchCount});
     const wins=r.wins||[r.win];
     if(cur!=="sub") await animate(wins[wins.length-1]);
     apply(r); if(cur==="sub") S.subClaimed = true; render();
     if(wins.length>1){ $("#wPic").innerHTML=`<div class="inv">${wins.map(k=>card(k)).join("")}</div>`; $("#wName").textContent=`Получено предметов: ${wins.length}`; $("#wVal").textContent="Добавлены в виртуальную коллекцию"; $("#mWin").classList.add("on"); sndWin(false); }
     else showWin(cur==="sub"?r:{...r,win:wins[0]});
-  }catch(err){ alert(err.message); }
-  finally{ spinning=false; $("#openBtn").disabled = (cur==="sub" && S.subClaimed); }
+  }catch(err){ if(bonusType){ $("#oInfo").textContent=err.message; } else alert(err.message); }
+  finally{ spinning=false; if(bonusType) $("#openBtn").disabled=!!S.bonusClaims[bonusType]; else $("#openBtn").disabled = (cur==="sub" && S.subClaimed); }
 };
 function animate(win){
   return new Promise(res=>{
