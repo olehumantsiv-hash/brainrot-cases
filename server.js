@@ -82,11 +82,15 @@ const getUser = id => {
   u.stats.casesOpened = Number(u.stats.casesOpened) || 0;
   u.stats.upgrades = Number(u.stats.upgrades) || 0;
   u.stats.coinsEarned = Number(u.stats.coinsEarned) || 0;
+  u.bonusClaims ||= { subscription: !!u.subClaimed, nickname: false };
+  u.bonusClaims.subscription = !!u.bonusClaims.subscription;
+  u.bonusClaims.nickname = !!u.bonusClaims.nickname;
   return u;
 };
 
 const CHANNEL = "@braincasegg";
-const SUB_REWARD = 10;
+const BOT_TAG = "braincase_game";
+const BONUS_MIN = 1, BONUS_MAX = 10;
 const UPGRADE_MULT = 0.8;
 
 const { ITEMS, LEGACY } = require("./items");
@@ -95,7 +99,7 @@ const CASES = buildCases(ITEMS);
 for (const u of Object.values(db.users)) if (Array.isArray(u.inv)) u.inv = u.inv.map(k => ITEMS[k] ? k : (LEGACY[k] || k));
 
 const ADMIN_IDS = (process.env.ADMIN_IDS || "").split(",").map(x => x.trim()).filter(Boolean);
-const pendingSub = new Set();
+const pendingBonus = new Set();
 
 const publicItems = () => Object.fromEntries(Object.entries(ITEMS).map(([k, v]) => [k, { name: v.name, value: v.value, e: v.e, c: v.c, img: v.img || null }]));
 const publicCases = () => Object.fromEntries(Object.entries(CASES).map(([id, c]) => {
@@ -175,15 +179,17 @@ async function adminCmd(text) {
   }
   return "Неизвестная команда. /admin";
 }
-const isSubscribed = async uid => {
+const subscriptionStatus = async uid => {
   const r = await tgApi("getChatMember", { chat_id: CHANNEL, user_id: uid }).catch(() => null);
-  return !!(r && r.ok && ["creator", "administrator", "member"].includes(r.result.status));
+  if (!r || !r.ok || !r.result) return null;
+  return ["creator", "administrator", "member"].includes(r.result.status) ||
+    (r.result.status === "restricted" && r.result.is_member === true);
 };
 
 const mePayload = (user, u) => ({
-  balance: u.balance, inv: u.inv, subClaimed: !!u.subClaimed, stats: u.stats,
+  balance: u.balance, inv: u.inv, subClaimed: !!u.subClaimed, bonusClaims: u.bonusClaims, stats: u.stats,
   user: { username: user.username || "", first_name: user.first_name || "" },
-  cfg: { subReward: SUB_REWARD, upgradeMult: UPGRADE_MULT,
+  cfg: { bonusChannel: CHANNEL, bonusBotTag: BOT_TAG, bonusMin: BONUS_MIN, bonusMax: BONUS_MAX, upgradeMult: UPGRADE_MULT,
     items: publicItems(), cases: publicCases() },
 });
 
@@ -227,17 +233,35 @@ const server = http.createServer(async (req, res) => {
     return send(200, mePayload(user, u));
   }
 
+  if (urlPath === "/api/bonus/claim") {
+    const type = String(body.type || "");
+    if (!["subscription", "nickname"].includes(type)) return send(400, { error: "Неизвестный бонус" });
+    if (u.bonusClaims[type]) return send(400, { error: "Этот бонус уже получен" });
+    const claimKey = `${uid}:${type}`;
+    if (pendingBonus.has(claimKey)) return send(429, { error: "Проверка уже выполняется" });
+    pendingBonus.add(claimKey);
+    try {
+      if (type === "subscription") {
+        const subscribed = await subscriptionStatus(uid);
+        if (subscribed === null) return send(503, { error: `Не удалось проверить подписку. Убедитесь, что бот добавлен администратором канала ${CHANNEL}.` });
+        if (!subscribed) return send(403, { error: `Подпишитесь на ${CHANNEL}, затем нажмите «Проверить и получить».` });
+      } else {
+        const profileName = `${user.first_name || ""} ${user.last_name || ""}`.toLowerCase();
+        if (!profileName.includes(BOT_TAG)) return send(403, { error: `Добавьте ${BOT_TAG} в имя Telegram-профиля, затем закройте и снова откройте приложение.` });
+      }
+      const amount = crypto.randomInt(BONUS_MIN, BONUS_MAX + 1);
+      u.bonusClaims[type] = true;
+      u.balance += amount;
+      u.stats.casesOpened += 1;
+      u.stats.coinsEarned += amount;
+      if (!(await persistOrRespond(send))) return;
+      return send(200, { amount, type, balance: u.balance, inv: u.inv, stats: u.stats, bonusClaims: u.bonusClaims });
+    } finally { pendingBonus.delete(claimKey); }
+  }
+
   if (urlPath === "/api/open") {
     if (body.case === "sub") {
-      if (u.subClaimed) return send(400, { error: "Награда уже получена" });
-      if (pendingSub.has(uid)) return send(429, { error: "Подождите" });
-      pendingSub.add(uid);
-      try {
-        if (!(await isSubscribed(uid))) return send(403, { error: "Вы не подписаны на канал" });
-        u.subClaimed = true; u.balance += SUB_REWARD; u.stats.coinsEarned += SUB_REWARD;
-        if (!(await persistOrRespond(send))) return;
-        return send(200, { win: "coins", amount: SUB_REWARD, balance: u.balance, inv: u.inv, stats: u.stats });
-      } finally { pendingSub.delete(uid); }
+      return send(400, { error: "Откройте раздел «Бонусы», чтобы проверить задания." });
     }
     const c = CASES[body.case];
     if (!c || c.special || !c.drops) return send(400, { error: "unknown case" });

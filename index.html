@@ -29,6 +29,14 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;pa
 .side-nav button:hover{background:#ffffff0a;color:#f4ecff}
 .side-nav button.on{background:#38283e;border-color:#a97347;box-shadow:inset 0 -2px #ff9a3d;color:#ffc481}
 .side-nav .profile-link{margin-top:auto}
+.bonus-grid{display:grid;gap:12px}
+.bonus-card{background:linear-gradient(150deg,#2a1a36,#17101f);border:1px solid #513d60;border-radius:16px;padding:16px}
+.bonus-card h3{font:700 14px Unbounded,sans-serif;margin:0 0 8px;color:#ffe0c2}
+.bonus-card p{font-size:13px;color:var(--muted);margin:0 0 12px}
+.bonus-card a{color:#ffc481;text-decoration:underline}
+.bonus-card .row{align-items:center}
+.bonus-card .btn{font-size:14px;padding:12px}
+.bonus-state{font-size:12px;color:var(--green);margin-top:8px;min-height:18px}
 .workspace{min-height:100vh;margin-left:276px}
 main{max-width:760px;margin:0 auto;padding:18px}
 #menuToggle{display:none;align-items:center;justify-content:center;width:38px;height:38px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font-size:20px;cursor:pointer}
@@ -206,6 +214,7 @@ h2.t{font-size:18px;margin:0 0 12px}
   <div class="side-balance">🪙 <span id="sideBal">0</span></div>
   <nav class="side-nav" aria-label="Разделы">
     <button data-go="cases" class="on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4.4 7.7 7.6 4.4 7.6-4.4M12 12v9"/></svg><span>Кейсы</span></button>
+    <button data-go="bonus"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 7v14M12 7H7.5a2.5 2.5 0 1 1 2.5-2.5C10 6 12 7 12 7Zm0 0h4.5A2.5 2.5 0 1 0 14 4.5C14 6 12 7 12 7Z"/></svg><span>Бонусы</span></button>
     <button data-go="up"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 2-9 12h7l-1 8 10-13h-7l.5-7Z"/></svg><span>Апгрейд</span></button>
     <button data-go="me" class="profile-link"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 3.5-6 8-6s7.2 2 8 6"/></svg><span>Профиль</span></button>
   </nav>
@@ -224,6 +233,13 @@ h2.t{font-size:18px;margin:0 0 12px}
     <div id="cbBox"></div>
     <div class="cats" id="cats"></div>
     <div class="grid" id="caseGrid"></div>
+  </section>
+
+  <section class="view" id="v-bonus">
+    <h2 class="t">Бонусы</h2>
+    <p class="info" style="text-align:left;margin:0 0 14px">Выполните задание, чтобы открыть бонус-кейс. Награда — от 1 до 10 виртуальных 🪙. Каждый бонус доступен один раз.</p>
+    <p id="bonusMsg" class="info" style="margin:0 0 12px"></p>
+    <div id="bonusGrid" class="bonus-grid"></div>
   </section>
 
   <section class="view" id="v-open">
@@ -301,8 +317,8 @@ const FALLBACK_ITEMS = {
   coin:{name:"1 монета",e:"🪙",c:"#ffd24a",value:1},
   dragon:{name:"Dragon Cannelloni",e:"🐉",c:"#ff7a00",value:1500}
 };
-const S = { bal:0, inv:[], subClaimed:false, stats:{casesOpened:0,upgrades:0,coinsEarned:0}, user:{username:"",first_name:""},
-  cfg:{ subReward:10, upgradeMult:0.8, items:FALLBACK_ITEMS, cases:{} } };
+const S = { bal:0, inv:[], subClaimed:false, bonusClaims:{subscription:false,nickname:false}, stats:{casesOpened:0,upgrades:0,coinsEarned:0}, user:{username:"",first_name:""},
+  cfg:{ bonusChannel:"@braincasegg", bonusBotTag:"braincase_game", bonusMin:1, bonusMax:10, upgradeMult:0.8, items:FALLBACK_ITEMS, cases:{} } };
 const item = k => (S.cfg.items && S.cfg.items[k]) || FALLBACK_ITEMS[k] || {name:k,e:"❓",c:"#9aa0b4",value:0};
 
 async function api(path, data){
@@ -315,6 +331,7 @@ function apply(d){
   if(d.balance != null) S.bal = Number(d.balance) || 0;
   if(d.inv) S.inv = d.inv;
   if(d.subClaimed != null) S.subClaimed = !!d.subClaimed;
+  if(d.bonusClaims) S.bonusClaims = d.bonusClaims;
   if(d.stats) S.stats = d.stats;
   if(d.user) S.user = d.user;
   if(d.cfg) S.cfg = Object.assign({}, S.cfg, d.cfg);
@@ -345,13 +362,42 @@ function renderCases(){
       <span class="pill">RTP ${xfmt(c.rtp)}%</span>
       <div class="cfoot"><span>${c.count} предм.</span><span class="cprice">🪙 ${fmt(c.price)}</span></div></div>`;
   }).join("");
-  if(all) html += `<div class="case" data-id="sub" style="--g:#39ffb0aa">
-    <div class="art">📣</div>
-    <div><b>CHANNEL</b><small>@braincasegg</small>
-    <span class="tag free">${S.subClaimed ? "Получено ✓" : "Бесплатно · +"+S.cfg.subReward+" 🪙"}</span></div></div>`;
   if(!html) html = `<p class="info" style="grid-column:1/-1">В этой категории пока нет кейсов.</p>`;
   $("#caseGrid").innerHTML = html;
   $("#caseGrid").onclick = e => { const el=e.target.closest(".case"); if(el) openCase(el.dataset.id); };
+}
+
+function renderBonuses(){
+  if(!$("#v-bonus").classList.contains("on")) return;
+  const channel=S.cfg.bonusChannel||"@braincasegg", tag=S.cfg.bonusBotTag||"braincase_game";
+  const tasks=[
+    {type:"subscription",title:"Кейс за подписку",description:`Подпишитесь на канал ${channel}. После этого нажмите кнопку проверки.`,claimed:!!S.bonusClaims.subscription,label:"Проверить подписку и открыть"},
+    {type:"nickname",title:"Кейс за ник",description:`Добавьте ${tag} в имя профиля Telegram. После изменения закройте и снова откройте Mini App, затем проверьте задание.`,claimed:!!S.bonusClaims.nickname,label:"Проверить ник и открыть"},
+  ];
+  $("#bonusGrid").innerHTML=tasks.map(t=>`<article class="bonus-card">
+    <h3>🎁 ${t.title}</h3><p>${t.description}${t.type==="subscription"?` <a href="https://t.me/${channel.replace(/^@/,"")}" data-bonus-channel>Открыть канал</a>.`:""}</p>
+    <button class="btn ${t.claimed?"alt":""}" data-claim-bonus="${t.type}" ${t.claimed?"disabled":""}>${t.claimed?"Бонус получен ✓":t.label}</button>
+  </article>`).join("");
+  $("#bonusGrid").onclick=e=>{
+    const link=e.target.closest("[data-bonus-channel]");
+    if(link && tg){ e.preventDefault(); tg.openTelegramLink(`https://t.me/${channel.replace(/^@/,"")}`); return; }
+    const button=e.target.closest("[data-claim-bonus]");
+    if(button && !button.disabled) claimBonus(button.dataset.claimBonus);
+  };
+}
+async function claimBonus(type){
+  $("#bonusMsg").textContent="Проверяем задание…";
+  const button=$(`[data-claim-bonus="${type}"]`);
+  if(button) button.disabled=true;
+  try{
+    const r=await api("/api/bonus/claim",{type});
+    apply(r);
+    $("#bonusMsg").textContent="";
+    showWin({win:"coins",amount:r.amount});
+  }catch(error){
+    $("#bonusMsg").textContent=error.message;
+    renderBonuses();
+  }
 }
 
 function render(){
@@ -362,6 +408,7 @@ function render(){
   $("#ava").textContent = $("#sideAva").textContent = (name.replace("@","")[0] || "?").toUpperCase();
   $("#statsBox").innerHTML = `Кейсов открыто: <b>${fmt(S.stats.casesOpened)}</b> · Апгрейдов: <b>${fmt(S.stats.upgrades)}</b><br>Виртуальных монет заработано: <b>${fmt(S.stats.coinsEarned)} 🪙</b>`;
   if($("#v-cases").classList.contains("on")) renderCases();
+  if($("#v-bonus").classList.contains("on")) renderBonuses();
   const box = $("#invBox");
   box.innerHTML = S.inv.length
     ? `<div class="row" style="margin:0 0 10px"><button class="btn red" id="sellAllBtn">Продать всё</button></div><div class="inv">${S.inv.map((k,i)=>card(k).replace('class="it"',`class="it" data-i="${i}"`)).join("")}</div><p class="info">Нажмите предмет, чтобы продать его отдельно</p>`
@@ -404,6 +451,7 @@ function show(v){
   });
   if(tg) (v==="open"||v==="up") ? tg.BackButton.show() : tg.BackButton.hide();
   if(v==="cases") renderCases();
+  if(v==="bonus") renderBonuses();
   if(v==="up"){
     if(upI>=S.inv.length){ upI=-1; upT=""; }
     renderUp();
