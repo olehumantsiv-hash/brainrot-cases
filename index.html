@@ -115,7 +115,7 @@ nav button.on{color:var(--pumpkin);background:var(--card)}
 
 <script>
 /* ====== Настройки ====== */
-const API_URL = "";            // например "https://your-domain.com". Пусто = демо-режим без сервера
+const API_URL = location.protocol.startsWith("http") ? location.origin : ""; // сайт и API на одном домене. Пусто = демо без сервера
 const tg = window.Telegram && Telegram.WebApp;
 if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor && tg.setHeaderColor("#16081f"); tg.setBackgroundColor && tg.setBackgroundColor("#16081f"); }
 
@@ -176,6 +176,14 @@ async function api(path, body){
 async function syncBalance(){
   if(!API_URL) return;
   try { const me = await api("/api/me", {}); S.bal = me.balance; render(); } catch(e){ console.warn(e); }
+}
+
+async function waitForCredit(prev){
+  for(let i=0;i<12;i++){
+    await new Promise(r=>setTimeout(r,1500));
+    try{ const me = await api("/api/me", {}); if(me.balance > prev){ S.bal = me.balance; render(); return true; } }catch(e){}
+  }
+  return false;
 }
 
 /* ====== Экраны ====== */
@@ -280,13 +288,19 @@ $("#payBtn").onclick = async ()=>{
     $("#amtErr").textContent = `Сумма от ${fmt(MIN_DEP)} до ${fmt(MAX_DEP)} ⭐`;
     return;
   }
-  if(!API_URL || !tg){ $("#amtErr").textContent = "Оплата заработает после запуска сервера."; return; }
+  if(!API_URL || !tg){ $("#amtErr").textContent = "Оплата работает только внутри Telegram-бота."; return; }
   $("#payBtn").disabled = true;
   try{
     const {link} = await api("/api/invoice", {amount});
     tg.openInvoice(link, async status=>{
       $("#payBtn").disabled = false;
-      if(status==="paid"){ await syncBalance(); setTimeout(syncBalance,3000); $("#mTop").classList.remove("on"); }
+      if(status==="paid"){
+        $("#amtErr").style.color = "var(--lilac)"; $("#amtErr").textContent = "Оплата прошла, зачисляем…";
+        const ok = await waitForCredit(S.bal);
+        $("#amtErr").style.color = "";
+        if(ok){ $("#mTop").classList.remove("on"); if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success"); }
+        else $("#amtErr").textContent = "Платёж принят, баланс обновится через минуту. Перезапустите приложение.";
+      } else if(status==="failed"){ $("#amtErr").textContent = "Оплата не прошла. Попробуйте ещё раз."; }
     });
   }catch(err){ $("#payBtn").disabled = false; $("#amtErr").textContent = "Не удалось создать счёт: " + err.message; }
 };

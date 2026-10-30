@@ -10,9 +10,11 @@ const WEBAPP_URL = process.env.WEBAPP_URL;
 const PORT = process.env.PORT || 3000;
 if (!TOKEN) throw new Error("Задайте BOT_TOKEN");
 
-const DB_FILE = path.join(__dirname, "db.json");
+// На Render подключите Disk (например, на /data) и задайте DB_FILE=/data/db.json,
+// иначе db.json обнуляется при каждом деплое и перезапуске.
+const DB_FILE = process.env.DB_FILE || path.join(__dirname, "db.json");
 const db = fs.existsSync(DB_FILE) ? JSON.parse(fs.readFileSync(DB_FILE)) : { users: {}, paid: {} };
-const saveDb = () => fs.writeFileSync(DB_FILE, JSON.stringify(db));
+const saveDb = () => { fs.writeFileSync(DB_FILE + ".tmp", JSON.stringify(db)); fs.renameSync(DB_FILE + ".tmp", DB_FILE); };
 const tgApi = (method, body) =>
   fetch(`https://api.telegram.org/bot${TOKEN}/${method}`, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
@@ -20,14 +22,18 @@ const tgApi = (method, body) =>
 
 // Проверка подписи initData по документации Telegram
 function verifyInitData(initData) {
-  const p = new URLSearchParams(initData);
-  const hash = p.get("hash"); p.delete("hash");
-  const check = [...p.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}=${v}`).join("\n");
-  const secret = crypto.createHmac("sha256", "WebAppData").update(TOKEN).digest();
-  const calc = crypto.createHmac("sha256", secret).update(check).digest("hex");
-  if (calc !== hash) return null;
-  if (Date.now() / 1000 - Number(p.get("auth_date")) > 86400) return null;
-  return JSON.parse(p.get("user"));
+  try {
+    const p = new URLSearchParams(initData);
+    const hash = p.get("hash"); p.delete("hash");
+    if (!hash) return null;
+    const check = [...p.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}=${v}`).join("\n");
+    const secret = crypto.createHmac("sha256", "WebAppData").update(TOKEN).digest();
+    const calc = crypto.createHmac("sha256", secret).update(check).digest();
+    const given = Buffer.from(hash, "hex");
+    if (given.length !== calc.length || !crypto.timingSafeEqual(calc, given)) return null;
+    if (Date.now() / 1000 - Number(p.get("auth_date")) > 86400) return null;
+    return JSON.parse(p.get("user"));
+  } catch { return null; }
 }
 const getUser = id => (db.users[id] ||= { balance: 0 });
 
@@ -38,7 +44,7 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
     return res.end(fs.readFileSync(path.join(__dirname, "index.html")));
   }
-  let raw = ""; for await (const c of req) raw += c;
+  let raw = ""; for await (const c of req) { raw += c; if (raw.length > 10000) return send(413, { error: "too large" }); }
   let body; try { body = JSON.parse(raw || "{}"); } catch { return send(400, { error: "bad json" }); }
   const user = verifyInitData(body.initData || "");
   if (!user) return send(401, { error: "bad initData" });
@@ -48,11 +54,11 @@ const server = http.createServer(async (req, res) => {
   if (req.url === "/api/invoice") {
     const amount = Math.floor(Number(body.amount));
     if (!Number.isInteger(amount) || amount < 100 || amount > 100000) return send(400, { error: "Сумма от 100 до 100000 ⭐" });
-    const r = await tgApi("createInvoiceLink", {
+    let r; try { r = await tgApi("createInvoiceLink", {
       title: `Депозит ${amount} ⭐`, description: `Вы получите ${amount} монет в Braincase`,
       payload: JSON.stringify({ uid: user.id, amount }), provider_token: "", currency: "XTR",
       prices: [{ label: "Депозит", amount }],
-    });
+    }); } catch (e) { return send(502, { error: "Telegram недоступен" }); }
     return r.ok ? send(200, { link: r.result }) : send(500, { error: r.description });
   }
   send(404, { error: "not found" });
@@ -62,10 +68,12 @@ server.listen(PORT, () => console.log("API на порту", PORT));
 // Бот: long polling (команда /start, оплата Stars)
 let offset = 0;
 (async function poll() {
+  await tgApi("deleteWebhook", {}).catch(() => {}); // getUpdates не работает, если когда-то был включён webhook
   for (;;) {
     try {
-      const { result = [] } = await tgApi("getUpdates", { offset, timeout: 30, allowed_updates: ["message", "pre_checkout_query"] });
-      for (const u of result) {
+      const r = await tgApi("getUpdates", { offset, timeout: 30, allowed_updates: ["message", "pre_checkout_query"] });
+      if (!r.ok) { console.error("getUpdates:", r.description); await new Promise(x => setTimeout(x, 3000)); continue; }
+      for (const u of r.result) {
         offset = u.update_id + 1;
         if (u.pre_checkout_query) {
           await tgApi("answerPreCheckoutQuery", { pre_checkout_query_id: u.pre_checkout_query.id, ok: true });
@@ -76,7 +84,12 @@ let offset = 0;
             if (pay.currency !== "XTR") continue;
             const amount = pay.total_amount; // монеты = фактически оплаченные Stars
             getUser(uid).balance += amount; db.paid[id] = { uid, amount, t: Date.now() }; saveDb();
+            tgApi("sendMessage", { chat_id: u.message.chat.id, text: `✅ Зачислено ${amount} 🪙. Баланс: ${getUser(uid).balance} 🪙` }).catch(() => {});
           }
+        } else if (u.message?.text?.startsWith("/paysupport")) {
+          // Telegram требует, чтобы бот с платежами отвечал на эту команду
+          await tgApi("sendMessage", { chat_id: u.message.chat.id,
+            text: "По вопросам оплаты и возврата Stars напишите в поддержку: @ВАШ_USERNAME. Укажите ID платежа из чека." });
         } else if (u.message?.text?.startsWith("/start") && WEBAPP_URL) {
           await tgApi("sendMessage", {
             chat_id: u.message.chat.id, parse_mode: "HTML",
