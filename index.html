@@ -20,15 +20,21 @@ header{display:flex;align-items:center;justify-content:space-between;padding:14p
 main{max-width:640px;margin:0 auto;padding:16px}
 .view{display:none}.view.on{display:block}
 h2.t{font-size:18px;margin:0 0 12px}
-.case{background:linear-gradient(160deg,#241240,var(--card));border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:14px;display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center;cursor:pointer}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.case{background:linear-gradient(160deg,#241240,var(--card));border:1px solid var(--line);border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:4px;align-items:center;text-align:center;cursor:pointer;min-height:168px}
 .case:hover{border-color:var(--acc)}
-.case .art{width:100%;flex:none;display:flex;align-items:center;justify-content:center;font-size:56px;filter:drop-shadow(0 6px 16px var(--g,#ff7a0088))}
-.case .art img{max-width:100%;max-height:260px;object-fit:contain}
-.oart{display:none;max-height:170px;margin:0 auto 6px}
-.case b{font-family:Unbounded,sans-serif;font-size:15px;display:block}
-.case small{color:var(--muted);display:block;margin:2px 0 8px}
-.tag{display:inline-block;background:#0000004d;border-radius:999px;padding:4px 12px;font-weight:600;color:var(--acc)}
+.case.wide{grid-column:1/-1;min-height:auto;flex-direction:row;gap:14px;text-align:left}
+.case .art{font-size:48px;line-height:1;filter:drop-shadow(0 6px 16px var(--g,#ff7a0088))}
+.case .art img{max-width:100%;max-height:90px;object-fit:contain}
+.case.wide .art img{max-height:120px}
+.case b{font-family:Unbounded,sans-serif;font-size:13px;display:block}
+.case small{color:var(--muted);display:block;font-size:12px}
+.tag{display:inline-block;background:#0000004d;border-radius:999px;padding:3px 10px;font-weight:600;color:var(--acc);margin-top:4px;font-size:13px}
 .tag.free{color:var(--green)}
+.gcard{background:linear-gradient(160deg,#241240,var(--card));border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:10px;cursor:pointer}
+.gcard:hover{border-color:var(--acc)}
+.gcard b{font-family:Unbounded,sans-serif;font-size:16px;display:block}
+.gcard p{color:var(--muted);font-size:13px;margin-top:4px}
 .back{background:none;border:0;color:var(--acc2);font:inherit;cursor:pointer;padding:0 0 12px}
 .stage{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:18px;background:#080410;height:150px;margin:8px 0 14px}
 .stage::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:3px;background:var(--acc);box-shadow:0 0 12px var(--acc);transform:translateX(-50%);z-index:2}
@@ -40,6 +46,7 @@ h2.t{font-size:18px;margin:0 0 12px}
 .row{display:flex;gap:10px}
 .btn{flex:1;border:0;border-radius:14px;padding:14px;font:600 16px Rubik,sans-serif;cursor:pointer;background:var(--acc);color:#2a1200}
 .btn.alt{background:var(--card);color:var(--text);border:1px solid var(--line)}
+.btn.red{background:var(--red);color:#fff}
 .btn:disabled{opacity:.5;cursor:default}
 .info{color:var(--muted);font-size:13px;margin-top:12px;text-align:center}
 .me{display:flex;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:16px}
@@ -47,22 +54,30 @@ h2.t{font-size:18px;margin:0 0 12px}
 .me b{font-size:18px;display:block}.me span{color:var(--muted)}
 .inv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .inv .it{flex:none;width:auto;cursor:pointer}
+.inv .it.on{outline:2px solid var(--acc)}
 .empty{color:var(--muted);text-align:center;padding:32px 0}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#0b0613f2;border-top:1px solid var(--line);padding:6px 8px calc(env(safe-area-inset-bottom,0) + 6px);backdrop-filter:blur(10px)}
-nav button{flex:1;background:none;border:0;color:var(--muted);font:600 13px Rubik,sans-serif;padding:9px;cursor:pointer;border-radius:12px}
+nav button{flex:1;background:none;border:0;color:var(--muted);font:600 12px Rubik,sans-serif;padding:8px 4px;cursor:pointer;border-radius:12px}
 nav button.on{color:var(--acc);background:var(--card)}
 .modal{position:fixed;inset:0;background:#000000b8;display:none;align-items:center;justify-content:center;z-index:20;padding:20px}
 .modal.on{display:flex}
 .sheet{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px;width:100%;max-width:360px;text-align:center}
 .sheet h2{font-size:20px;color:var(--acc);margin-bottom:6px}
-.sheet .big{height:130px;display:flex;align-items:center;justify-content:center;font-size:72px;margin:6px 0}
-.sheet .big img{height:130px;max-width:100%;object-fit:contain;filter:drop-shadow(0 8px 20px #ff7a0099)}
+.sheet .big{height:110px;display:flex;align-items:center;justify-content:center;font-size:64px;margin:6px 0}
+.sheet .big img{height:110px;max-width:100%;object-fit:contain;filter:drop-shadow(0 8px 20px #ff7a0099)}
 .pk{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
 .pk button{background:#0000004d;border:1px solid var(--line);color:var(--text);border-radius:12px;padding:12px 0;font:600 15px Rubik,sans-serif;cursor:pointer}
 .pk button.sel{border-color:var(--acc);background:#ff7a0026}
-#amt{width:100%;background:#0000004d;border:1px solid var(--line);border-radius:12px;color:var(--text);font:600 16px Rubik,sans-serif;padding:12px;margin-bottom:10px;text-align:center}
+#amt,.money{width:100%;background:#0000004d;border:1px solid var(--line);border-radius:12px;color:var(--text);font:600 16px Rubik,sans-serif;padding:12px;margin-bottom:10px;text-align:center}
 #amt.bad{border-color:var(--red)}
 #amtErr{color:var(--red);font-size:13px;min-height:18px;margin-bottom:6px}
+.crash{font:800 56px/1 Unbounded,sans-serif;text-align:center;padding:28px 0;color:var(--acc);text-shadow:0 0 24px #ff7a0066}
+.crash.dead{color:var(--red)}
+.dice-num{font:800 64px/1 Unbounded,sans-serif;text-align:center;padding:18px 0}
+.tgts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.tgts .it{flex:none;width:auto;cursor:pointer;height:110px}
+.tgts .it.on{outline:2px solid var(--acc)}
+#errBanner{display:none;background:#ff446622;border:1px solid var(--red);color:#ffb3c0;padding:10px 14px;border-radius:12px;margin-bottom:12px;font-size:13px}
 :focus-visible{outline:2px solid var(--acc2);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.strip{transition:none!important}}
 </style>
@@ -74,25 +89,53 @@ nav button.on{color:var(--acc);background:var(--card)}
 </header>
 
 <main>
+  <div id="errBanner"></div>
   <section class="view on" id="v-cases">
     <h2 class="t">Кейсы</h2>
-    <div class="case" data-id="allin" style="--g:#ff7a00aa">
-      <div class="art"><img src="allin.png" alt="All or Nothing"></div>
-      <div><small id="allinSub"></small><span class="tag" id="allinPrice"></span></div>
-    </div>
-    <div class="case" data-id="sub" style="--g:#39ffb0aa">
-      <div class="art">📣</div>
-      <div><b>CHANNEL CASE</b><small>Подпишись на @braincasegg и забери награду</small><span class="tag free" id="subTag">Бесплатно</span></div>
-    </div>
+    <div class="grid" id="caseGrid"></div>
   </section>
 
   <section class="view" id="v-open">
     <button class="back" id="back">‹ Все кейсы</button>
     <h2 class="t" id="oTitle"></h2>
-    <img class="oart" id="oArt" src="allin.png" alt="">
     <div class="stage"><div class="strip" id="strip"></div></div>
     <div class="row"><button class="btn" id="openBtn"></button></div>
     <p class="info" id="oInfo"></p>
+  </section>
+
+  <section class="view" id="v-games">
+    <h2 class="t">Игры</h2>
+    <div class="gcard" data-play="up"><b>⚡ Апгрейд</b><p>Улучши брейнрота. Шанс = цена / цель × 80%</p></div>
+    <div class="gcard" data-play="crash"><b>🚀 Краш</b><p>Забери множитель до краша. Ставка от 1 🪙</p></div>
+    <div class="gcard" data-play="dice"><b>🎲 Дайсы</b><p>Меньше или больше 50. Выплата ×1.92</p></div>
+  </section>
+
+  <section class="view" id="v-up">
+    <button class="back" data-to="games">‹ Игры</button>
+    <h2 class="t">Апгрейд</h2>
+    <p class="info" style="margin:0 0 10px">Сначала предмет из инвентаря, потом цель дороже.</p>
+    <div id="upSrc"></div>
+    <div class="tgts" id="upTgt"></div>
+    <p class="info" id="upChance">Шанс: —</p>
+    <div class="row"><button class="btn" id="upBtn" disabled>Апгрейд</button></div>
+  </section>
+
+  <section class="view" id="v-crash">
+    <button class="back" data-to="games">‹ Игры</button>
+    <h2 class="t">Краш</h2>
+    <div class="crash" id="crashM">1.00×</div>
+    <input class="money" id="crashAmt" type="number" min="1" placeholder="Ставка 🪙">
+    <div class="row"><button class="btn" id="crashBet">Ставка</button><button class="btn red" id="crashOut" disabled>Забрать</button></div>
+    <p class="info" id="crashInfo">Множитель растёт. Успей забрать до краша.</p>
+  </section>
+
+  <section class="view" id="v-dice">
+    <button class="back" data-to="games">‹ Игры</button>
+    <h2 class="t">Дайсы</h2>
+    <div class="dice-num" id="diceN">50</div>
+    <input class="money" id="diceAmt" type="number" min="1" placeholder="Ставка 🪙">
+    <div class="row"><button class="btn alt" id="diceUnder">UNDER 50 · ×1.92</button><button class="btn" id="diceOver">OVER 50 · ×1.92</button></div>
+    <p class="info" id="diceInfo">Выпадет число 0–99.</p>
   </section>
 
   <section class="view" id="v-me">
@@ -105,7 +148,8 @@ nav button.on{color:var(--acc);background:var(--card)}
 
 <nav>
   <button data-go="cases" class="on">Кейсы</button>
-  <button data-go="me">Личный кабинет</button>
+  <button data-go="games">Игры</button>
+  <button data-go="me">Кабинет</button>
 </nav>
 
 <div class="modal" id="mWin"><div class="sheet">
@@ -129,13 +173,18 @@ if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor && tg.setHeaderColor("#0b06
 const $ = s => document.querySelector(s);
 const fmt = n => Number(n).toLocaleString("ru-RU");
 
-const DRAGON_IMG = "https://static.wikia.nocookie.net/stealabr/images/a/a5/Dragon_Cannelloni.png/revision/latest/scale-to-width-down/1200?cb=20260428162417";
-const ITEMS = { dragon:{name:"Dragon Cannelloni", e:"🐉", img:DRAGON_IMG, c:"#ff7a00"}, coin:{name:"1 монета", e:"🪙", c:"#ffd24a"} };
-const S = { bal:0, inv:[], subClaimed:false, user:{username:"",first_name:""}, cfg:{allinPrice:100,dragonChance:0.05,subReward:10,dragonValue:900} };
+const FALLBACK_ITEMS = {
+  coin:{name:"1 монета",e:"🪙",c:"#ffd24a",value:1},
+  dragon:{name:"Dragon Cannelloni",e:"🐉",c:"#ff7a00",value:1500}
+};
+const S = { bal:0, inv:[], subClaimed:false, user:{username:"",first_name:""},
+  cfg:{ allinPrice:100, dragonChance:0.05, subReward:10, dicePayout:1.92, crashK:0.06, upgradeMult:0.8, items:FALLBACK_ITEMS, cases:{} } };
+const item = k => (S.cfg.items && S.cfg.items[k]) || FALLBACK_ITEMS[k] || {name:k,e:"❓",c:"#9aa0b4",value:0};
 
 async function api(path, data){
   const r = await fetch(API_URL + path, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({...data, initData: tg ? tg.initData : ""}) });
-  const j = await r.json(); if(!r.ok) throw new Error(j.error || "Ошибка"); return j;
+  let j={}; try{ j=await r.json(); }catch(e){}
+  if(!r.ok) throw new Error(j.error || "Ошибка"); return j;
 }
 function apply(d){
   if(!d) return;
@@ -143,104 +192,244 @@ function apply(d){
   if(d.inv) S.inv = d.inv;
   if(d.subClaimed != null) S.subClaimed = !!d.subClaimed;
   if(d.user) S.user = d.user;
-  if(d.cfg) S.cfg = d.cfg;
+  if(d.cfg) S.cfg = Object.assign({}, S.cfg, d.cfg);
   render();
 }
-const pic = (k, h) => { const i = ITEMS[k]; return i.img ? `<img src="${i.img}" alt="${i.name}" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createTextNode('${i.e}'))">` : i.e; };
-const card = k => `<div class="it" style="--rc:${ITEMS[k].c}"><div class="pic">${pic(k)}</div><small>${ITEMS[k].name}</small></div>`;
+function pic(k){
+  const i = item(k);
+  return i.img ? `<img src="${i.img}" alt="${i.name}" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createTextNode('${i.e}'))">` : (i.e || "❓");
+}
+const card = k => `<div class="it" style="--rc:${item(k).c||'#9aa0b4'}"><div class="pic">${pic(k)}</div><small>${item(k).name}</small></div>`;
+
+function renderCases(){
+  const order = ["nubini","cerber","taco","lucky","dragon","allin"];
+  const cs = S.cfg.cases || {};
+  let html = order.filter(id=>cs[id]).map(id=>{
+    const c = cs[id];
+    const art = c.art==="allin" ? `<img src="allin.png" alt="">` : c.art;
+    return `<div class="case ${id==="allin"?"wide":""}" data-id="${id}" style="--g:${c.g||"#ff7a00aa"}">
+      <div class="art">${art}</div>
+      <div><b>${c.name}</b><span class="tag">${fmt(c.price)} 🪙</span></div></div>`;
+  }).join("");
+  html += `<div class="case" data-id="sub" style="--g:#39ffb0aa">
+    <div class="art">📣</div>
+    <div><b>CHANNEL</b><small>@braincasegg</small>
+    <span class="tag free">${S.subClaimed ? "Получено ✓" : "Бесплатно · +"+S.cfg.subReward+" 🪙"}</span></div></div>`;
+  $("#caseGrid").innerHTML = html;
+  $("#caseGrid").onclick = e => { const el=e.target.closest(".case"); if(el) openCase(el.dataset.id); };
+}
 
 function render(){
   $("#bal").textContent = fmt(S.bal) + " 🪙"; $("#ubal").textContent = "Баланс: " + fmt(S.bal) + " 🪙";
   const name = S.user.username ? "@" + S.user.username : (S.user.first_name || "Игрок");
-  $("#uname").textContent = name; $("#ava").textContent = (S.user.username || S.user.first_name || "?")[0].toUpperCase();
-  $("#allinSub").textContent = `Дракон Cannelloni (${fmt(S.cfg.dragonValue)} 🪙) или 1 монета`;
-  $("#allinPrice").textContent = fmt(S.cfg.allinPrice) + " 🪙";
-  $("#subTag").textContent = S.subClaimed ? "Получено ✓" : `Бесплатно · +${S.cfg.subReward} 🪙`;
+  $("#uname").textContent = name; $("#ava").textContent = (name.replace("@","")[0] || "?").toUpperCase();
+  if($("#v-cases").classList.contains("on")) renderCases();
   const box = $("#invBox");
-  box.innerHTML = S.inv.length ? `<div class="inv">${S.inv.map((k,i)=>card(k).replace('class="it"',`class="it" data-i="${i}"`)).join("")}</div><p class="info">Нажмите на предмет, чтобы продать за ${fmt(S.cfg.dragonValue)} 🪙</p>` : '<div class="empty">Пока пусто. Откройте первый кейс.</div>';
+  box.innerHTML = S.inv.length
+    ? `<div class="inv">${S.inv.map((k,i)=>card(k).replace('class="it"',`class="it" data-i="${i}"`)).join("")}</div><p class="info">Нажмите предмет, чтобы продать</p>`
+    : '<div class="empty">Пока пусто. Откройте первый кейс.</div>';
+  if($("#v-up").classList.contains("on")) renderUp();
 }
+
 let ready=false;
 async function sync(){
   if(!API_URL) return;
   try{
     const prev=S.bal;
     apply(await api("/api/me", {}));
+    $("#errBanner").style.display="none";
     if(ready && S.bal!==prev && tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred(S.bal>prev?"success":"warning");
     ready=true;
-  }catch(e){ console.warn(e); }
+  }catch(e){
+    $("#errBanner").style.display="block";
+    $("#errBanner").textContent = e.message || "Нет связи с сервером. Открой Mini App из бота.";
+  }
 }
 setInterval(sync, 2500);
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) sync(); });
 
 function show(v){
   document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on", x.id==="v-"+v));
-  document.querySelectorAll("nav [data-go]").forEach(b=>b.classList.toggle("on", b.dataset.go===v || (v==="open"&&b.dataset.go==="cases")));
-  if(tg) v==="open" ? tg.BackButton.show() : tg.BackButton.hide();
+  document.querySelectorAll("nav [data-go]").forEach(b=>{
+    const on = b.dataset.go===v || (["open"].includes(v)&&b.dataset.go==="cases") || (["up","crash","dice"].includes(v)&&b.dataset.go==="games");
+    b.classList.toggle("on", on);
+  });
+  if(tg) (v==="open"||v==="up"||v==="crash"||v==="dice") ? tg.BackButton.show() : tg.BackButton.hide();
+  if(v==="cases") renderCases();
+  if(v==="up") renderUp();
 }
 document.querySelectorAll("nav [data-go]").forEach(b=>b.onclick=()=>show(b.dataset.go));
-$("#back").onclick = () => show("cases"); if(tg) tg.BackButton.onClick(()=>show("cases"));
+$("#back").onclick = () => show("cases");
+document.querySelectorAll("[data-to]").forEach(b=>b.onclick=()=>show(b.dataset.to));
+if(tg) tg.BackButton.onClick(()=>{
+  if($("#v-open").classList.contains("on")) show("cases");
+  else show("games");
+});
+document.querySelectorAll("#v-games .gcard").forEach(el=>el.onclick=()=>show(el.dataset.play));
 
 $("#invBox").onclick = async e => {
   const el = e.target.closest(".it"); if(!el) return;
-  if(!confirm(`Продать ${ITEMS[S.inv[+el.dataset.i]].name} за ${fmt(S.cfg.dragonValue)} 🪙?`)) return;
+  const k = S.inv[+el.dataset.i]; if(!item(k)) return;
+  if(!confirm(`Продать ${item(k).name} за ${fmt(item(k).value)} 🪙?`)) return;
   try{ apply(await api("/api/sell", {index:+el.dataset.i})); }catch(err){ alert(err.message); }
 };
 
-/* ===== Кейсы ===== */
 let cur=null, spinning=false;
-document.querySelectorAll(".case").forEach(el=>el.onclick=()=>openCase(el.dataset.id));
 function openCase(id){
-  cur = id; $("#oArt").style.display = id==="allin" ? "block" : "none"; const strip = $("#strip"); strip.style.transition="none"; strip.style.transform="translateX(0)";
-  if(id==="allin"){
-    $("#oTitle").textContent = "ALL OR NOTHING";
-    $("#openBtn").textContent = `Открыть за ${fmt(S.cfg.allinPrice)} 🪙`;
-    $("#oInfo").textContent = `Шанс дракона: ${+(S.cfg.dragonChance*100).toFixed(2)}%. Иначе вы получите 1 монету на баланс.`;
-    strip.innerHTML = ["coin","dragon","coin","coin","dragon","coin","coin","dragon"].map(card).join("");
-  } else {
+  cur = id;
+  const strip = $("#strip"); strip.style.transition="none"; strip.style.transform="translateX(0)";
+  const c = (S.cfg.cases||{})[id];
+  if(id==="sub"){
     $("#oTitle").textContent = "CHANNEL CASE";
     $("#openBtn").textContent = S.subClaimed ? "Уже получено" : "Подписался, проверить";
     $("#openBtn").disabled = S.subClaimed;
-    $("#oInfo").innerHTML = `Сначала подпишитесь: <a href="https://t.me/braincasegg" style="color:var(--acc2)" id="chLink">t.me/braincasegg</a><br>Награда: ${S.cfg.subReward} 🪙, один раз на аккаунт.`;
-    strip.innerHTML = Array(8).fill(card("coin").replace("1 монета", S.cfg.subReward+" монет")).join("");
-    $("#chLink").onclick = e => { if(tg){ e.preventDefault(); tg.openTelegramLink("https://t.me/braincasegg"); } };
+    $("#oInfo").innerHTML = `Сначала подпишитесь: <a href="https://t.me/braincasegg" style="color:var(--acc2)" id="chLink">t.me/braincasegg</a>`;
+    strip.innerHTML = Array(8).fill(card("coin")).join("");
+    const ch=$("#chLink"); if(ch) ch.onclick = e => { if(tg){ e.preventDefault(); tg.openTelegramLink("https://t.me/braincasegg"); } };
+  } else {
+    $("#oTitle").textContent = (c && c.name) || id.toUpperCase();
+    $("#openBtn").textContent = `Открыть за ${fmt((c&&c.price)||0)} 🪙`;
+    $("#openBtn").disabled = false;
+    const pool = (c && c.pool) || ["dragon"];
+    $("#oInfo").textContent = id==="allin" ? `Шанс дракона: ${+(S.cfg.dragonChance*100).toFixed(2)}%. Иначе 1 монета.` : "Приз считается на сервере.";
+    strip.innerHTML = Array(10).fill(0).map((_,i)=>card(pool[i%pool.length])).join("");
   }
-  if(id==="allin") $("#openBtn").disabled = false;
   show("open");
 }
 $("#openBtn").onclick = async () => {
   if(spinning) return;
-  if(cur==="allin" && S.bal < S.cfg.allinPrice){ openTop(); return; }
+  const price = cur==="sub" ? 0 : ((S.cfg.cases||{})[cur]||{}).price || 0;
+  if(cur!=="sub" && S.bal < price){ openTop(); return; }
   spinning = true; $("#openBtn").disabled = true;
   try{
     const r = await api("/api/open", {case:cur});
-    if(cur==="allin") await animate(r.win);
+    await animate(r.win==="coins"?"coin":r.win);
     apply(r); if(cur==="sub") S.subClaimed = true; render();
     showWin(r);
-  }catch(err){
-    alert(err.message);
-  }finally{ spinning = false; $("#openBtn").disabled = (cur==="sub" && S.subClaimed); }
+  }catch(err){ alert(err.message); }
+  finally{ spinning=false; $("#openBtn").disabled = (cur==="sub" && S.subClaimed); }
 };
 function animate(win){
   return new Promise(res=>{
     const N=40, STOP=34, strip=$("#strip"), stage=$(".stage");
-    const seq = Array.from({length:N},(_,i)=> i===STOP ? win : (Math.random()<.25?"dragon":"coin"));
+    const pool = ((S.cfg.cases||{})[cur]||{}).pool || ["dragon","coin"];
+    const seq = Array.from({length:N},(_,i)=> i===STOP ? win : pool[i%pool.length]);
     strip.style.transition="none"; strip.style.transform="translateX(0)"; strip.innerHTML = seq.map(card).join("");
     const target = STOP*108 + 54 - stage.clientWidth/2 + (Math.random()-.5)*60;
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{ strip.style.transition="transform 5.2s cubic-bezier(.12,.7,.1,1)"; strip.style.transform=`translateX(${-target}px)`; }));
-    setTimeout(res, 5400);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ strip.style.transition="transform 4.2s cubic-bezier(.12,.7,.1,1)"; strip.style.transform=`translateX(${-target}px)`; }));
+    setTimeout(res, 4400);
   });
 }
 function showWin(r){
-  const dragon = r.win==="dragon", sub = r.win==="coins";
-  $("#wPic").innerHTML = dragon ? pic("dragon") : "🪙";
-  $("#wName").textContent = dragon ? "Dragon Cannelloni!" : sub ? `+${r.amount} монет` : "+1 монета";
-  $("#wVal").textContent = dragon ? "Предмет добавлен в инвентарь" : "Зачислено на баланс";
+  const k = r.win==="coins" || r.win==="coin" ? "coin" : r.win;
+  $("#wPic").innerHTML = pic(k);
+  if(r.win==="coins") $("#wName").textContent = `+${r.amount} монет`;
+  else if(r.win==="coin") $("#wName").textContent = "+1 монета";
+  else if(r.ok===false) $("#wName").textContent = "Неудача";
+  else if(r.ok) $("#wName").textContent = item(r.win).name + "!";
+  else $("#wName").textContent = (item(r.win).name || r.win) + "!";
+  $("#wVal").textContent = r.win==="coin"||r.win==="coins" ? "Зачислено на баланс" : (ITEMS_SELL(r.win));
   $("#mWin").classList.add("on");
-  if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred(dragon?"success":"warning");
+  if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred(r.win==="coin"||r.ok===false?"warning":"success");
 }
+function ITEMS_SELL(k){ const i=item(k); return i.value ? `Можно продать за ${fmt(i.value)} 🪙` : ""; }
 $("#wOk").onclick = () => $("#mWin").classList.remove("on");
 
-/* ===== Депозит Stars ===== */
+let upI=-1, upT="";
+function renderUp(){
+  const src = $("#upSrc");
+  src.innerHTML = S.inv.length
+    ? `<div class="inv">${S.inv.map((k,i)=>card(k).replace('class="it"',`class="it ${upI===i?"on":""}" data-i="${i}"`)).join("")}</div>`
+    : '<div class="empty">Нет предметов для апгрейда</div>';
+  src.onclick = e => { const el=e.target.closest(".it"); if(!el) return; upI=+el.dataset.i; upT=""; renderUp(); };
+  const keys = Object.keys(S.cfg.items||{}).filter(k=>k!=="coin");
+  const srcVal = S.inv[upI] ? item(S.inv[upI]).value : 0;
+  $("#upTgt").innerHTML = keys.filter(k=>item(k).value>srcVal).map(k=>
+    card(k).replace('class="it"',`class="it ${upT===k?"on":""}" data-k="${k}"`)
+  ).join("") || '<div class="empty" style="grid-column:1/-1">Выберите предмет</div>';
+  $("#upTgt").onclick = e => { const el=e.target.closest("[data-k]"); if(!el) return; upT=el.dataset.k; renderUp(); };
+  let ch="—";
+  if(upI>=0 && upT){
+    const c = Math.min(0.9, Math.max(0.01, (item(S.inv[upI]).value / item(upT).value) * (S.cfg.upgradeMult||0.8)));
+    ch = (c*100).toFixed(1)+"%";
+  }
+  $("#upChance").textContent = "Шанс: "+ch;
+  $("#upBtn").disabled = !(upI>=0 && upT);
+}
+$("#upBtn").onclick = async () => {
+  $("#upBtn").disabled = true;
+  try{
+    const r = await api("/api/upgrade", {index:upI, target:upT});
+    apply(r); upI=-1; upT=""; renderUp();
+    showWin({ win: r.ok ? r.win : "coin", ok: r.ok });
+    if(!r.ok){ $("#wName").textContent="Предмет сгорел"; $("#wVal").textContent="Апгрейд не удался"; $("#wPic").textContent="💥"; }
+  }catch(e){ alert(e.message); }
+  finally{ $("#upBtn").disabled = !(upI>=0 && upT); }
+};
+
+let crashTimer=null, crashStart=0;
+function stopCrash(){ if(crashTimer){ cancelAnimationFrame(crashTimer); crashTimer=null; } }
+function drawCrash(){
+  const k = S.cfg.crashK || 0.06;
+  const m = Math.exp(k * (Date.now()-crashStart)/1000);
+  $("#crashM").textContent = m.toFixed(2)+"×";
+  crashTimer = requestAnimationFrame(drawCrash);
+}
+$("#crashBet").onclick = async () => {
+  const amount = Math.floor(Number($("#crashAmt").value));
+  if(!amount || amount<1){ alert("Ставка от 1 🪙"); return; }
+  if(S.bal<amount){ openTop(); return; }
+  try{
+    const r = await api("/api/crash/bet", {amount});
+    apply(r);
+    crashStart = r.start || Date.now();
+    $("#crashM").classList.remove("dead");
+    $("#crashBet").disabled = true; $("#crashOut").disabled = false;
+    stopCrash(); drawCrash();
+    pollCrash();
+  }catch(e){ alert(e.message); }
+};
+let crashPoll=null;
+function pollCrash(){
+  if(crashPoll) clearInterval(crashPoll);
+  crashPoll = setInterval(async ()=>{
+    try{
+      const r = await api("/api/crash/tick", {});
+      if(r.crashed){ crashEnd(r); }
+    }catch(e){ crashEnd({crashed:true, crashAt:1, win:0, balance:S.bal, inv:S.inv}); }
+  }, 250);
+}
+async function crashEnd(r){
+  if(crashPoll){ clearInterval(crashPoll); crashPoll=null; }
+  stopCrash();
+  $("#crashM").classList.add("dead");
+  $("#crashM").textContent = (r.crashAt||1).toFixed(2)+"×";
+  $("#crashBet").disabled = false; $("#crashOut").disabled = true;
+  apply(r);
+  $("#crashInfo").textContent = r.win ? `Забрал ${fmt(r.win)} 🪙` : `Краш на ${(r.crashAt||1).toFixed(2)}×`;
+}
+$("#crashOut").onclick = async () => {
+  try{ crashEnd(await api("/api/crash/cash", {})); }
+  catch(e){ alert(e.message); crashEnd({crashed:true, crashAt:1, win:0, balance:S.bal, inv:S.inv}); }
+};
+
+async function playDice(side){
+  const amount = Math.floor(Number($("#diceAmt").value));
+  if(!amount || amount<1){ alert("Ставка от 1 🪙"); return; }
+  if(S.bal<amount){ openTop(); return; }
+  $("#diceUnder").disabled = $("#diceOver").disabled = true;
+  try{
+    const r = await api("/api/dice", {amount, side});
+    $("#diceN").textContent = String(r.roll).padStart(2,"0");
+    $("#diceN").style.color = r.win ? "var(--green)" : "var(--red)";
+    apply(r);
+    $("#diceInfo").textContent = r.win ? `Выигрыш ${fmt(r.payout)} 🪙` : "Проигрыш";
+  }catch(e){ alert(e.message); }
+  finally{ $("#diceUnder").disabled = $("#diceOver").disabled = false; }
+}
+$("#diceUnder").onclick = () => playDice("under");
+$("#diceOver").onclick = () => playDice("over");
+
 const MIN_DEP=100, MAX_DEP=100000, PACKS=[100,250,500,1000,2500,5000];
 $("#pk").innerHTML = PACKS.map(p=>`<button data-p="${p}">${fmt(p)} ⭐</button>`).join("");
 const markSel = () => document.querySelectorAll("#pk button").forEach(b=>b.classList.toggle("sel",+b.dataset.p===+$("#amt").value));
@@ -271,7 +460,7 @@ $("#payBtn").onclick = async () => {
   }catch(err){ $("#payBtn").disabled=false; $("#amtErr").textContent="Не удалось создать счёт: "+err.message; }
 };
 
-render(); sync();
+renderCases(); render(); sync();
 </script>
 </body>
 </html>

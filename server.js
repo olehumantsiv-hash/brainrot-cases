@@ -10,18 +10,17 @@ const WEBAPP_URL = process.env.WEBAPP_URL;
 const PORT = process.env.PORT || 3000;
 if (!TOKEN) throw new Error("Задайте BOT_TOKEN");
 
-// На Render подключите Disk (например, на /data) и задайте DB_FILE=/data/db.json,
-// иначе db.json обнуляется при каждом деплое и перезапуске.
 const DB_FILE = process.env.DB_FILE || path.join(__dirname, "db.json");
 let db = { users: {}, paid: {} };
 try { if (fs.existsSync(DB_FILE)) db = JSON.parse(fs.readFileSync(DB_FILE)); } catch (e) { console.error("db read:", e.message); }
+if (!db.users) db.users = {};
+if (!db.paid) db.paid = {};
 const saveDb = () => {
   try {
     fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
     fs.writeFileSync(DB_FILE + ".tmp", JSON.stringify(db)); fs.renameSync(DB_FILE + ".tmp", DB_FILE);
   } catch (e) { console.error("saveDb не удалось (проверьте DB_FILE и Disk):", e.message); }
 };
-// Ошибка в одном запросе не должна валить весь сервер
 process.on("unhandledRejection", e => console.error("unhandledRejection:", e));
 process.on("uncaughtException", e => console.error("uncaughtException:", e));
 const tgApi = (method, body) =>
@@ -29,7 +28,6 @@ const tgApi = (method, body) =>
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
   }).then(r => r.json());
 
-// Проверка подписи initData по документации Telegram
 function verifyInitData(initData) {
   try {
     const p = new URLSearchParams(initData);
@@ -52,25 +50,81 @@ const getUser = id => {
   return u;
 };
 
-// ===== Игровая логика (всё считается на сервере) =====
-const CHANNEL = "@braincasegg";          // бот должен быть админом канала, иначе getChatMember не сработает
-const ALLIN_PRICE = 100;                 // цена кейса «Всё или ничего»
-const DRAGON_CHANCE = 0.05;              // шанс дракона (5%). Меняйте под свою экономику
-const SUB_REWARD = 10;                   // награда за подписку (один раз на аккаунт)
-const ITEMS = { dragon: { name: "Dragon Cannelloni", value: 900 } };
-const ADMIN_IDS = (process.env.ADMIN_IDS || "").split(",").map(x => x.trim()).filter(Boolean); // Telegram ID админов через запятую
+const CHANNEL = "@braincasegg";
+const SUB_REWARD = 10;
+const ALLIN_PRICE = 100;
+const DRAGON_CHANCE = 0.05;
+const DICE_PAYOUT = 1.92;
+const CRASH_K = 0.06;
+const UPGRADE_MULT = 0.8;
+
+const ITEMS = {
+  noobini:    { name: "Noobini Pizzanini", value: 8,    e: "🍕", c: "#9aa0b4" },
+  lirili:     { name: "Lirili Larila",     value: 18,   e: "🦒", c: "#7dd3fc" },
+  tungtung:   { name: "Tung Tung Sahur",   value: 35,   e: "🥁", c: "#fbbf24" },
+  tralalero:  { name: "Tralalero Tralala", value: 70,   e: "🦈", c: "#38bdf8" },
+  cappuccino: { name: "Cappuccino",        value: 120,  e: "☕", c: "#c4a574" },
+  ballerina:  { name: "Ballerina",         value: 180,  e: "🩰", c: "#f9a8d4" },
+  chimpanzini:{ name: "Chimpanzini",       value: 250,  e: "🍌", c: "#facc15" },
+  trippi:     { name: "Trippi Troppi",     value: 400,  e: "🐸", c: "#4ade80" },
+  cerberus:   { name: "Cerberus",          value: 550,  e: "🐺", c: "#fb7185" },
+  taco:       { name: "Taco",              value: 700,  e: "🌮", c: "#fb923c" },
+  lucky:      { name: "Lucky Block",       value: 900,  e: "🍀", c: "#22c55e" },
+  dragon:     { name: "Dragon Cannelloni", value: 1500, e: "🐉", c: "#ff7a00",
+    img: "https://static.wikia.nocookie.net/stealabr/images/a/a5/Dragon_Cannelloni.png/revision/latest/scale-to-width-down/1200" },
+  lavacca:    { name: "La Vacca Saturno",  value: 2500, e: "🐮", c: "#a855ff" },
+};
+
+const CASES = {
+  nubini: { name: "NUBINI", price: 19, art: "🍕", g: "#7dd3fc",
+    drops: [["noobini", 62], ["lirili", 24], ["tungtung", 10], ["tralalero", 4]] },
+  cerber: { name: "CERBER", price: 137, art: "🐺", g: "#fb7185",
+    drops: [["tungtung", 42], ["cappuccino", 28], ["ballerina", 16], ["chimpanzini", 9], ["cerberus", 4], ["dragon", 1]] },
+  taco: { name: "TACO", price: 209, art: "🌮", g: "#fb923c",
+    drops: [["cappuccino", 36], ["ballerina", 28], ["chimpanzini", 20], ["trippi", 10], ["taco", 5], ["dragon", 1]] },
+  lucky: { name: "LUCKY BLOCK", price: 259, art: "🍀", g: "#22c55e",
+    drops: [["ballerina", 32], ["chimpanzini", 28], ["trippi", 20], ["cerberus", 12], ["lucky", 6], ["dragon", 2]] },
+  dragon: { name: "DRAGON", price: 500, art: "🐉", g: "#ff7a00",
+    drops: [["trippi", 38], ["cerberus", 28], ["taco", 16], ["lucky", 10], ["dragon", 6], ["lavacca", 2]] },
+  allin: { name: "ALL OR NOTHING", price: ALLIN_PRICE, art: "allin", g: "#ff7a00", special: "allin" },
+};
+
+const ADMIN_IDS = (process.env.ADMIN_IDS || "").split(",").map(x => x.trim()).filter(Boolean);
 const pendingSub = new Set();
-const touch = (id, username) => { // запоминаем @username, чтобы находить игрока по нику
+const crashGames = new Map();
+
+const publicItems = () => Object.fromEntries(Object.entries(ITEMS).map(([k, v]) => [k, { name: v.name, value: v.value, e: v.e, c: v.c, img: v.img || null }]));
+const publicCases = () => Object.fromEntries(Object.entries(CASES).map(([id, c]) => [id, {
+  name: c.name, price: c.price, art: c.art, g: c.g, special: c.special || null,
+  pool: c.drops ? [...new Set(c.drops.map(d => d[0]))] : ["dragon", "coin"],
+}]));
+
+function pickDrop(drops) {
+  const total = drops.reduce((s, d) => s + d[1], 0);
+  let r = crypto.randomInt(total);
+  for (const [key, w] of drops) { r -= w; if (r < 0) return key; }
+  return drops[0][0];
+}
+function rollCrash() {
+  const r = crypto.randomInt(1, 1_000_001) / 1_000_000;
+  if (r < 0.04) return 1;
+  return Math.min(100, Math.max(1.01, Math.floor((0.96 / (1 - r)) * 100) / 100));
+}
+function crashMult(start) {
+  return Math.exp(CRASH_K * (Date.now() - start) / 1000);
+}
+
+const touch = (id, username) => {
   const u = getUser(id), n = (username || "").toLowerCase();
   if (n && u.username !== n) { u.username = n; saveDb(); }
 };
 const findByName = name => {
   const raw = String(name || "").replace(/^@/, "").trim();
   if (!raw) return null;
-  if (db.users[raw]) return { id: raw, u: db.users[raw] };
+  if (db.users[raw]) return { id: raw };
   const n = raw.toLowerCase();
   const e = Object.entries(db.users).find(([, u]) => u.username === n);
-  return e ? { id: e[0], u: e[1] } : null;
+  return e ? { id: e[0] } : null;
 };
 const ADMIN_HELP = "🛠 Админ-команды:\n" +
   "/give @username 500 — выдать монеты\n" +
@@ -80,6 +134,7 @@ const ADMIN_HELP = "🛠 Админ-команды:\n" +
   "/user @username — баланс и инвентарь\n" +
   "Брейнроты: " + Object.keys(ITEMS).join(", ") + "\n" +
   "Игрок должен хотя бы раз открыть бота.";
+
 async function adminCmd(text) {
   const [raw, name, arg] = text.trim().split(/\s+/);
   const cmd = raw.split("@")[0].toLowerCase();
@@ -89,7 +144,7 @@ async function adminCmd(text) {
   if (!f) return `Игрок ${name} не найден. Он должен хотя бы раз открыть бота.`;
   const id = String(f.id);
   const u = getUser(id);
-  if (cmd === "/user") return `@${u.username}: ${u.balance} 🪙, предметы: ${u.inv.length ? u.inv.join(", ") : "нет"}`;
+  if (cmd === "/user") return `@${u.username || id}: ${u.balance} 🪙, предметы: ${u.inv.length ? u.inv.join(", ") : "нет"}`;
   if (cmd === "/give" || cmd === "/take") {
     const n = Math.floor(Number(arg));
     if (!Number.isInteger(n) || n <= 0) return "Укажите сумму: /give @username 500";
@@ -108,7 +163,7 @@ async function adminCmd(text) {
     else { const i = u.inv.indexOf(k); if (i < 0) return "У игрока нет этого предмета."; u.inv.splice(i, 1); }
     saveDb();
     if (cmd === "/giveitem") tgApi("sendMessage", { chat_id: id, text: `🎁 Вам выдан ${ITEMS[k].name}! Смотрите инвентарь.` }).catch(() => {});
-    return `✅ @${u.username}: ${cmd === "/giveitem" ? "выдан" : "забран"} ${ITEMS[k].name}`;
+    return `✅ @${u.username || id}: ${cmd === "/giveitem" ? "выдан" : "забран"} ${ITEMS[k].name}`;
   }
   return "Неизвестная команда. /admin";
 }
@@ -117,35 +172,42 @@ const isSubscribed = async uid => {
   return !!(r && r.ok && ["creator", "administrator", "member"].includes(r.result.status));
 };
 
+const mePayload = (user, u) => ({
+  balance: u.balance, inv: u.inv, subClaimed: !!u.subClaimed,
+  user: { username: user.username || "", first_name: user.first_name || "" },
+  cfg: { allinPrice: ALLIN_PRICE, dragonChance: DRAGON_CHANCE, subReward: SUB_REWARD,
+    dicePayout: DICE_PAYOUT, crashK: CRASH_K, upgradeMult: UPGRADE_MULT,
+    items: publicItems(), cases: publicCases() },
+});
+
 const server = http.createServer(async (req, res) => {
   const send = (code, obj) => { res.writeHead(code, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type" }); res.end(JSON.stringify(obj)); };
   if (req.method === "OPTIONS") return send(204, {});
-  if (req.method === "GET" && req.url.split("?")[0] === "/allin.png") {
+  const urlPath = (req.url || "/").split("?")[0];
+  if (req.method === "GET" && urlPath === "/allin.png") {
     try {
       const img = fs.readFileSync(path.join(__dirname, "allin.png"));
       res.writeHead(200, { "Content-Type": "image/png", "Cache-Control": "public, max-age=86400" });
       return res.end(img);
-    } catch { res.writeHead(404); return res.end(); } // файла нет в репозитории: не падаем
+    } catch { res.writeHead(404); return res.end(); }
   }
-  if (req.method !== "POST") { // отдаём index.html
+  if (req.method !== "POST") {
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
     return res.end(fs.readFileSync(path.join(__dirname, "index.html")));
   }
   let raw = ""; for await (const c of req) { raw += c; if (raw.length > 10000) return send(413, { error: "too large" }); }
   let body; try { body = JSON.parse(raw || "{}"); } catch { return send(400, { error: "bad json" }); }
   const user = verifyInitData(body.initData || "");
-  if (!user) return send(401, { error: "bad initData" });
+  if (!user) return send(401, { error: "Открой Braincase из Telegram-бота" });
+  const uid = String(user.id);
+  const u = getUser(uid);
 
-  if (req.url === "/api/me") {
-    touch(user.id, user.username);
-    const u = getUser(user.id);
-    return send(200, { balance: u.balance, inv: u.inv, subClaimed: !!u.subClaimed,
-      user: { username: user.username || "", first_name: user.first_name || "" },
-      cfg: { allinPrice: ALLIN_PRICE, dragonChance: DRAGON_CHANCE, subReward: SUB_REWARD, dragonValue: ITEMS.dragon.value } });
+  if (urlPath === "/api/me") {
+    touch(uid, user.username);
+    return send(200, mePayload(user, u));
   }
 
-  if (req.url === "/api/open") {
-    const u = getUser(user.id);
+  if (urlPath === "/api/open") {
     if (body.case === "allin") {
       if (u.balance < ALLIN_PRICE) return send(400, { error: "Недостаточно монет" });
       u.balance -= ALLIN_PRICE;
@@ -156,31 +218,94 @@ const server = http.createServer(async (req, res) => {
     }
     if (body.case === "sub") {
       if (u.subClaimed) return send(400, { error: "Награда уже получена" });
-      if (pendingSub.has(user.id)) return send(429, { error: "Подождите" });
-      pendingSub.add(user.id);
+      if (pendingSub.has(uid)) return send(429, { error: "Подождите" });
+      pendingSub.add(uid);
       try {
-        if (!(await isSubscribed(user.id))) return send(403, { error: "Вы не подписаны на канал" });
+        if (!(await isSubscribed(uid))) return send(403, { error: "Вы не подписаны на канал" });
         u.subClaimed = true; u.balance += SUB_REWARD; saveDb();
         return send(200, { win: "coins", amount: SUB_REWARD, balance: u.balance, inv: u.inv });
-      } finally { pendingSub.delete(user.id); }
+      } finally { pendingSub.delete(uid); }
     }
-    return send(400, { error: "unknown case" });
+    const c = CASES[body.case];
+    if (!c || c.special || !c.drops) return send(400, { error: "unknown case" });
+    if (u.balance < c.price) return send(400, { error: "Недостаточно монет" });
+    u.balance -= c.price;
+    const win = pickDrop(c.drops);
+    u.inv.push(win); saveDb();
+    return send(200, { win, balance: u.balance, inv: u.inv });
   }
 
-  if (req.url === "/api/sell") {
-    const u = getUser(user.id), i = Math.floor(Number(body.index));
+  if (urlPath === "/api/sell") {
+    const i = Math.floor(Number(body.index));
     const key = u.inv[i];
     if (!ITEMS[key]) return send(400, { error: "Предмет не найден" });
     u.inv.splice(i, 1); u.balance += ITEMS[key].value; saveDb();
     return send(200, { balance: u.balance, inv: u.inv });
   }
 
-  if (req.url === "/api/invoice") {
+  if (urlPath === "/api/upgrade") {
+    const i = Math.floor(Number(body.index));
+    const srcKey = u.inv[i];
+    const tgtKey = String(body.target || "");
+    if (!ITEMS[srcKey] || !ITEMS[tgtKey]) return send(400, { error: "Выберите предметы" });
+    if (ITEMS[tgtKey].value <= ITEMS[srcKey].value) return send(400, { error: "Цель должна быть дороже" });
+    const chance = Math.min(0.9, Math.max(0.01, (ITEMS[srcKey].value / ITEMS[tgtKey].value) * UPGRADE_MULT));
+    const roll = crypto.randomInt(1_000_000) / 1_000_000;
+    const ok = roll < chance;
+    u.inv.splice(i, 1);
+    if (ok) u.inv.push(tgtKey);
+    saveDb();
+    return send(200, { ok, chance, win: ok ? tgtKey : null, balance: u.balance, inv: u.inv });
+  }
+
+  if (urlPath === "/api/dice") {
+    const amount = Math.floor(Number(body.amount));
+    const side = body.side === "over" ? "over" : "under";
+    if (!Number.isInteger(amount) || amount < 1) return send(400, { error: "Ставка от 1 🪙" });
+    if (u.balance < amount) return send(400, { error: "Недостаточно монет" });
+    u.balance -= amount;
+    const roll = crypto.randomInt(100); // 0..99
+    const win = side === "under" ? roll < 50 : roll >= 50;
+    let payout = 0;
+    if (win) { payout = Math.floor(amount * DICE_PAYOUT); u.balance += payout; }
+    saveDb();
+    return send(200, { roll, win, payout, side, balance: u.balance, inv: u.inv });
+  }
+
+  if (urlPath === "/api/crash/bet") {
+    const amount = Math.floor(Number(body.amount));
+    if (!Number.isInteger(amount) || amount < 1) return send(400, { error: "Ставка от 1 🪙" });
+    if (u.balance < amount) return send(400, { error: "Недостаточно монет" });
+    const prev = crashGames.get(uid);
+    if (prev && crashMult(prev.start) < prev.crashAt) return send(400, { error: "Раунд ещё идёт" });
+    u.balance -= amount; saveDb();
+    const start = Date.now();
+    crashGames.set(uid, { start, amount, crashAt: rollCrash() });
+    return send(200, { start, k: CRASH_K, balance: u.balance });
+  }
+
+  if (urlPath === "/api/crash/tick" || urlPath === "/api/crash/cash") {
+    const g = crashGames.get(uid);
+    if (!g) return send(400, { error: "Нет активной ставки" });
+    const m = crashMult(g.start);
+    if (m >= g.crashAt) {
+      crashGames.delete(uid);
+      return send(200, { crashed: true, crashAt: g.crashAt, win: 0, balance: u.balance, inv: u.inv });
+    }
+    if (urlPath === "/api/crash/tick") return send(200, { crashed: false, mult: Math.floor(m * 100) / 100 });
+    const cash = Math.floor(m * 100) / 100;
+    const win = Math.floor(g.amount * cash);
+    u.balance += win; saveDb();
+    crashGames.delete(uid);
+    return send(200, { crashed: false, cash, win, balance: u.balance, inv: u.inv });
+  }
+
+  if (urlPath === "/api/invoice") {
     const amount = Math.floor(Number(body.amount));
     if (!Number.isInteger(amount) || amount < 100 || amount > 100000) return send(400, { error: "Сумма от 100 до 100000 ⭐" });
     let r; try { r = await tgApi("createInvoiceLink", {
       title: `Депозит ${amount} ⭐`, description: `Вы получите ${amount} монет в Braincase`,
-      payload: JSON.stringify({ uid: user.id, amount }), provider_token: "", currency: "XTR",
+      payload: JSON.stringify({ uid, amount }), provider_token: "", currency: "XTR",
       prices: [{ label: "Депозит", amount }],
     }); } catch (e) { return send(502, { error: "Telegram недоступен" }); }
     return r.ok ? send(200, { link: r.result }) : send(500, { error: r.description });
@@ -189,44 +314,41 @@ const server = http.createServer(async (req, res) => {
 });
 server.listen(PORT, () => console.log("API на порту", PORT));
 
-// Бот: long polling (команда /start, оплата Stars)
 let offset = 0;
 (async function poll() {
-  await tgApi("deleteWebhook", {}).catch(() => {}); // getUpdates не работает, если когда-то был включён webhook
+  await tgApi("deleteWebhook", {}).catch(() => {});
   for (;;) {
     try {
       const r = await tgApi("getUpdates", { offset, timeout: 30, allowed_updates: ["message", "pre_checkout_query"] });
       if (!r.ok) { console.error("getUpdates:", r.description); await new Promise(x => setTimeout(x, 3000)); continue; }
-      for (const u of r.result) {
-        offset = u.update_id + 1;
-        if (u.message?.from) touch(u.message.from.id, u.message.from.username);
-        const mtext = u.message?.text || "";
+      for (const upd of r.result) {
+        offset = upd.update_id + 1;
+        if (upd.message?.from) touch(upd.message.from.id, upd.message.from.username);
+        const mtext = upd.message?.text || "";
         if (/^\/myid\b/.test(mtext)) {
-          await tgApi("sendMessage", { chat_id: u.message.chat.id, text: "Ваш Telegram ID: " + u.message.from.id });
+          await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: "Ваш Telegram ID: " + upd.message.from.id });
         } else if (/^\/(admin|give|take|giveitem|takeitem|user)(@\w+)?(\s|$)/.test(mtext)) {
-          const reply = ADMIN_IDS.includes(String(u.message.from.id)) ? await adminCmd(mtext) : "Нет доступа.";
-          await tgApi("sendMessage", { chat_id: u.message.chat.id, text: reply });
-        } else if (u.pre_checkout_query) {
-          await tgApi("answerPreCheckoutQuery", { pre_checkout_query_id: u.pre_checkout_query.id, ok: true });
-        } else if (u.message?.successful_payment) {
-          const pay = u.message.successful_payment, id = pay.telegram_payment_charge_id;
-          if (!db.paid[id]) { // защита от повторного зачисления
-            const { uid } = JSON.parse(pay.invoice_payload);
+          const reply = ADMIN_IDS.includes(String(upd.message.from.id)) ? await adminCmd(mtext) : "Нет доступа.";
+          await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: reply });
+        } else if (upd.pre_checkout_query) {
+          await tgApi("answerPreCheckoutQuery", { pre_checkout_query_id: upd.pre_checkout_query.id, ok: true });
+        } else if (upd.message?.successful_payment) {
+          const pay = upd.message.successful_payment, id = pay.telegram_payment_charge_id;
+          if (!db.paid[id]) {
+            const { uid: payUid } = JSON.parse(pay.invoice_payload);
             if (pay.currency !== "XTR") continue;
-            const amount = pay.total_amount; // монеты = фактически оплаченные Stars
-            getUser(uid).balance += amount; db.paid[id] = { uid, amount, t: Date.now() }; saveDb();
-            tgApi("sendMessage", { chat_id: u.message.chat.id, text: `✅ Зачислено ${amount} 🪙. Баланс: ${getUser(uid).balance} 🪙` }).catch(() => {});
+            const amount = pay.total_amount;
+            getUser(payUid).balance += amount; db.paid[id] = { uid: payUid, amount, t: Date.now() }; saveDb();
+            tgApi("sendMessage", { chat_id: upd.message.chat.id, text: `✅ Зачислено ${amount} 🪙. Баланс: ${getUser(payUid).balance} 🪙` }).catch(() => {});
           }
-        } else if (u.message?.text?.startsWith("/paysupport")) {
-          // Telegram требует, чтобы бот с платежами отвечал на эту команду
-          await tgApi("sendMessage", { chat_id: u.message.chat.id,
-            text: "По вопросам оплаты и возврата Stars напишите в поддержку: @ВАШ_USERNAME. Укажите ID платежа из чека." });
-        } else if (u.message?.text?.startsWith("/start") && WEBAPP_URL) {
+        } else if (mtext.startsWith("/paysupport")) {
+          await tgApi("sendMessage", { chat_id: upd.message.chat.id,
+            text: "По вопросам оплаты и возврата Stars напишите в поддержку. Укажите ID платежа из чека." });
+        } else if (mtext.startsWith("/start") && WEBAPP_URL) {
           await tgApi("sendMessage", {
-            chat_id: u.message.chat.id, parse_mode: "HTML",
+            chat_id: upd.message.chat.id, parse_mode: "HTML",
             text: "🎃 <b>Добро пожаловать в Braincase!</b>\n\n" +
-              "Braincase — это место, где ты можешь улучшить своих брейнротов. " +
-              "Открывай хэллоуинские кейсы, выбивай героев от Common до Secret и собирай сильнейшую коллекцию.\n\n" +
+              "Открывай кейсы, апгрейди брейнротов, играй в краш и дайсы.\n" +
               "Нажми кнопку ниже, чтобы начать.",
             reply_markup: { inline_keyboard: [[{ text: "Открыть Braincase", web_app: { url: WEBAPP_URL } }]] },
           });
