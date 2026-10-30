@@ -4,23 +4,54 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const { Pool } = require("pg");
 
 const TOKEN = process.env.BOT_TOKEN;
 const WEBAPP_URL = process.env.WEBAPP_URL;
 const PORT = process.env.PORT || 3000;
 if (!TOKEN) throw new Error("Задайте BOT_TOKEN");
 
-const DB_FILE = process.env.DB_FILE || path.join(__dirname, "db.json");
-let db = { users: {}, paid: {} };
-try { if (fs.existsSync(DB_FILE)) db = JSON.parse(fs.readFileSync(DB_FILE)); } catch (e) { console.error("db read:", e.message); }
-if (!db.users) db.users = {};
-if (!db.paid) db.paid = {};
-const saveDb = () => {
-  try {
-    fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
-    fs.writeFileSync(DB_FILE + ".tmp", JSON.stringify(db)); fs.renameSync(DB_FILE + ".tmp", DB_FILE);
-  } catch (e) { console.error("saveDb не удалось (проверьте DB_FILE и Disk):", e.message); }
+const DATABASE_URL = process.env.DATABASE_URL;
+if (!DATABASE_URL) throw new Error("Задайте DATABASE_URL из Supabase PostgreSQL");
+const pool = new Pool({ connectionString: DATABASE_URL, ssl: true, max: 5, connectionTimeoutMillis: 10000 });
+let db = { users: {} };
+let saveQueue = Promise.resolve();
+const normalizeDb = value => {
+  const result = value && typeof value === "object" ? value : { users: {} };
+  if (!result.users || typeof result.users !== "object") result.users = {};
+  return result;
 };
+async function saveDb() {
+  const snapshot = JSON.stringify(db);
+  const write = saveQueue.then(() => pool.query(
+    "INSERT INTO braincase_state (id, data) VALUES (1, $1::jsonb) ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data",
+    [snapshot],
+  ));
+  saveQueue = write.catch(() => {});
+  await write;
+}
+async function initDb() {
+  await pool.query("CREATE TABLE IF NOT EXISTS braincase_state (id integer PRIMARY KEY CHECK (id = 1), data jsonb NOT NULL)");
+  const stored = await pool.query("SELECT data FROM braincase_state WHERE id = 1");
+  if (stored.rowCount) {
+    db = normalizeDb(stored.rows[0].data);
+    return;
+  }
+  const legacyFile = process.env.DB_FILE || path.join(__dirname, "db.json");
+  if (fs.existsSync(legacyFile)) {
+    try { db = normalizeDb(JSON.parse(fs.readFileSync(legacyFile, "utf8"))); }
+    catch (error) { throw new Error(`Не удалось прочитать старый файл ${legacyFile}: ${error.message}`); }
+  }
+  await saveDb();
+}
+async function persistOrRespond(send) {
+  try { await saveDb(); return true; }
+  catch (error) {
+    console.error("PostgreSQL save failed:", error.message);
+    send(503, { error: "Не удалось сохранить данные. Повторите попытку позже." });
+    return false;
+  }
+}
 process.on("unhandledRejection", e => console.error("unhandledRejection:", e));
 process.on("uncaughtException", e => console.error("uncaughtException:", e));
 const tgApi = (method, body) =>
@@ -44,34 +75,27 @@ function verifyInitData(initData) {
 }
 const getUser = id => {
   const uid = String(id);
-  const u = (db.users[uid] ||= { balance: 0 });
+  const u = (db.users[uid] ||= { balance: 100000000 });
   u.balance = Number(u.balance) || 0;
   u.inv ||= [];
-  u.spent = Number(u.spent) || 0; u.prize = Number(u.prize) || 0; u.cbClaimed = Number(u.cbClaimed) || 0;
+  u.stats ||= {};
+  u.stats.casesOpened = Number(u.stats.casesOpened) || 0;
+  u.stats.upgrades = Number(u.stats.upgrades) || 0;
+  u.stats.coinsEarned = Number(u.stats.coinsEarned) || 0;
   return u;
 };
 
 const CHANNEL = "@braincasegg";
 const SUB_REWARD = 10;
-const ALLIN_PRICE = 100;
-const DICE_PAYOUT = 1.92;
-const CRASH_K = 0.06;
 const UPGRADE_MULT = 0.8;
-const CASHBACK_RATE = 0.10; // кэшбэк: 10% от суммарного проигрыша в кейсах (потрачено минус стоимость выпавших призов), открыто показывается игроку
-const cashbackAvail = u => Math.max(0, Math.floor(((u.spent || 0) - (u.prize || 0)) * CASHBACK_RATE) - (u.cbClaimed || 0));
 
 const { ITEMS, LEGACY } = require("./items");
-const { buildCases, CASE_RTP } = require("./cases"); // CASE_RTP: средний возврат игроку от цены кейса
-const DRAGON_CHANCE = Math.min(0.5, (ALLIN_PRICE * CASE_RTP - 1) / (ITEMS.dragon.value - 1));
-const CASES = {
-  ...buildCases(ITEMS),
-  allin: { name: "ALL OR NOTHING", price: ALLIN_PRICE, art: "allin", g: "#ff7a00", special: "allin" },
-};
+const { buildCases } = require("./cases");
+const CASES = buildCases(ITEMS);
 for (const u of Object.values(db.users)) if (Array.isArray(u.inv)) u.inv = u.inv.map(k => ITEMS[k] ? k : (LEGACY[k] || k));
 
 const ADMIN_IDS = (process.env.ADMIN_IDS || "").split(",").map(x => x.trim()).filter(Boolean);
 const pendingSub = new Set();
-const crashGames = new Map();
 
 const publicItems = () => Object.fromEntries(Object.entries(ITEMS).map(([k, v]) => [k, { name: v.name, value: v.value, e: v.e, c: v.c, img: v.img || null }]));
 const publicCases = () => Object.fromEntries(Object.entries(CASES).map(([id, c]) => {
@@ -92,18 +116,13 @@ function pickDrop(drops) {
   for (const [key, w] of drops) { r -= w; if (r < 0) return key; }
   return drops[0][0];
 }
-function rollCrash() {
-  const r = crypto.randomInt(1, 1_000_001) / 1_000_000;
-  if (r < 0.04) return 1;
-  return Math.min(100, Math.max(1.01, Math.floor((0.96 / (1 - r)) * 100) / 100));
-}
-function crashMult(start) {
-  return Math.exp(CRASH_K * (Date.now() - start) / 1000);
-}
 
-const touch = (id, username) => {
-  const u = getUser(id), n = (username || "").toLowerCase();
-  if (n && u.username !== n) { u.username = n; saveDb(); }
+const touch = async (id, username) => {
+  const uid = String(id), isNew = !db.users[uid];
+  const u = getUser(uid), n = (username || "").toLowerCase();
+  let changed = isNew;
+  if (n && u.username !== n) { u.username = n; changed = true; }
+  if (changed) await saveDb();
 };
 const findByName = name => {
   const raw = String(name || "").replace(/^@/, "").trim();
@@ -135,7 +154,9 @@ async function adminCmd(text) {
   if (cmd === "/give" || cmd === "/take") {
     const n = Math.floor(Number(arg));
     if (!Number.isInteger(n) || n <= 0) return "Укажите сумму: /give @username 500";
-    u.balance = Math.max(0, u.balance + (cmd === "/give" ? n : -n)); saveDb();
+    u.balance = Math.max(0, u.balance + (cmd === "/give" ? n : -n));
+    if (cmd === "/give") u.stats.coinsEarned += n;
+    await saveDb();
     const who = u.username ? "@" + u.username : id;
     const msg = cmd === "/give"
       ? `🎁 Вам начислено ${n} 🪙. Баланс: ${u.balance} 🪙`
@@ -148,7 +169,7 @@ async function adminCmd(text) {
     if (!ITEMS[k]) return "Нет такого брейнрота. Доступно: " + Object.keys(ITEMS).join(", ");
     if (cmd === "/giveitem") { u.inv.push(k); }
     else { const i = u.inv.indexOf(k); if (i < 0) return "У игрока нет этого предмета."; u.inv.splice(i, 1); }
-    saveDb();
+    await saveDb();
     if (cmd === "/giveitem") tgApi("sendMessage", { chat_id: id, text: `🎁 Вам выдан ${ITEMS[k].name}! Смотрите инвентарь.` }).catch(() => {});
     return `✅ @${u.username || id}: ${cmd === "/giveitem" ? "выдан" : "забран"} ${ITEMS[k].name}`;
   }
@@ -160,10 +181,9 @@ const isSubscribed = async uid => {
 };
 
 const mePayload = (user, u) => ({
-  balance: u.balance, inv: u.inv, subClaimed: !!u.subClaimed, cashback: cashbackAvail(u),
+  balance: u.balance, inv: u.inv, subClaimed: !!u.subClaimed, stats: u.stats,
   user: { username: user.username || "", first_name: user.first_name || "" },
-  cfg: { cashbackRate: CASHBACK_RATE, allinPrice: ALLIN_PRICE, dragonChance: DRAGON_CHANCE, subReward: SUB_REWARD,
-    dicePayout: DICE_PAYOUT, crashK: CRASH_K, upgradeMult: UPGRADE_MULT,
+  cfg: { subReward: SUB_REWARD, upgradeMult: UPGRADE_MULT,
     items: publicItems(), cases: publicCases() },
 });
 
@@ -171,13 +191,6 @@ const server = http.createServer(async (req, res) => {
   const send = (code, obj) => { res.writeHead(code, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type" }); res.end(JSON.stringify(obj)); };
   if (req.method === "OPTIONS") return send(204, {});
   const urlPath = (req.url || "/").split("?")[0];
-  if (req.method === "GET" && urlPath === "/allin.png") {
-    try {
-      const img = fs.readFileSync(path.join(__dirname, "allin.png"));
-      res.writeHead(200, { "Content-Type": "image/png", "Cache-Control": "public, max-age=86400" });
-      return res.end(img);
-    } catch { res.writeHead(404); return res.end(); }
-  }
   if (req.method === "GET" && urlPath === "/health") { // быстрая проверка версии: открыть /health в браузере
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     return res.end(JSON.stringify({ version: "images-v3", cases: Object.keys(CASES), itemsWithImages: Object.entries(ITEMS).filter(([, v]) => v.img).map(([k]) => k) }));
@@ -200,49 +213,60 @@ const server = http.createServer(async (req, res) => {
   const user = verifyInitData(body.initData || "");
   if (!user) return send(401, { error: "Открой Braincase из Telegram-бота" });
   const uid = String(user.id);
+  const isNewUser = !db.users[uid];
   const u = getUser(uid);
 
   if (urlPath === "/api/me") {
-    touch(uid, user.username);
+    try {
+      await touch(uid, user.username);
+      if (isNewUser) await saveDb();
+    } catch (error) {
+      console.error("PostgreSQL save failed:", error.message);
+      return send(503, { error: "Не удалось сохранить профиль. Повторите попытку позже." });
+    }
     return send(200, mePayload(user, u));
   }
 
   if (urlPath === "/api/open") {
-    if (body.case === "allin") {
-      if (u.balance < ALLIN_PRICE) return send(400, { error: "Недостаточно монет" });
-      u.balance -= ALLIN_PRICE;
-      const win = crypto.randomInt(1_000_000) < DRAGON_CHANCE * 1_000_000;
-      if (win) u.inv.push("dragon"); else u.balance += 1;
-      u.spent += ALLIN_PRICE; u.prize += win ? ITEMS.dragon.value : 1;
-      saveDb();
-      return send(200, { win: win ? "dragon" : "coin", balance: u.balance, inv: u.inv });
-    }
     if (body.case === "sub") {
       if (u.subClaimed) return send(400, { error: "Награда уже получена" });
       if (pendingSub.has(uid)) return send(429, { error: "Подождите" });
       pendingSub.add(uid);
       try {
         if (!(await isSubscribed(uid))) return send(403, { error: "Вы не подписаны на канал" });
-        u.subClaimed = true; u.balance += SUB_REWARD; saveDb();
-        return send(200, { win: "coins", amount: SUB_REWARD, balance: u.balance, inv: u.inv });
+        u.subClaimed = true; u.balance += SUB_REWARD; u.stats.coinsEarned += SUB_REWARD;
+        if (!(await persistOrRespond(send))) return;
+        return send(200, { win: "coins", amount: SUB_REWARD, balance: u.balance, inv: u.inv, stats: u.stats });
       } finally { pendingSub.delete(uid); }
     }
     const c = CASES[body.case];
     if (!c || c.special || !c.drops) return send(400, { error: "unknown case" });
-    if (u.balance < c.price) return send(400, { error: "Недостаточно монет" });
-    u.balance -= c.price;
-    const win = pickDrop(c.drops);
-    u.spent += c.price; u.prize += ITEMS[win].value;
-    u.inv.push(win); saveDb();
-    return send(200, { win, balance: u.balance, inv: u.inv });
+    const count = body.count == null ? 1 : Number(body.count);
+    if (!Number.isInteger(count) || count < 1 || count > 5) return send(400, { error: "Можно открыть от 1 до 5 кейсов" });
+    const totalPrice = c.price * count;
+    if (u.balance < totalPrice) return send(400, { error: "Недостаточно виртуальных монет" });
+    u.balance -= totalPrice;
+    const wins = Array.from({ length: count }, () => pickDrop(c.drops));
+    u.inv.push(...wins); u.stats.casesOpened += count;
+    if (!(await persistOrRespond(send))) return;
+    return send(200, { wins, balance: u.balance, inv: u.inv, stats: u.stats });
   }
 
   if (urlPath === "/api/sell") {
     const i = Math.floor(Number(body.index));
     const key = u.inv[i];
     if (!ITEMS[key]) return send(400, { error: "Предмет не найден" });
-    u.inv.splice(i, 1); u.balance += ITEMS[key].value; saveDb();
-    return send(200, { balance: u.balance, inv: u.inv });
+    u.inv.splice(i, 1); u.balance += ITEMS[key].value; u.stats.coinsEarned += ITEMS[key].value;
+    if (!(await persistOrRespond(send))) return;
+    return send(200, { balance: u.balance, inv: u.inv, stats: u.stats });
+  }
+
+  if (urlPath === "/api/sell-all") {
+    if (!u.inv.length) return send(400, { error: "Инвентарь пуст" });
+    const total = u.inv.reduce((sum, key) => sum + (ITEMS[key]?.value || 0), 0);
+    u.inv = []; u.balance += total; u.stats.coinsEarned += total;
+    if (!(await persistOrRespond(send))) return;
+    return send(200, { balance: u.balance, inv: u.inv, stats: u.stats, sold: total });
   }
 
   if (urlPath === "/api/upgrade") {
@@ -256,108 +280,34 @@ const server = http.createServer(async (req, res) => {
     const ok = roll < chance;
     u.inv.splice(i, 1);
     if (ok) u.inv.push(tgtKey);
-    saveDb();
-    return send(200, { ok, chance, roll, win: ok ? tgtKey : null, balance: u.balance, inv: u.inv });
+    u.stats.upgrades++;
+    if (!(await persistOrRespond(send))) return;
+    return send(200, { ok, chance, roll, win: ok ? tgtKey : null, balance: u.balance, inv: u.inv, stats: u.stats });
   }
 
-  if (urlPath === "/api/dice") {
-    const amount = Math.floor(Number(body.amount));
-    const side = body.side === "over" ? "over" : "under";
-    if (!Number.isInteger(amount) || amount < 1) return send(400, { error: "Ставка от 1 🪙" });
-    if (u.balance < amount) return send(400, { error: "Недостаточно монет" });
-    u.balance -= amount;
-    const roll = crypto.randomInt(100); // 0..99
-    const win = side === "under" ? roll < 50 : roll >= 50;
-    let payout = 0;
-    if (win) { payout = Math.floor(amount * DICE_PAYOUT); u.balance += payout; }
-    saveDb();
-    return send(200, { roll, win, payout, side, balance: u.balance, inv: u.inv });
-  }
-
-  if (urlPath === "/api/crash/bet") {
-    const amount = Math.floor(Number(body.amount));
-    if (!Number.isInteger(amount) || amount < 1) return send(400, { error: "Ставка от 1 🪙" });
-    if (u.balance < amount) return send(400, { error: "Недостаточно монет" });
-    const prev = crashGames.get(uid);
-    if (prev && crashMult(prev.start) < prev.crashAt) return send(400, { error: "Раунд ещё идёт" });
-    u.balance -= amount; saveDb();
-    const start = Date.now();
-    crashGames.set(uid, { start, amount, crashAt: rollCrash() });
-    return send(200, { start, k: CRASH_K, balance: u.balance });
-  }
-
-  if (urlPath === "/api/crash/tick" || urlPath === "/api/crash/cash") {
-    const g = crashGames.get(uid);
-    if (!g) return send(400, { error: "Нет активной ставки" });
-    const m = crashMult(g.start);
-    if (m >= g.crashAt) {
-      crashGames.delete(uid);
-      return send(200, { crashed: true, crashAt: g.crashAt, win: 0, balance: u.balance, inv: u.inv });
-    }
-    if (urlPath === "/api/crash/tick") return send(200, { crashed: false, mult: Math.floor(m * 100) / 100 });
-    const cash = Math.floor(m * 100) / 100;
-    const win = Math.floor(g.amount * cash);
-    u.balance += win; saveDb();
-    crashGames.delete(uid);
-    return send(200, { crashed: false, cash, win, balance: u.balance, inv: u.inv });
-  }
-
-  if (urlPath === "/api/cashback") {
-    const avail = cashbackAvail(u);
-    if (avail < 1) return send(400, { error: "Кэшбэка пока нет" });
-    u.balance += avail; u.cbClaimed += avail; saveDb();
-    return send(200, { balance: u.balance, inv: u.inv, cashback: 0 });
-  }
-
-  if (urlPath === "/api/invoice") {
-    const amount = Math.floor(Number(body.amount));
-    if (!Number.isInteger(amount) || amount < 1 || amount > 100000) return send(400, { error: "Сумма от 1 до 100000 ⭐" });
-    let r; try { r = await tgApi("createInvoiceLink", {
-      title: `Депозит ${amount} ⭐`, description: `Вы получите ${amount} монет в Braincase`,
-      payload: JSON.stringify({ uid, amount }), provider_token: "", currency: "XTR",
-      prices: [{ label: "Депозит", amount }],
-    }); } catch (e) { return send(502, { error: "Telegram недоступен" }); }
-    return r.ok ? send(200, { link: r.result }) : send(500, { error: r.description });
-  }
   send(404, { error: "not found" });
 });
-server.listen(PORT, () => console.log("API на порту", PORT));
-
 let offset = 0;
-(async function poll() {
+async function poll() {
   await tgApi("deleteWebhook", {}).catch(() => {});
   for (;;) {
     try {
-      const r = await tgApi("getUpdates", { offset, timeout: 30, allowed_updates: ["message", "pre_checkout_query"] });
+      const r = await tgApi("getUpdates", { offset, timeout: 30, allowed_updates: ["message"] });
       if (!r.ok) { console.error("getUpdates:", r.description); await new Promise(x => setTimeout(x, 3000)); continue; }
       for (const upd of r.result) {
         offset = upd.update_id + 1;
-        if (upd.message?.from) touch(upd.message.from.id, upd.message.from.username);
+        if (upd.message?.from) await touch(upd.message.from.id, upd.message.from.username);
         const mtext = upd.message?.text || "";
         if (/^\/myid\b/.test(mtext)) {
           await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: "Ваш Telegram ID: " + upd.message.from.id });
         } else if (/^\/(admin|give|take|giveitem|takeitem|user)(@\w+)?(\s|$)/.test(mtext)) {
           const reply = ADMIN_IDS.includes(String(upd.message.from.id)) ? await adminCmd(mtext) : "Нет доступа.";
           await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: reply });
-        } else if (upd.pre_checkout_query) {
-          await tgApi("answerPreCheckoutQuery", { pre_checkout_query_id: upd.pre_checkout_query.id, ok: true });
-        } else if (upd.message?.successful_payment) {
-          const pay = upd.message.successful_payment, id = pay.telegram_payment_charge_id;
-          if (!db.paid[id]) {
-            const { uid: payUid } = JSON.parse(pay.invoice_payload);
-            if (pay.currency !== "XTR") continue;
-            const amount = pay.total_amount;
-            getUser(payUid).balance += amount; db.paid[id] = { uid: payUid, amount, t: Date.now() }; saveDb();
-            tgApi("sendMessage", { chat_id: upd.message.chat.id, text: `✅ Зачислено ${amount} 🪙. Баланс: ${getUser(payUid).balance} 🪙` }).catch(() => {});
-          }
-        } else if (mtext.startsWith("/paysupport")) {
-          await tgApi("sendMessage", { chat_id: upd.message.chat.id,
-            text: "По вопросам оплаты и возврата Stars напишите в поддержку. Укажите ID платежа из чека." });
         } else if (mtext.startsWith("/start") && WEBAPP_URL) {
           await tgApi("sendMessage", {
             chat_id: upd.message.chat.id, parse_mode: "HTML",
             text: "🎃 <b>Добро пожаловать в Braincase!</b>\n\n" +
-              "Открывай кейсы, апгрейди брейнротов, играй в краш и дайсы.\n" +
+              "Собирай брейнротов из кейсов и улучшай коллекцию.\n" +
               "Нажми кнопку ниже, чтобы начать.",
             reply_markup: { inline_keyboard: [[{ text: "Открыть Braincase", web_app: { url: WEBAPP_URL } }]] },
           });
@@ -365,4 +315,15 @@ let offset = 0;
       }
     } catch (e) { console.error(e.message); await new Promise(r => setTimeout(r, 3000)); }
   }
-})();
+}
+
+async function start() {
+  await initDb();
+  server.listen(PORT, () => console.log("API на порту", PORT));
+  poll();
+}
+start().catch(async error => {
+  console.error("Не удалось запустить бота:", error.message);
+  await pool.end().catch(() => {});
+  process.exitCode = 1;
+});

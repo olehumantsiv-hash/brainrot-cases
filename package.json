@@ -1,6 +1,11 @@
 {
   "name": "braincase",
   "version": "1.0.0",
-  "scripts": { "start": "node server.js" },
-  "engines": { "node": ">=18" }
+  "scripts": {
+    "start": "node server.js",
+    "migrate:json": "node migrate-json-to-postgres.js",
+    "backup:json": "node backup-postgres-to-json.js"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": { "pg": "^8.23.1" }
 }
