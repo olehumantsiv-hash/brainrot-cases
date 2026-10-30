@@ -114,7 +114,7 @@ nav button.on{color:var(--acc);background:var(--card)}
 .wheel-label{position:absolute;font-size:8px;color:#d0b8e9;text-shadow:0 1px 3px #000;z-index:2}.wheel-label.top{top:-1px;left:50%;transform:translateX(-50%)}.wheel-label.bottom{bottom:-1px;left:50%;transform:translateX(-50%)}.wheel-label.left{left:-1px;top:50%;transform:translate(-35%,-50%) rotate(-90deg)}.wheel-label.right{right:-1px;top:50%;transform:translate(35%,-50%) rotate(90deg)}
 .upgrade-hat{position:absolute;top:-12px;left:8%;font-size:36px;z-index:3;transform:rotate(-18deg);filter:drop-shadow(0 2px 4px #a855ff)}
 .up-slots{display:grid;grid-template-columns:1fr 28px 1fr;align-items:center;gap:8px;margin:4px 4px 7px}
-.up-slot{height:78px;min-width:0;border:1px solid #9360b3;background:#21182b;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:5px;color:#d8baff;font-size:10px;overflow:hidden}.up-slot .pic{height:42px;display:flex;align-items:center;justify-content:center;font-size:28px}.up-slot .pic img{max-width:42px;max-height:40px;object-fit:contain}
+.up-slot{height:78px;min-width:0;border:1px solid #9360b3;background:#21182b;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:5px;color:#d8baff;font-size:10px;overflow:hidden}.up-slot .pic{height:42px;display:flex;align-items:center;justify-content:center;font-size:28px}.up-slot .pic img{max-width:42px;max-height:40px;object-fit:contain}.up-slot .item-price{font-size:9px;color:#ffbd73}
 .up-slot.selected{border-color:#ff9c42;box-shadow:0 0 10px #ff7a0033;color:#fff}.up-slot .pic{font-size:26px;line-height:1.05}.up-slot img{max-width:42px;max-height:40px;object-fit:contain}.up-slot span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 .slot-arrow{text-align:center;font-size:23px;color:#fff;text-shadow:0 0 8px #fff8}
 .upgrade-screen .up-actions{gap:7px;margin:0 4px 10px}
@@ -135,6 +135,22 @@ nav button.on{color:var(--acc);background:var(--card)}
 .upgrade-screen #upSrc .it img,.upgrade-screen #upTgt .it img{height:38px;max-width:58px}
 .upgrade-screen #upSrc .it small,.upgrade-screen #upTgt .it small{font-size:8px;line-height:1.1}
 .upgrade-screen #upSrc .empty,.upgrade-screen #upTgt .empty{padding:12px 0;font-size:11px}
+.upgrade-screen{background-color:#130d09;background-image:linear-gradient(#ff9b3510 1px,transparent 1px),linear-gradient(90deg,#ff9b3510 1px,transparent 1px);border-color:#503019;box-shadow:0 12px 34px #0009,0 0 28px #ff7a0012}
+.upgrade-screen h2.t{color:#ffe0c2;text-shadow:0 0 12px #ff7a0080}
+.upgrade-screen .wheel{background:radial-gradient(circle at 50% 75%,#653b25,#29190f 67%,#17100c);box-shadow:inset 0 0 0 2px #130e0a,inset 0 0 25px #0009,0 0 0 2px #ffad4c,0 0 0 4px #2b1a10,0 0 15px #ff7a0070}
+.upgrade-screen .wheel::before{border-bottom-color:#ff9d28;border-left-color:#ff7a00}
+.upgrade-screen .wtrack{stroke:#1b130e!important}.upgrade-screen .wzone{stroke:#ff9a35!important}
+.upgrade-screen .wcenter b{color:#ffc16f;text-shadow:0 2px 12px #ff7a0090}
+.upgrade-screen .wcenter small,.upgrade-screen>.info{color:#f2c99e}
+.upgrade-screen .wheel-label{color:#ffd6a7}.upgrade-screen .upgrade-hat{filter:drop-shadow(0 2px 4px #ff7a00)}
+.upgrade-screen .chance-btn{background:#25170e!important;border-color:#8d4a1e!important;color:#ffca8d!important}
+.upgrade-screen .upgrade-main{background:linear-gradient(100deg,#ff9a30,#ffb047)!important;border-color:#ffd194;color:#291507;box-shadow:0 0 18px #ff7a0055;font-weight:800}
+.upgrade-screen .up-slot{background:#21150d;border-color:#9b5a2e;color:#ffd0a1}
+.upgrade-screen .up-slot.selected{border-color:#ffab45;box-shadow:0 0 12px #ff7a0050}
+.upgrade-screen .up-presets button{background:#21160f;border-color:#573a27;color:#f4d1ac}.upgrade-screen .up-presets button.on{background:#432514;border-color:#ff9a35;color:#ffd195}
+.upgrade-screen .pick-labels button{background:#24170f;border-color:#a65e30;color:#ffe0c2}.upgrade-screen #upSrc,.upgrade-screen #upTgt{background:#19110c;border-color:#614027}
+.it .item-price{font-size:10px;line-height:1.1;color:#ffcb8d;white-space:nowrap}
+.upgrade-screen #upSrc .it .item-price,.upgrade-screen #upTgt .it .item-price{font-size:8px}
 @media (prefers-reduced-motion:reduce){.strip{transition:none!important}}
 </style>
 </head>
@@ -170,7 +186,7 @@ nav button.on{color:var(--acc);background:var(--card)}
    <div class="upgrade-screen">
     <button class="back" data-to="games">‹ Игры</button>
     <h2 class="t">Апгрейд</h2>
-    <p class="info">Выбери предмет и цель</p>
+    <p class="info">Цена в ₽ — ориентир FunPay. Выбери предмет и цель.</p>
     <div class="wheelBox"><div class="wheel" id="wheel">
       <svg viewBox="0 0 200 200" aria-hidden="true">
         <defs><linearGradient id="upgradeArc" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff8a35"/><stop offset="1" stop-color="#bd79ff"/></linearGradient></defs>
@@ -278,7 +294,7 @@ function pic(k){
   const i = item(k);
   return i.img ? `<img src="${i.img}" alt="${i.name}" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createTextNode('${i.e}'))">` : (i.e || "❓");
 }
-const card = k => `<div class="it" style="--rc:${item(k).c||'#9aa0b4'}"><div class="pic">${pic(k)}</div><small>${item(k).name}</small></div>`;
+const card = k => `<div class="it" style="--rc:${item(k).c||'#9aa0b4'}"><div class="pic">${pic(k)}</div><small>${item(k).name}</small><span class="item-price" title="Ориентировочная цена; предложения FunPay меняются">≈ ${fmt(item(k).value)} ₽</span></div>`;
 
 function renderCases(){
   const order = ["halloween","christmas","nubini","cerber","taco","lucky","dragon","allin"];
@@ -344,7 +360,12 @@ function show(v){
   });
   if(tg) (v==="open"||v==="up"||v==="crash"||v==="dice") ? tg.BackButton.show() : tg.BackButton.hide();
   if(v==="cases") renderCases();
-  if(v==="up") renderUp();
+  if(v==="up"){
+    if(upI>=S.inv.length){ upI=-1; upT=""; }
+    renderUp();
+    if(upI<0){ $("#upSrc").classList.add("open"); $("#upTgt").classList.remove("open"); }
+    else { $("#upTgt").classList.add("open"); }
+  }
 }
 document.querySelectorAll("nav [data-go]").forEach(b=>b.onclick=()=>show(b.dataset.go));
 $("#back").onclick = () => show("cases");
@@ -424,7 +445,7 @@ function showWin(r,silent){
   if(!silent){ bad ? sndFail() : sndWin(item(r.win).value>=1000); }
   if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred(bad?"warning":"success");
 }
-function ITEMS_SELL(k){ const i=item(k); return i.value ? `Можно продать за ${fmt(i.value)} 🪙` : ""; }
+function ITEMS_SELL(k){ const i=item(k); return i.value ? `≈ ${fmt(i.value)} ₽ · продать за ${fmt(i.value)} 🪙` : ""; }
 $("#wOk").onclick = () => $("#mWin").classList.remove("on");
 
 let upI=-1, upT="", upSpin=false, needleAng=180;
@@ -442,15 +463,15 @@ function renderUp(){
   if(srcSlot){
     const k=S.inv[upI];
     srcSlot.classList.toggle("selected",!!k);
-    srcSlot.innerHTML=k?`<div class="pic">${pic(k)}</div><span>${item(k).name}</span>`:"<span>Твой предмет</span>";
+    srcSlot.innerHTML=k?`<div class="pic">${pic(k)}</div><span>${item(k).name}</span><small class="item-price">≈ ${fmt(item(k).value)} ₽</small>`:"<span>Твой предмет</span>";
     tgtSlot.classList.toggle("selected",!!upT);
-    tgtSlot.innerHTML=upT?`<div class="pic">${pic(upT)}</div><span>${item(upT).name}</span>`:"<span>Цель</span>";
+    tgtSlot.innerHTML=upT?`<div class="pic">${pic(upT)}</div><span>${item(upT).name}</span><small class="item-price">≈ ${fmt(item(upT).value)} ₽</small>`:"<span>Цель</span>";
   }
   const src = $("#upSrc");
   src.innerHTML = S.inv.length
     ? `<div class="inv">${S.inv.map((k,i)=>card(k).replace('class="it"',`class="it ${upI===i?"on":""}" data-i="${i}"`)).join("")}</div>`
     : '<div class="empty">Нет предметов для апгрейда</div>';
-  src.onclick = e => { if(upSpin) return; const el=e.target.closest(".it"); if(!el) return; upI=+el.dataset.i; upT=""; renderUp(); };
+    src.onclick = e => { if(upSpin) return; const el=e.target.closest(".it"); if(!el) return; upI=+el.dataset.i; upT=""; src.classList.remove("open"); $("#upTgt").classList.add("open"); renderUp(); };
   const keys = Object.keys(S.cfg.items||{}).filter(k=>k!=="coin");
   const srcVal = S.inv[upI] ? item(S.inv[upI]).value : 0;
   $("#upTgt").innerHTML = keys.filter(k=>item(k).value>srcVal).map(k=>
