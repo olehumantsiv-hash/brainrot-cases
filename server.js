@@ -35,7 +35,19 @@ function verifyInitData(initData) {
     return JSON.parse(p.get("user"));
   } catch { return null; }
 }
-const getUser = id => (db.users[id] ||= { balance: 0 });
+const getUser = id => { const u = (db.users[id] ||= { balance: 0 }); u.inv ||= []; return u; };
+
+// ===== Игровая логика (всё считается на сервере) =====
+const CHANNEL = "@braincasegg";          // бот должен быть админом канала, иначе getChatMember не сработает
+const ALLIN_PRICE = 100;                 // цена кейса «Всё или ничего»
+const DRAGON_CHANCE = 0.05;              // шанс дракона (5%). Меняйте под свою экономику
+const SUB_REWARD = 10;                   // награда за подписку (один раз на аккаунт)
+const ITEMS = { dragon: { name: "Dragon Cannelloni", value: 900 } };
+const pendingSub = new Set();
+const isSubscribed = async uid => {
+  const r = await tgApi("getChatMember", { chat_id: CHANNEL, user_id: uid }).catch(() => null);
+  return !!(r && r.ok && ["creator", "administrator", "member"].includes(r.result.status));
+};
 
 const server = http.createServer(async (req, res) => {
   const send = (code, obj) => { res.writeHead(code, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type" }); res.end(JSON.stringify(obj)); };
@@ -49,7 +61,43 @@ const server = http.createServer(async (req, res) => {
   const user = verifyInitData(body.initData || "");
   if (!user) return send(401, { error: "bad initData" });
 
-  if (req.url === "/api/me") return send(200, { balance: getUser(user.id).balance });
+  if (req.url === "/api/me") {
+    const u = getUser(user.id);
+    return send(200, { balance: u.balance, inv: u.inv, subClaimed: !!u.subClaimed,
+      user: { username: user.username || "", first_name: user.first_name || "" },
+      cfg: { allinPrice: ALLIN_PRICE, dragonChance: DRAGON_CHANCE, subReward: SUB_REWARD, dragonValue: ITEMS.dragon.value } });
+  }
+
+  if (req.url === "/api/open") {
+    const u = getUser(user.id);
+    if (body.case === "allin") {
+      if (u.balance < ALLIN_PRICE) return send(400, { error: "Недостаточно монет" });
+      u.balance -= ALLIN_PRICE;
+      const win = crypto.randomInt(1_000_000) < DRAGON_CHANCE * 1_000_000;
+      if (win) u.inv.push("dragon"); else u.balance += 1;
+      saveDb();
+      return send(200, { win: win ? "dragon" : "coin", balance: u.balance, inv: u.inv });
+    }
+    if (body.case === "sub") {
+      if (u.subClaimed) return send(400, { error: "Награда уже получена" });
+      if (pendingSub.has(user.id)) return send(429, { error: "Подождите" });
+      pendingSub.add(user.id);
+      try {
+        if (!(await isSubscribed(user.id))) return send(403, { error: "Вы не подписаны на канал" });
+        u.subClaimed = true; u.balance += SUB_REWARD; saveDb();
+        return send(200, { win: "coins", amount: SUB_REWARD, balance: u.balance, inv: u.inv });
+      } finally { pendingSub.delete(user.id); }
+    }
+    return send(400, { error: "unknown case" });
+  }
+
+  if (req.url === "/api/sell") {
+    const u = getUser(user.id), i = Math.floor(Number(body.index));
+    const key = u.inv[i];
+    if (!ITEMS[key]) return send(400, { error: "Предмет не найден" });
+    u.inv.splice(i, 1); u.balance += ITEMS[key].value; saveDb();
+    return send(200, { balance: u.balance, inv: u.inv });
+  }
 
   if (req.url === "/api/invoice") {
     const amount = Math.floor(Number(body.amount));

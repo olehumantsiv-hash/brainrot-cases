@@ -3,309 +3,254 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Brainrot Cases: Хэллоуин</title>
+<title>Braincase</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Creepster&family=Rubik:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Rubik:wght@400;600&display=swap" rel="stylesheet">
 <style>
-:root{
-  --ink:#16081f; --card:#241036; --line:#3d1f5c; --pumpkin:#ff8a1f; --bone:#f3e9d2;
-  --blood:#d1274b; --lilac:#b9a7ff; --muted:#9a86b8;
-  --c-common:#9aa0b4; --c-rare:#4aa8ff; --c-epic:#b25cff; --c-legendary:#ffb020; --c-mythic:#ff4d6d; --c-god:#ff8a1f; --c-secret:#39ffb0;
-  color-scheme:dark;
-}
+:root{--bg:#0b0613;--card:#1a0f2b;--line:#33214f;--acc:#ff7a00;--acc2:#a855ff;--text:#f4ecff;--muted:#9886b8;--red:#ff4466;--green:#39ffb0;color-scheme:dark}
 *{box-sizing:border-box;margin:0}
 html,body{height:100%}
-body{background:radial-gradient(1200px 500px at 50% -10%,#3a1466 0,var(--ink) 60%) fixed;color:var(--bone);font:400 15px/1.45 Rubik,system-ui,sans-serif;
-  padding:env(safe-area-inset-top,0) 0 calc(env(safe-area-inset-bottom,0) + 72px)}
-h1,h2{font-family:Creepster,cursive;font-weight:400;letter-spacing:.04em}
-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;position:sticky;top:0;background:#16081fe6;backdrop-filter:blur(8px);z-index:5;border-bottom:1px solid var(--line)}
-header h1{font-size:26px;color:var(--pumpkin);text-shadow:0 0 14px #ff8a1f66}
-.bal{display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 6px 6px 14px;font-weight:600}
-.bal button{background:var(--pumpkin);color:#2a0f00;border:0;border-radius:999px;width:28px;height:28px;font-size:18px;font-weight:600;cursor:pointer}
+body{background:radial-gradient(900px 420px at 50% -8%,#3b1168 0,var(--bg) 62%) fixed;color:var(--text);font:400 15px/1.45 Rubik,system-ui,sans-serif;padding:env(safe-area-inset-top,0) 0 calc(env(safe-area-inset-bottom,0) + 76px)}
+h1,h2{font-family:Unbounded,system-ui,sans-serif;font-weight:800}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;position:sticky;top:0;z-index:5;background:#0b0613e8;backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.logo{font-size:20px;letter-spacing:.06em;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.bal{display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 5px 5px 14px;font-weight:600}
+.bal button{background:var(--acc);color:#2a1200;border:0;border-radius:50%;width:28px;height:28px;font-size:18px;font-weight:700;cursor:pointer}
 main{max-width:640px;margin:0 auto;padding:16px}
 .view{display:none}.view.on{display:block}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.case{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 12px;text-align:center;cursor:pointer;position:relative;overflow:hidden}
-.case:hover{border-color:var(--pumpkin)}
-.case .art{font-size:64px;line-height:1;margin:6px 0 8px;filter:drop-shadow(0 6px 14px var(--glow,#ff8a1f88))}
-.case b{display:block;font-size:15px}
-.case small{color:var(--muted)}
-.price{margin-top:8px;display:inline-block;background:#0000004d;border-radius:999px;padding:4px 12px;font-weight:600;color:var(--pumpkin)}
-.back{background:none;border:0;color:var(--lilac);font:inherit;cursor:pointer;padding:0 0 12px}
-.stage{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:18px;background:#0e0516;height:150px;margin:8px 0 14px}
-.stage::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:3px;background:var(--pumpkin);box-shadow:0 0 12px var(--pumpkin);transform:translateX(-50%);z-index:2}
+h2.t{font-size:18px;margin:0 0 12px}
+.case{background:linear-gradient(160deg,#241240,var(--card));border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:14px;display:flex;gap:14px;align-items:center;cursor:pointer}
+.case:hover{border-color:var(--acc)}
+.case .art{width:96px;height:96px;flex:none;display:flex;align-items:center;justify-content:center;font-size:56px;filter:drop-shadow(0 6px 16px var(--g,#ff7a0088))}
+.case .art img{width:100%;height:100%;object-fit:contain}
+.case b{font-family:Unbounded,sans-serif;font-size:15px;display:block}
+.case small{color:var(--muted);display:block;margin:2px 0 8px}
+.tag{display:inline-block;background:#0000004d;border-radius:999px;padding:4px 12px;font-weight:600;color:var(--acc)}
+.tag.free{color:var(--green)}
+.back{background:none;border:0;color:var(--acc2);font:inherit;cursor:pointer;padding:0 0 12px}
+.stage{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:18px;background:#080410;height:150px;margin:8px 0 14px}
+.stage::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:3px;background:var(--acc);box-shadow:0 0 12px var(--acc);transform:translateX(-50%);z-index:2}
 .strip{display:flex;gap:8px;padding:12px 0;position:absolute;left:0;top:0;will-change:transform}
-.it{flex:0 0 100px;height:126px;border-radius:12px;background:var(--card);border-bottom:4px solid var(--rc);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;padding:4px}
-.it span{font-size:40px;line-height:1}.it small{font-size:10.5px;line-height:1.1;color:var(--bone)}
+.it{flex:0 0 100px;height:126px;border-radius:12px;background:var(--card);border-bottom:4px solid var(--rc,#9aa0b4);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;padding:4px}
+.it .pic{height:62px;display:flex;align-items:center;justify-content:center;font-size:40px}
+.it img{height:62px;max-width:90px;object-fit:contain}
+.it small{font-size:11px;line-height:1.1}
 .row{display:flex;gap:10px}
-.btn{flex:1;border:0;border-radius:14px;padding:14px;font:600 16px Rubik,sans-serif;cursor:pointer;background:var(--pumpkin);color:#2a0f00}
-.btn.alt{background:var(--card);color:var(--bone);border:1px solid var(--line)}
+.btn{flex:1;border:0;border-radius:14px;padding:14px;font:600 16px Rubik,sans-serif;cursor:pointer;background:var(--acc);color:#2a1200}
+.btn.alt{background:var(--card);color:var(--text);border:1px solid var(--line)}
 .btn:disabled{opacity:.5;cursor:default}
-.drops{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
-.drops .it{flex:none;width:auto}
-.rar{font-size:11px;color:var(--rc)}
+.info{color:var(--muted);font-size:13px;margin-top:12px;text-align:center}
+.me{display:flex;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:16px}
+.ava{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font:800 24px Unbounded,sans-serif;flex:none}
+.me b{font-size:18px;display:block}.me span{color:var(--muted)}
 .inv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.empty{color:var(--muted);text-align:center;padding:40px 0}
-nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#16081ff2;border-top:1px solid var(--line);padding:6px 8px calc(env(safe-area-inset-bottom,0) + 6px);backdrop-filter:blur(8px)}
-nav button{flex:1;background:none;border:0;color:var(--muted);font:600 13px Rubik,sans-serif;padding:8px;cursor:pointer;border-radius:12px}
-nav button.on{color:var(--pumpkin);background:var(--card)}
-.modal{position:fixed;inset:0;background:#000000b3;display:none;align-items:center;justify-content:center;z-index:20;padding:20px}
+.inv .it{flex:none;width:auto;cursor:pointer}
+.empty{color:var(--muted);text-align:center;padding:32px 0}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#0b0613f2;border-top:1px solid var(--line);padding:6px 8px calc(env(safe-area-inset-bottom,0) + 6px);backdrop-filter:blur(10px)}
+nav button{flex:1;background:none;border:0;color:var(--muted);font:600 13px Rubik,sans-serif;padding:9px;cursor:pointer;border-radius:12px}
+nav button.on{color:var(--acc);background:var(--card)}
+.modal{position:fixed;inset:0;background:#000000b8;display:none;align-items:center;justify-content:center;z-index:20;padding:20px}
 .modal.on{display:flex}
-.sheet{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;width:100%;max-width:360px;text-align:center}
-.sheet h2{font-size:28px;color:var(--pumpkin);margin-bottom:6px}
-.sheet .big{font-size:72px;margin:6px 0}
+.sheet{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px;width:100%;max-width:360px;text-align:center}
+.sheet h2{font-size:20px;color:var(--acc);margin-bottom:6px}
+.sheet .big{height:130px;display:flex;align-items:center;justify-content:center;font-size:72px;margin:6px 0}
+.sheet .big img{height:130px;max-width:100%;object-fit:contain;filter:drop-shadow(0 8px 20px #ff7a0099)}
 .pk{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
-.pk button{background:#0000004d;border:1px solid var(--line);color:var(--bone);border-radius:12px;padding:12px 0;font:600 15px Rubik,sans-serif;cursor:pointer}
-.pk button:hover{border-color:var(--pumpkin)}
-#amt{width:100%;background:#0000004d;border:1px solid var(--line);border-radius:12px;color:var(--bone);font:600 16px Rubik,sans-serif;padding:12px;margin-bottom:10px;text-align:center}
-#amt.bad{border-color:var(--blood)}
-.pk button.sel{border-color:var(--pumpkin);background:#ff8a1f26}
-#amtErr{color:var(--blood);font-size:13px;min-height:18px;margin-bottom:6px}
-.trade{margin-top:8px;font-size:13px;color:var(--muted)}
-:focus-visible{outline:2px solid var(--lilac);outline-offset:2px}
+.pk button{background:#0000004d;border:1px solid var(--line);color:var(--text);border-radius:12px;padding:12px 0;font:600 15px Rubik,sans-serif;cursor:pointer}
+.pk button.sel{border-color:var(--acc);background:#ff7a0026}
+#amt{width:100%;background:#0000004d;border:1px solid var(--line);border-radius:12px;color:var(--text);font:600 16px Rubik,sans-serif;padding:12px;margin-bottom:10px;text-align:center}
+#amt.bad{border-color:var(--red)}
+#amtErr{color:var(--red);font-size:13px;min-height:18px;margin-bottom:6px}
+:focus-visible{outline:2px solid var(--acc2);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.strip{transition:none!important}}
 </style>
 </head>
 <body>
 <header>
-  <h1>Brainrot Cases</h1>
+  <h1 class="logo">BRAINCASE</h1>
   <div class="bal"><span id="bal">0 🪙</span><button id="plus" aria-label="Пополнить">+</button></div>
 </header>
 
 <main>
-  <section class="view on" id="v-cases"><div class="grid" id="caseGrid"></div></section>
+  <section class="view on" id="v-cases">
+    <h2 class="t">Кейсы</h2>
+    <div class="case" data-id="allin" style="--g:#ff7a00aa">
+      <div class="art"><img id="allinImg" alt="Dragon Cannelloni"></div>
+      <div><b>ALL OR NOTHING</b><small id="allinSub"></small><span class="tag" id="allinPrice"></span></div>
+    </div>
+    <div class="case" data-id="sub" style="--g:#39ffb0aa">
+      <div class="art">📣</div>
+      <div><b>CHANNEL CASE</b><small>Подпишись на @braincasegg и забери награду</small><span class="tag free" id="subTag">Бесплатно</span></div>
+    </div>
+  </section>
 
   <section class="view" id="v-open">
     <button class="back" id="back">‹ Все кейсы</button>
-    <h2 id="oTitle" style="font-size:30px;color:var(--pumpkin)"></h2>
+    <h2 class="t" id="oTitle"></h2>
     <div class="stage"><div class="strip" id="strip"></div></div>
-    <div class="row"><button class="btn" id="openBtn"></button><button class="btn alt" id="demoBtn">Демо</button></div>
-    <h2 style="font-size:22px;margin-top:20px">Что внутри</h2>
-    <div class="drops" id="drops"></div>
+    <div class="row"><button class="btn" id="openBtn"></button></div>
+    <p class="info" id="oInfo"></p>
   </section>
 
-  <section class="view" id="v-inv">
-    <h2 style="font-size:28px;margin-bottom:10px">Инвентарь</h2>
-    <div class="inv" id="invGrid"></div>
+  <section class="view" id="v-me">
+    <div class="me"><div class="ava" id="ava">?</div><div><b id="uname">—</b><span id="ubal"></span></div></div>
+    <div class="row" style="margin-bottom:18px"><button class="btn" id="topupBtn">Пополнить ⭐</button></div>
+    <h2 class="t">Инвентарь</h2>
+    <div id="invBox"></div>
   </section>
 </main>
 
 <nav>
   <button data-go="cases" class="on">Кейсы</button>
-  <button data-go="inv">Инвентарь</button>
-  <button id="topupNav">Пополнить</button>
+  <button data-go="me">Личный кабинет</button>
 </nav>
 
 <div class="modal" id="mWin"><div class="sheet">
-  <div class="rar" id="wRar"></div><div class="big" id="wEmoji"></div>
-  <h2 id="wName"></h2><div id="wVal" style="color:var(--muted)"></div>
-  <div class="row" style="margin-top:14px"><button class="btn alt" id="wSell">Продать</button><button class="btn" id="wKeep">Оставить</button></div>
+  <div class="big" id="wPic"></div><h2 id="wName"></h2><div id="wVal" style="color:var(--muted)"></div>
+  <div class="row" style="margin-top:14px"><button class="btn" id="wOk">Отлично</button></div>
 </div></div>
 
 <div class="modal" id="mTop"><div class="sheet">
   <h2>Депозит</h2>
-  <p style="color:var(--muted);margin-bottom:6px">Оплата Telegram Stars ⭐<br>1 ⭐ = 1 🪙 на баланс. Минимум 100 ⭐.</p>
+  <p style="color:var(--muted);margin-bottom:6px">Оплата Telegram Stars ⭐<br>1 ⭐ = 1 🪙. Минимум 100 ⭐.</p>
   <div class="pk" id="pk"></div>
   <input id="amt" type="number" inputmode="numeric" min="100" step="1" placeholder="Своя сумма от 100">
   <div id="amtErr"></div>
   <div class="row"><button class="btn alt" id="topClose">Закрыть</button><button class="btn" id="payBtn">Пополнить</button></div>
-  <p class="trade">Пополнение трейдом в Roblox: скоро.</p>
 </div></div>
 
 <script>
-/* ====== Настройки ====== */
-const API_URL = location.protocol.startsWith("http") ? location.origin : ""; // сайт и API на одном домене. Пусто = демо без сервера
+const API_URL = location.protocol.startsWith("http") ? location.origin : "";
 const tg = window.Telegram && Telegram.WebApp;
-if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor && tg.setHeaderColor("#16081f"); tg.setBackgroundColor && tg.setBackgroundColor("#16081f"); }
-
-/* ====== Данные: брейнроты из Steal a Brainrot (имена, редкость, доход/с) ====== */
-const R = {
-  common:{n:"Common",c:"var(--c-common)"}, rare:{n:"Rare",c:"var(--c-rare)"}, epic:{n:"Epic",c:"var(--c-epic)"},
-  legendary:{n:"Legendary",c:"var(--c-legendary)"}, mythic:{n:"Mythic",c:"var(--c-mythic)"},
-  god:{n:"Brainrot God",c:"var(--c-god)"}, secret:{n:"Secret",c:"var(--c-secret)"}
-};
-// v = условная цена продажи в 🪙 (настраивается в админке позже)
-const I = {
-  noobini:{name:"Noobini Pizzanini",r:"common",e:"🍕",inc:"1/с",v:3},
-  pipi:{name:"Pipi Corni",r:"common",e:"🌽",inc:"1.7K/с",v:5},
-  bandito:{name:"Bandito Axolito",r:"epic",e:"🦎",inc:"",v:25},
-  malame:{name:"Malamé Amaralé",r:"epic",e:"🎃",inc:"",v:30},
-  mangolini:{name:"Mangolini Parrocini",r:"epic",e:"🥭",inc:"",v:35},
-  tirili:{name:"Tirilikalika Tirilikalako",r:"legendary",e:"🕷️",inc:"",v:80},
-  noobinis:{name:"Los Noobinis",r:"mythic",e:"👻",inc:"",v:160},
-  coco:{name:"Cocofanto Elefanto",r:"god",e:"🐘",inc:"10K/с",v:300},
-  antonio:{name:"Antonio",r:"god",e:"🧛",inc:"18.5K/с",v:380},
-  girafa:{name:"Girafa Celestre",r:"god",e:"🦒",inc:"20K/с",v:420},
-  nyanino:{name:"Gattatino Nyanino",r:"god",e:"🐈‍⬛",inc:"35K/с",v:520},
-  chihua:{name:"Chihuanini Taconini",r:"god",e:"🌮",inc:"45K/с",v:600},
-  tralalero:{name:"Tralalero Tralala",r:"god",e:"🦈",inc:"50K/с",v:700},
-  tipi:{name:"Los Tipi Tacos",r:"god",e:"💀",inc:"260K/с",v:1100},
-  popsahur:{name:"Pop Pop Sahur",r:"god",e:"🥁",inc:"295K/с",v:1300},
-  vacca:{name:"La Vacca Saturno Saturnita",r:"secret",e:"🐄",inc:"250K/с",v:2500},
-  bisonte:{name:"Bisonte Giuppitere",r:"secret",e:"🦬",inc:"300K/с",v:3200},
-  ketchuru:{name:"Ketchuru and Masturu",r:"secret",e:"🍅",inc:"42.5M/с",v:7000},
-  garama:{name:"Garama and Madundung",r:"secret",e:"🪘",inc:"50M/с",v:9000},
-  dragon:{name:"Dragon Cannelloni",r:"secret",e:"🐉",inc:"100M/с",v:20000}
-};
-// w = вес выпадения
-const CASES = [
-  {id:"pumpkin",name:"Тыквенный",sub:"Для начала охоты",price:25,e:"🎃",glow:"#ff8a1f88",
-   drop:{noobini:40,pipi:30,bandito:14,malame:8,mangolini:6,tirili:2}},
-  {id:"ghost",name:"Призрачный",sub:"Epic и выше",price:100,e:"👻",glow:"#b9a7ff88",
-   drop:{bandito:30,malame:22,mangolini:20,tirili:14,noobinis:9,coco:4,antonio:1}},
-  {id:"witch",name:"Ведьмин котёл",sub:"Охота на Brainrot God",price:300,e:"🧪",glow:"#39ffb066",
-   drop:{tirili:25,noobinis:20,coco:14,antonio:11,girafa:9,nyanino:7,chihua:5,tralalero:4,vacca:1.2,bisonte:0.8}},
-  {id:"cursed",name:"Проклятый секрет",sub:"Только топ-добыча",price:1000,e:"💀",glow:"#d1274b99",
-   drop:{noobinis:18,tipi:22,popsahur:20,tralalero:15,vacca:9,bisonte:7,ketchuru:4.5,garama:3,dragon:1.5}}
-];
-
-/* ====== Состояние ====== */
-let S = JSON.parse(localStorage.getItem("brc") || '{"bal":100,"inv":[]}');
-const save = () => localStorage.setItem("brc", JSON.stringify(S));
+if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor && tg.setHeaderColor("#0b0613"); tg.setBackgroundColor && tg.setBackgroundColor("#0b0613"); }
 const $ = s => document.querySelector(s);
-const fmt = n => n.toLocaleString("ru-RU");
-function render(){ $("#bal").textContent = fmt(S.bal) + " 🪙"; save(); }
+const fmt = n => Number(n).toLocaleString("ru-RU");
 
-async function api(path, body){
-  const r = await fetch(API_URL + path, {method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({initData: tg ? tg.initData : "", ...body})});
-  if(!r.ok) throw new Error(await r.text());
-  return r.json();
-}
-async function syncBalance(){
-  if(!API_URL) return;
-  try { const me = await api("/api/me", {}); S.bal = me.balance; render(); } catch(e){ console.warn(e); }
-}
+const DRAGON_IMG = "https://static.wikia.nocookie.net/stealabr/images/a/a5/Dragon_Cannelloni.png/revision/latest/scale-to-width-down/1200?cb=20260428162417";
+const ITEMS = { dragon:{name:"Dragon Cannelloni", e:"🐉", img:DRAGON_IMG, c:"#ff7a00"}, coin:{name:"1 монета", e:"🪙", c:"#ffd24a"} };
+const S = { bal:0, inv:[], subClaimed:false, user:{username:"",first_name:""}, cfg:{allinPrice:100,dragonChance:0.05,subReward:10,dragonValue:900} };
 
-async function waitForCredit(prev){
-  for(let i=0;i<12;i++){
-    await new Promise(r=>setTimeout(r,1500));
-    try{ const me = await api("/api/me", {}); if(me.balance > prev){ S.bal = me.balance; render(); return true; } }catch(e){}
-  }
-  return false;
+async function api(path, data){
+  const r = await fetch(API_URL + path, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({...data, initData: tg ? tg.initData : ""}) });
+  const j = await r.json(); if(!r.ok) throw new Error(j.error || "Ошибка"); return j;
 }
+const pic = (k, h) => { const i = ITEMS[k]; return i.img ? `<img src="${i.img}" alt="${i.name}" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createTextNode('${i.e}'))">` : i.e; };
+const card = k => `<div class="it" style="--rc:${ITEMS[k].c}"><div class="pic">${pic(k)}</div><small>${ITEMS[k].name}</small></div>`;
 
-/* ====== Экраны ====== */
+function render(){
+  $("#bal").textContent = fmt(S.bal) + " 🪙"; $("#ubal").textContent = "Баланс: " + fmt(S.bal) + " 🪙";
+  const name = S.user.username ? "@" + S.user.username : (S.user.first_name || "Игрок");
+  $("#uname").textContent = name; $("#ava").textContent = (S.user.username || S.user.first_name || "?")[0].toUpperCase();
+  $("#allinImg").src = DRAGON_IMG; $("#allinImg").onerror = e => e.target.replaceWith(document.createTextNode("🐉"));
+  $("#allinSub").textContent = `Дракон Cannelloni (${fmt(S.cfg.dragonValue)} 🪙) или 1 монета`;
+  $("#allinPrice").textContent = fmt(S.cfg.allinPrice) + " 🪙";
+  $("#subTag").textContent = S.subClaimed ? "Получено ✓" : `Бесплатно · +${S.cfg.subReward} 🪙`;
+  const box = $("#invBox");
+  box.innerHTML = S.inv.length ? `<div class="inv">${S.inv.map((k,i)=>card(k).replace('class="it"',`class="it" data-i="${i}"`)).join("")}</div><p class="info">Нажмите на предмет, чтобы продать за ${fmt(S.cfg.dragonValue)} 🪙</p>` : '<div class="empty">Пока пусто. Откройте первый кейс.</div>';
+}
+async function sync(){ if(!API_URL) return; try{ Object.assign(S, await api("/api/me", {})); render(); }catch(e){ console.warn(e); } }
+
 function show(v){
   document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on", x.id==="v-"+v));
   document.querySelectorAll("nav [data-go]").forEach(b=>b.classList.toggle("on", b.dataset.go===v || (v==="open"&&b.dataset.go==="cases")));
-  if(v==="inv") renderInv();
-  if(tg){ v==="open" ? tg.BackButton.show() : tg.BackButton.hide(); }
+  if(tg) v==="open" ? tg.BackButton.show() : tg.BackButton.hide();
 }
 document.querySelectorAll("nav [data-go]").forEach(b=>b.onclick=()=>show(b.dataset.go));
-$("#back").onclick = () => show("cases");
-if(tg) tg.BackButton.onClick(()=>show("cases"));
+$("#back").onclick = () => show("cases"); if(tg) tg.BackButton.onClick(()=>show("cases"));
 
-$("#caseGrid").innerHTML = CASES.map(c=>`
-  <div class="case" tabindex="0" role="button" data-id="${c.id}" style="--glow:${c.glow}">
-    <div class="art">${c.e}</div><b>${c.name}</b><small>${c.sub}</small><div class="price">${fmt(c.price)} 🪙</div>
-  </div>`).join("");
-document.querySelectorAll(".case").forEach(el=>{
-  const go=()=>openCase(el.dataset.id);
-  el.onclick=go; el.onkeydown=e=>{ if(e.key==="Enter") go(); };
-});
+$("#invBox").onclick = async e => {
+  const el = e.target.closest(".it"); if(!el) return;
+  if(!confirm(`Продать ${ITEMS[S.inv[+el.dataset.i]].name} за ${fmt(S.cfg.dragonValue)} 🪙?`)) return;
+  try{ Object.assign(S, await api("/api/sell", {index:+el.dataset.i})); render(); }catch(err){ alert(err.message); }
+};
 
-const itemHTML = k => { const i=I[k]; return `<div class="it" style="--rc:${R[i.r].c}"><span>${i.e}</span><small>${i.name}</small></div>`; };
-
-/* ====== Открытие кейса ====== */
+/* ===== Кейсы ===== */
 let cur=null, spinning=false;
-function pick(c){
-  const e=Object.entries(c.drop), t=e.reduce((s,[,w])=>s+w,0); let x=Math.random()*t;
-  for(const [k,w] of e){ if((x-=w)<0) return k; } return e[0][0];
-}
+document.querySelectorAll(".case").forEach(el=>el.onclick=()=>openCase(el.dataset.id));
 function openCase(id){
-  cur = CASES.find(c=>c.id===id);
-  $("#oTitle").textContent = cur.name;
-  $("#openBtn").textContent = `Открыть за ${fmt(cur.price)} 🪙`;
-  $("#strip").style.transition="none"; $("#strip").style.transform="translateX(0)";
-  $("#strip").innerHTML = Object.keys(cur.drop).concat(Object.keys(cur.drop)).map(itemHTML).join("");
-  $("#drops").innerHTML = Object.entries(cur.drop).sort((a,b)=>a[1]-b[1]).map(([k,w])=>{
-    const i=I[k]; return `<div class="it" style="--rc:${R[i.r].c}"><span>${i.e}</span><small>${i.name}</small><small class="rar">${R[i.r].n}${i.inc?" · "+i.inc:""}</small></div>`;
-  }).join("");
+  cur = id; const strip = $("#strip"); strip.style.transition="none"; strip.style.transform="translateX(0)";
+  if(id==="allin"){
+    $("#oTitle").textContent = "ALL OR NOTHING";
+    $("#openBtn").textContent = `Открыть за ${fmt(S.cfg.allinPrice)} 🪙`;
+    $("#oInfo").textContent = `Шанс дракона: ${+(S.cfg.dragonChance*100).toFixed(2)}%. Иначе вы получите 1 монету на баланс.`;
+    strip.innerHTML = ["coin","dragon","coin","coin","dragon","coin","coin","dragon"].map(card).join("");
+  } else {
+    $("#oTitle").textContent = "CHANNEL CASE";
+    $("#openBtn").textContent = S.subClaimed ? "Уже получено" : "Подписался, проверить";
+    $("#openBtn").disabled = S.subClaimed;
+    $("#oInfo").innerHTML = `Сначала подпишитесь: <a href="https://t.me/braincasegg" style="color:var(--acc2)" id="chLink">t.me/braincasegg</a><br>Награда: ${S.cfg.subReward} 🪙, один раз на аккаунт.`;
+    strip.innerHTML = Array(8).fill(card("coin").replace("1 монета", S.cfg.subReward+" монет")).join("");
+    $("#chLink").onclick = e => { if(tg){ e.preventDefault(); tg.openTelegramLink("https://t.me/braincasegg"); } };
+  }
+  if(id==="allin") $("#openBtn").disabled = false;
   show("open");
 }
-function spin(demo){
+$("#openBtn").onclick = async () => {
   if(spinning) return;
-  if(!demo && S.bal < cur.price){ openTop(); return; }
-  spinning = true; $("#openBtn").disabled = $("#demoBtn").disabled = true;
-  const win = pick(cur), keys = Object.keys(cur.drop), N = 40, STOP = 34;
-  const seq = Array.from({length:N},(_,i)=> i===STOP ? win : keys[Math.floor(Math.random()*keys.length)]);
-  const strip = $("#strip"), stage = $(".stage");
-  strip.style.transition="none"; strip.style.transform="translateX(0)"; strip.innerHTML = seq.map(itemHTML).join("");
-  const w = 108, jitter = (Math.random()-.5)*60;
-  const target = STOP*w + 54 - stage.clientWidth/2 + jitter;
-  if(!demo){ S.bal -= cur.price; render(); }
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    strip.style.transition = "transform 5.2s cubic-bezier(.12,.7,.1,1)";
-    strip.style.transform = `translateX(${-target}px)`;
-  }));
-  setTimeout(()=>{ spinning=false; $("#openBtn").disabled = $("#demoBtn").disabled = false; showWin(win, demo); }, 5400);
+  if(cur==="allin" && S.bal < S.cfg.allinPrice){ openTop(); return; }
+  spinning = true; $("#openBtn").disabled = true;
+  try{
+    const r = await api("/api/open", {case:cur});
+    if(cur==="allin") await animate(r.win);
+    S.bal = r.balance; S.inv = r.inv; if(cur==="sub") S.subClaimed = true; render();
+    showWin(r);
+  }catch(err){
+    alert(err.message);
+  }finally{ spinning = false; $("#openBtn").disabled = (cur==="sub" && S.subClaimed); }
+};
+function animate(win){
+  return new Promise(res=>{
+    const N=40, STOP=34, strip=$("#strip"), stage=$(".stage");
+    const seq = Array.from({length:N},(_,i)=> i===STOP ? win : (Math.random()<.25?"dragon":"coin"));
+    strip.style.transition="none"; strip.style.transform="translateX(0)"; strip.innerHTML = seq.map(card).join("");
+    const target = STOP*108 + 54 - stage.clientWidth/2 + (Math.random()-.5)*60;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ strip.style.transition="transform 5.2s cubic-bezier(.12,.7,.1,1)"; strip.style.transform=`translateX(${-target}px)`; }));
+    setTimeout(res, 5400);
+  });
 }
-$("#openBtn").onclick = ()=>spin(false);
-$("#demoBtn").onclick = ()=>spin(true);
-
-let lastWin=null;
-function showWin(k, demo){
-  const i=I[k]; lastWin={k,demo};
-  $("#wRar").textContent = R[i.r].n; $("#wRar").style.setProperty("--rc",R[i.r].c);
-  $("#wEmoji").textContent = i.e; $("#wName").textContent = i.name;
-  $("#wVal").textContent = (i.inc ? "Доход " + i.inc + " · " : "") + "цена " + fmt(i.v) + " 🪙";
-  $("#wKeep").textContent = demo ? "Закрыть" : "Оставить";
-  $("#wSell").style.display = demo ? "none" : "";
+function showWin(r){
+  const dragon = r.win==="dragon", sub = r.win==="coins";
+  $("#wPic").innerHTML = dragon ? pic("dragon") : "🪙";
+  $("#wName").textContent = dragon ? "Dragon Cannelloni!" : sub ? `+${r.amount} монет` : "+1 монета";
+  $("#wVal").textContent = dragon ? "Предмет добавлен в инвентарь" : "Зачислено на баланс";
   $("#mWin").classList.add("on");
-  if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
+  if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred(dragon?"success":"warning");
 }
-$("#wKeep").onclick = ()=>{ if(!lastWin.demo){ S.inv.push(lastWin.k); render(); } $("#mWin").classList.remove("on"); };
-$("#wSell").onclick = ()=>{ S.bal += I[lastWin.k].v; render(); $("#mWin").classList.remove("on"); };
+$("#wOk").onclick = () => $("#mWin").classList.remove("on");
 
-/* ====== Инвентарь ====== */
-function renderInv(){
-  const g=$("#invGrid");
-  if(!S.inv.length){ g.outerHTML='<div class="empty" id="invGrid">Пока пусто. Откройте первый кейс.</div>'; return; }
-  g.outerHTML='<div class="inv" id="invGrid"></div>';
-  $("#invGrid").innerHTML = S.inv.map((k,idx)=>itemHTML(k).replace('class="it"',`class="it" data-i="${idx}" title="Нажмите, чтобы продать"`)).join("");
-  $("#invGrid").onclick = e=>{
-    const el=e.target.closest(".it"); if(!el) return;
-    const k=S.inv[+el.dataset.i];
-    if(confirm(`Продать ${I[k].name} за ${fmt(I[k].v)} 🪙?`)){ S.inv.splice(+el.dataset.i,1); S.bal+=I[k].v; render(); renderInv(); }
-  };
-}
-
-/* ====== Депозит через Telegram Stars (минимум 100) ====== */
+/* ===== Депозит Stars ===== */
 const MIN_DEP=100, MAX_DEP=100000, PACKS=[100,250,500,1000,2500,5000];
 $("#pk").innerHTML = PACKS.map(p=>`<button data-p="${p}">${fmt(p)} ⭐</button>`).join("");
-function markSel(){ const v=+$("#amt").value; document.querySelectorAll("#pk button").forEach(b=>b.classList.toggle("sel",+b.dataset.p===v)); }
+const markSel = () => document.querySelectorAll("#pk button").forEach(b=>b.classList.toggle("sel",+b.dataset.p===+$("#amt").value));
 function openTop(){ $("#amt").value=""; $("#amtErr").textContent=""; $("#amt").classList.remove("bad"); markSel(); $("#mTop").classList.add("on"); }
-$("#plus").onclick = $("#topupNav").onclick = openTop;
-$("#topClose").onclick = ()=>$("#mTop").classList.remove("on");
-$("#pk").onclick = e=>{ const b=e.target.closest("button"); if(!b) return; $("#amt").value=b.dataset.p; $("#amtErr").textContent=""; $("#amt").classList.remove("bad"); markSel(); };
-$("#amt").oninput = ()=>{ $("#amtErr").textContent=""; $("#amt").classList.remove("bad"); markSel(); };
-$("#payBtn").onclick = async ()=>{
+$("#plus").onclick = $("#topupBtn").onclick = openTop;
+$("#topClose").onclick = () => $("#mTop").classList.remove("on");
+$("#pk").onclick = e => { const b=e.target.closest("button"); if(!b) return; $("#amt").value=b.dataset.p; $("#amt").classList.remove("bad"); markSel(); };
+$("#amt").oninput = () => { $("#amtErr").textContent=""; $("#amt").classList.remove("bad"); markSel(); };
+async function waitForCredit(prev){
+  for(let i=0;i<12;i++){ await new Promise(r=>setTimeout(r,1500)); try{ const me=await api("/api/me",{}); if(me.balance>prev){ Object.assign(S,me); render(); return true; } }catch(e){} }
+  return false;
+}
+$("#payBtn").onclick = async () => {
   const amount = Math.floor(Number($("#amt").value));
-  if(!amount || amount < MIN_DEP || amount > MAX_DEP){
-    $("#amt").classList.add("bad");
-    $("#amtErr").textContent = `Сумма от ${fmt(MIN_DEP)} до ${fmt(MAX_DEP)} ⭐`;
-    return;
-  }
-  if(!API_URL || !tg){ $("#amtErr").textContent = "Оплата работает только внутри Telegram-бота."; return; }
+  if(!amount || amount<MIN_DEP || amount>MAX_DEP){ $("#amt").classList.add("bad"); $("#amtErr").textContent=`Сумма от ${fmt(MIN_DEP)} до ${fmt(MAX_DEP)} ⭐`; return; }
+  if(!API_URL || !tg){ $("#amtErr").textContent="Оплата работает только внутри Telegram-бота."; return; }
   $("#payBtn").disabled = true;
   try{
     const {link} = await api("/api/invoice", {amount});
     tg.openInvoice(link, async status=>{
       $("#payBtn").disabled = false;
       if(status==="paid"){
-        $("#amtErr").style.color = "var(--lilac)"; $("#amtErr").textContent = "Оплата прошла, зачисляем…";
-        const ok = await waitForCredit(S.bal);
-        $("#amtErr").style.color = "";
-        if(ok){ $("#mTop").classList.remove("on"); if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success"); }
-        else $("#amtErr").textContent = "Платёж принят, баланс обновится через минуту. Перезапустите приложение.";
-      } else if(status==="failed"){ $("#amtErr").textContent = "Оплата не прошла. Попробуйте ещё раз."; }
+        $("#amtErr").style.color="var(--acc2)"; $("#amtErr").textContent="Оплата прошла, зачисляем…";
+        const ok = await waitForCredit(S.bal); $("#amtErr").style.color="";
+        if(ok) $("#mTop").classList.remove("on"); else $("#amtErr").textContent="Платёж принят, баланс обновится через минуту.";
+      } else if(status==="failed") $("#amtErr").textContent="Оплата не прошла. Попробуйте ещё раз.";
     });
-  }catch(err){ $("#payBtn").disabled = false; $("#amtErr").textContent = "Не удалось создать счёт: " + err.message; }
+  }catch(err){ $("#payBtn").disabled=false; $("#amtErr").textContent="Не удалось создать счёт: "+err.message; }
 };
 
-render(); syncBalance();
+render(); sync();
 </script>
 </body>
 </html>
