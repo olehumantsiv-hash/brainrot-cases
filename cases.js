@@ -19,7 +19,8 @@ const LINEUP = [
 ];
 
 function buildCase(ITEMS, id, name, art, g, keys, cat) {
-  keys = [...new Set(keys)].filter(k => ITEMS[k]);
+  // OG-предметы не выпадают из кейсов, кроме Skibidi Toilet.
+  keys = [...new Set(keys)].filter(k => ITEMS[k] && (ITEMS[k].rarity !== "og" || k === "skibidi"));
   if (keys.length < 2) { console.error(`Кейс ${id}: мало предметов, пропущен`); return null; }
   const vals = keys.map(k => ITEMS[k].value);
   const min = Math.min(...vals), max = Math.max(...vals);
