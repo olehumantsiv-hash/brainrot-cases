@@ -13,8 +13,17 @@ if (!TOKEN) throw new Error("Задайте BOT_TOKEN");
 // На Render подключите Disk (например, на /data) и задайте DB_FILE=/data/db.json,
 // иначе db.json обнуляется при каждом деплое и перезапуске.
 const DB_FILE = process.env.DB_FILE || path.join(__dirname, "db.json");
-const db = fs.existsSync(DB_FILE) ? JSON.parse(fs.readFileSync(DB_FILE)) : { users: {}, paid: {} };
-const saveDb = () => { fs.writeFileSync(DB_FILE + ".tmp", JSON.stringify(db)); fs.renameSync(DB_FILE + ".tmp", DB_FILE); };
+let db = { users: {}, paid: {} };
+try { if (fs.existsSync(DB_FILE)) db = JSON.parse(fs.readFileSync(DB_FILE)); } catch (e) { console.error("db read:", e.message); }
+const saveDb = () => {
+  try {
+    fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
+    fs.writeFileSync(DB_FILE + ".tmp", JSON.stringify(db)); fs.renameSync(DB_FILE + ".tmp", DB_FILE);
+  } catch (e) { console.error("saveDb не удалось (проверьте DB_FILE и Disk):", e.message); }
+};
+// Ошибка в одном запросе не должна валить весь сервер
+process.on("unhandledRejection", e => console.error("unhandledRejection:", e));
+process.on("uncaughtException", e => console.error("uncaughtException:", e));
 const tgApi = (method, body) =>
   fetch(`https://api.telegram.org/bot${TOKEN}/${method}`, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
@@ -98,8 +107,11 @@ const server = http.createServer(async (req, res) => {
   const send = (code, obj) => { res.writeHead(code, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type" }); res.end(JSON.stringify(obj)); };
   if (req.method === "OPTIONS") return send(204, {});
   if (req.method === "GET" && req.url.split("?")[0] === "/allin.png") {
-    res.writeHead(200, { "Content-Type": "image/png", "Cache-Control": "public, max-age=86400" });
-    return res.end(fs.readFileSync(path.join(__dirname, "allin.png")));
+    try {
+      const img = fs.readFileSync(path.join(__dirname, "allin.png"));
+      res.writeHead(200, { "Content-Type": "image/png", "Cache-Control": "public, max-age=86400" });
+      return res.end(img);
+    } catch { res.writeHead(404); return res.end(); } // файла нет в репозитории: не падаем
   }
   if (req.method !== "POST") { // отдаём index.html
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
