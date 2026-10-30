@@ -34,6 +34,9 @@ h2.t{font-size:18px;margin:0 0 12px}
 .gcard{background:linear-gradient(160deg,#241240,var(--card));border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:10px;cursor:pointer}
 .gcard:hover{border-color:var(--acc)}
 .gcard b{font-family:Unbounded,sans-serif;font-size:16px;display:block}
+.game-title{display:flex!important;align-items:center;gap:11px}
+.game-icon{width:42px;height:42px;flex:none;display:grid;place-items:center;border-radius:13px;background:linear-gradient(145deg,#ff7a0033,#a855ff44);border:1px solid #a855ff66;box-shadow:inset 0 0 14px #a855ff22,0 5px 16px #ff7a001c}
+.game-icon svg{width:25px;height:25px;filter:drop-shadow(0 0 5px #ff7a0080)}
 .gcard p{color:var(--muted);font-size:13px;margin-top:4px}
 .back{background:none;border:0;color:var(--acc2);font:inherit;cursor:pointer;padding:0 0 12px}
 .stage{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:18px;background:#080410;height:150px;margin:8px 0 14px}
@@ -48,6 +51,8 @@ h2.t{font-size:18px;margin:0 0 12px}
 .btn.alt{background:var(--card);color:var(--text);border:1px solid var(--line)}
 .btn.red{background:var(--red);color:#fff}
 .btn:disabled{opacity:.5;cursor:default}
+.up-actions{display:grid;gap:8px;margin:0 0 14px}
+.chance-btn{background:linear-gradient(110deg,#ff7a0026,#a855ff33)!important;border:1px solid #a855ff66!important;color:var(--text)!important}
 .info{color:var(--muted);font-size:13px;margin-top:12px;text-align:center}
 .me{display:flex;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:16px}
 .ava{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font:800 24px Unbounded,sans-serif;flex:none}
@@ -118,7 +123,7 @@ nav button.on{color:var(--acc);background:var(--card)}
 
   <section class="view" id="v-games">
     <h2 class="t">Игры</h2>
-    <div class="gcard" data-play="up"><b>⚡ Апгрейд</b><p>Улучши брейнрота. Шанс = цена / цель × 80%</p></div>
+    <div class="gcard" data-play="up"><b class="game-title"><span class="game-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M18.8 3.5 7.6 17.1c-.5.6-.1 1.5.7 1.5h7.1l-1 9.9 12-14.2c.5-.6.1-1.5-.7-1.5h-7.4l.5-9.3Z" fill="url(#upgradeBolt)" stroke="#ffd4a8" stroke-width="1.2" stroke-linejoin="round"/><defs><linearGradient id="upgradeBolt" x1="8" y1="27" x2="25" y2="5" gradientUnits="userSpaceOnUse"><stop stop-color="#ff7a00"/><stop offset="1" stop-color="#a855ff"/></linearGradient></defs></svg></span>Апгрейд</b><p>Улучши брейнрота. Шанс = цена / цель × 80%</p></div>
     <div class="gcard" data-play="crash"><b>🚀 Краш</b><p>Забери множитель до краша. Ставка от 1 🪙</p></div>
     <div class="gcard" data-play="dice"><b>🎲 Дайсы</b><p>Меньше или больше 50. Выплата ×1.92</p></div>
   </section>
@@ -135,10 +140,12 @@ nav button.on{color:var(--acc);background:var(--card)}
       <div class="needle" id="needle"><svg viewBox="0 0 200 200" aria-hidden="true"><polygon points="90,46 110,46 100,20" fill="#ff7a00"/></svg></div>
       <div class="wcenter"><b id="wPct">—</b><small id="wSub">Выберите предметы</small></div>
     </div></div>
+    <div class="up-actions">
+      <button class="btn chance-btn" id="upChance" type="button" disabled>Шанс: —</button>
+      <button class="btn" id="upBtn" disabled>Прокачать</button>
+    </div>
     <div id="upSrc"></div>
     <div class="tgts" id="upTgt"></div>
-    <p class="info" id="upChance">Шанс: —</p>
-    <div class="row"><button class="btn" id="upBtn" disabled>Апгрейд</button></div>
   </section>
 
   <section class="view" id="v-crash">
@@ -397,6 +404,7 @@ function renderUp(){
   $("#wheel").classList.remove("win","lose");
   $("#wSub").textContent = c==null ? "Выберите предметы" : "Шанс апгрейда";
   setWheel(c);
+  $("#upChance").disabled = c==null;
   $("#upBtn").disabled = !(upI>=0 && upT);
 }
 function spinNeedle(roll,c){
