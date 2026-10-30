@@ -59,7 +59,10 @@ const touch = (id, username) => { // запоминаем @username, чтобы 
   if (n && u.username !== n) { u.username = n; saveDb(); }
 };
 const findByName = name => {
-  const n = name.replace(/^@/, "").toLowerCase();
+  const raw = String(name || "").replace(/^@/, "").trim();
+  if (!raw) return null;
+  if (db.users[raw]) return { id: raw, u: db.users[raw] };
+  const n = raw.toLowerCase();
   const e = Object.entries(db.users).find(([, u]) => u.username === n);
   return e ? { id: e[0], u: e[1] } : null;
 };
@@ -84,8 +87,12 @@ async function adminCmd(text) {
     const n = Math.floor(Number(arg));
     if (!Number.isInteger(n) || n <= 0) return "Укажите сумму: /give @username 500";
     u.balance = Math.max(0, u.balance + (cmd === "/give" ? n : -n)); saveDb();
-    if (cmd === "/give") tgApi("sendMessage", { chat_id: id, text: `🎁 Вам начислено ${n} 🪙. Баланс: ${u.balance} 🪙` }).catch(() => {});
-    return `✅ @${u.username}: баланс ${u.balance} 🪙`;
+    const who = u.username ? "@" + u.username : id;
+    const msg = cmd === "/give"
+      ? `🎁 Вам начислено ${n} 🪙. Баланс: ${u.balance} 🪙`
+      : `Баланс изменён. Списано ${n} 🪙. Баланс: ${u.balance} 🪙`;
+    tgApi("sendMessage", { chat_id: id, text: msg }).catch(() => {});
+    return `✅ ${who}: баланс ${u.balance} 🪙`;
   }
   if (cmd === "/giveitem" || cmd === "/takeitem") {
     const k = (arg || "").toLowerCase();

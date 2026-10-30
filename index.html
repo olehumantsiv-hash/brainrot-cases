@@ -150,7 +150,19 @@ function render(){
   const box = $("#invBox");
   box.innerHTML = S.inv.length ? `<div class="inv">${S.inv.map((k,i)=>card(k).replace('class="it"',`class="it" data-i="${i}"`)).join("")}</div><p class="info">Нажмите на предмет, чтобы продать за ${fmt(S.cfg.dragonValue)} 🪙</p>` : '<div class="empty">Пока пусто. Откройте первый кейс.</div>';
 }
-async function sync(){ if(!API_URL) return; try{ Object.assign(S, await api("/api/me", {})); render(); }catch(e){ console.warn(e); } }
+let ready=false;
+async function sync(){
+  if(!API_URL) return;
+  try{
+    const prev=S.bal;
+    Object.assign(S, await api("/api/me", {}));
+    render();
+    if(ready && S.bal!==prev && tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred(S.bal>prev?"success":"warning");
+    ready=true;
+  }catch(e){ console.warn(e); }
+}
+setInterval(sync, 2500);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) sync(); });
 
 function show(v){
   document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on", x.id==="v-"+v));
