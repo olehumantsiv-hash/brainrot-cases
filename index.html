@@ -97,6 +97,44 @@ nav button.on{color:var(--acc);background:var(--card)}
 .wcenter small{color:var(--muted);font-size:12px}
 .wheel.win .wcenter b,.wheel.win .wcenter small{color:var(--green)}
 .wheel.lose .wcenter b,.wheel.lose .wcenter small{color:var(--red)}
+.upgrade-screen{max-width:420px;margin:0 auto;padding:10px 12px 18px;background-color:#100d19;background-image:linear-gradient(#ffffff06 1px,transparent 1px),linear-gradient(90deg,#ffffff06 1px,transparent 1px);background-size:16px 16px;border:1px solid #35263f;border-radius:10px;box-shadow:0 12px 34px #0008}
+.upgrade-screen .back{display:none}.upgrade-screen h2.t{color:#ffd3b8;font-size:15px;margin-bottom:8px;text-shadow:0 0 12px #ff7a0066}
+.upgrade-screen>.info{font-size:10px;margin:0 0 6px;color:#c4a8df}
+.upgrade-screen .wheelBox{margin:0 auto 6px;position:relative;width:min(250px,72vw);aspect-ratio:1}
+.upgrade-screen .wheel{width:100%;height:100%;border-radius:50%;padding:12px;background:linear-gradient(145deg,#241a31,#321d43 54%,#15101f);box-shadow:inset 0 0 0 2px #130e1b,inset 0 0 25px #0009,0 0 0 2px #a855ff,0 0 0 4px #261a30,0 0 12px #a855ff66}
+.upgrade-screen .wheel::before{content:"";position:absolute;inset:-5px;border-radius:50%;border:2px solid transparent;border-bottom-color:#ff7a00;border-left-color:#ff7a0099;transform:rotate(-30deg);pointer-events:none}
+.upgrade-screen .wheel>svg{inset:12px;width:calc(100% - 24px);height:calc(100% - 24px)}
+.upgrade-screen .wtrack{stroke:#17111f!important;stroke-width:24!important}
+.upgrade-screen .wzone{stroke:#a855ff!important;stroke-width:24!important}
+.upgrade-screen .wheel.win .wzone{stroke:var(--green)!important}.upgrade-screen .wheel.lose .wtrack{stroke:#5a1530!important}
+.upgrade-screen .needle svg{filter:drop-shadow(0 0 5px #ffb34d)}
+.upgrade-screen .needle polygon{fill:#ffbd54}
+.upgrade-screen .wcenter b{font-size:clamp(23px,7vw,32px);color:#ffbd54;text-shadow:0 2px 12px #ff7a0066}
+.upgrade-screen .wcenter small{color:#dfc8f4;font-size:11px}
+.wheel-label{position:absolute;font-size:8px;color:#d0b8e9;text-shadow:0 1px 3px #000;z-index:2}.wheel-label.top{top:-1px;left:50%;transform:translateX(-50%)}.wheel-label.bottom{bottom:-1px;left:50%;transform:translateX(-50%)}.wheel-label.left{left:-1px;top:50%;transform:translate(-35%,-50%) rotate(-90deg)}.wheel-label.right{right:-1px;top:50%;transform:translate(35%,-50%) rotate(90deg)}
+.upgrade-hat{position:absolute;top:-12px;left:8%;font-size:36px;z-index:3;transform:rotate(-18deg);filter:drop-shadow(0 2px 4px #a855ff)}
+.up-slots{display:grid;grid-template-columns:1fr 28px 1fr;align-items:center;gap:8px;margin:4px 4px 7px}
+.up-slot{height:78px;min-width:0;border:1px solid #9360b3;background:#21182b;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:5px;color:#d8baff;font-size:10px;overflow:hidden}.up-slot .pic{height:42px;display:flex;align-items:center;justify-content:center;font-size:28px}.up-slot .pic img{max-width:42px;max-height:40px;object-fit:contain}
+.up-slot.selected{border-color:#ff9c42;box-shadow:0 0 10px #ff7a0033;color:#fff}.up-slot .pic{font-size:26px;line-height:1.05}.up-slot img{max-width:42px;max-height:40px;object-fit:contain}.up-slot span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.slot-arrow{text-align:center;font-size:23px;color:#fff;text-shadow:0 0 8px #fff8}
+.upgrade-screen .up-actions{gap:7px;margin:0 4px 10px}
+.upgrade-screen .chance-btn{padding:7px 10px;border-radius:4px;font-size:10px;background:#17121e!important;border:1px solid #614176!important;color:#d9b8fb!important}
+.upgrade-screen .upgrade-main{border-radius:3px;background:linear-gradient(100deg,#ff7a0077,#b65a1877)!important;color:#160d19;border:1px solid #d99854;font-size:14px;letter-spacing:.04em;padding:10px;text-transform:uppercase}
+.upgrade-screen .upgrade-main::after{content:"›";font-size:20px;margin-left:8px;vertical-align:-1px}
+.upgrade-screen .fast-label{font-size:9px;color:#d7b7ff;text-transform:uppercase;letter-spacing:.08em;margin:6px 4px 5px}
+.up-presets{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:0 4px 10px}
+.up-presets button{min-width:0;padding:6px 1px;background:#211b2b;border:1px solid #46374f;color:#d8c5e8;font:600 9px Rubik,sans-serif;cursor:pointer}
+.up-presets button.on{border-color:#ff9c42;color:#ffce91;background:#382538;box-shadow:0 0 8px #ff7a0044}
+.pick-labels{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 6px}
+.pick-labels button{background:#21182b;border:1px solid #8b5aa9;color:#e8d5f5;border-radius:7px;padding:7px 3px;font:600 9px Rubik,sans-serif;text-transform:uppercase;cursor:pointer}
+.upgrade-screen #upSrc,.upgrade-screen #upTgt{display:none;margin:8px 0;padding:8px;background:#18131f;border:1px solid #44314f;border-radius:8px}
+.upgrade-screen #upSrc.open{display:block}.upgrade-screen #upTgt.open{display:grid}
+.upgrade-screen #upSrc .inv,.upgrade-screen #upTgt{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;max-height:220px;overflow:auto}
+.upgrade-screen #upSrc .it,.upgrade-screen #upTgt .it{height:78px;min-width:0;padding:3px;background:#251b30}
+.upgrade-screen #upSrc .it .pic,.upgrade-screen #upTgt .it .pic{height:42px;font-size:27px}
+.upgrade-screen #upSrc .it img,.upgrade-screen #upTgt .it img{height:38px;max-width:58px}
+.upgrade-screen #upSrc .it small,.upgrade-screen #upTgt .it small{font-size:8px;line-height:1.1}
+.upgrade-screen #upSrc .empty,.upgrade-screen #upTgt .empty{padding:12px 0;font-size:11px}
 @media (prefers-reduced-motion:reduce){.strip{transition:none!important}}
 </style>
 </head>
@@ -129,23 +167,36 @@ nav button.on{color:var(--acc);background:var(--card)}
   </section>
 
   <section class="view" id="v-up">
+   <div class="upgrade-screen">
     <button class="back" data-to="games">‹ Игры</button>
     <h2 class="t">Апгрейд</h2>
-    <p class="info" style="margin:0 0 10px">Сначала предмет из инвентаря, потом цель дороже.</p>
+    <p class="info">Выбери предмет и цель</p>
     <div class="wheelBox"><div class="wheel" id="wheel">
       <svg viewBox="0 0 200 200" aria-hidden="true">
+        <defs><linearGradient id="upgradeArc" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff8a35"/><stop offset="1" stop-color="#bd79ff"/></linearGradient></defs>
         <circle class="wtrack" cx="100" cy="100" r="80" fill="none" stroke="#33214f" stroke-width="18"/>
-        <circle class="wzone" id="wZone" cx="100" cy="100" r="80" fill="none" stroke="#39ffb0" stroke-width="18" stroke-dasharray="0 503" transform="rotate(-90 100 100)"/>
+        <circle class="wzone" id="wZone" cx="100" cy="100" r="80" fill="none" stroke="url(#upgradeArc)" stroke-width="18" stroke-dasharray="0 503" transform="rotate(-90 100 100)"/>
       </svg>
       <div class="needle" id="needle"><svg viewBox="0 0 200 200" aria-hidden="true"><polygon points="90,46 110,46 100,20" fill="#ff7a00"/></svg></div>
       <div class="wcenter"><b id="wPct">—</b><small id="wSub">Выберите предметы</small></div>
+      <span class="wheel-label top">100%</span><span class="wheel-label right">50%</span><span class="wheel-label bottom">0%</span><span class="wheel-label left">50%</span><span class="upgrade-hat" aria-hidden="true">🧙</span>
     </div></div>
-    <div class="up-actions">
-      <button class="btn chance-btn" id="upChance" type="button" disabled>Шанс: —</button>
-      <button class="btn" id="upBtn" disabled>Прокачать</button>
+    <button class="btn chance-btn" id="upChance" type="button" disabled>Шанс: —</button>
+    <div class="up-slots">
+      <div class="up-slot" id="upSrcSlot"><span>Твой предмет</span></div><div class="slot-arrow">➜</div>
+      <div class="up-slot" id="upTgtSlot"><span>Цель</span></div>
     </div>
+    <div class="up-actions">
+      <button class="btn upgrade-main" id="upBtn" disabled>Прокачать</button>
+    </div>
+    <div class="fast-label">Быстрый выбор</div>
+    <div class="up-presets">
+      <button type="button" data-up-preset="2">x2</button><button type="button" data-up-preset="5">x5</button><button type="button" data-up-preset="10">x10</button><button type="button" data-up-preset="30">30%</button><button type="button" data-up-preset="50">50%</button><button type="button" data-up-preset="75">75%</button>
+    </div>
+    <div class="pick-labels"><button type="button" id="showInv">Мои предметы</button><button type="button" id="showTargets">Желаемые предметы</button></div>
     <div id="upSrc"></div>
     <div class="tgts" id="upTgt"></div>
+   </div>
   </section>
 
   <section class="view" id="v-crash">
@@ -387,6 +438,14 @@ function setWheel(c){
 }
 function renderUp(){
   if(upSpin) return;
+  const srcSlot=$("#upSrcSlot"), tgtSlot=$("#upTgtSlot");
+  if(srcSlot){
+    const k=S.inv[upI];
+    srcSlot.classList.toggle("selected",!!k);
+    srcSlot.innerHTML=k?`<div class="pic">${pic(k)}</div><span>${item(k).name}</span>`:"<span>Твой предмет</span>";
+    tgtSlot.classList.toggle("selected",!!upT);
+    tgtSlot.innerHTML=upT?`<div class="pic">${pic(upT)}</div><span>${item(upT).name}</span>`:"<span>Цель</span>";
+  }
   const src = $("#upSrc");
   src.innerHTML = S.inv.length
     ? `<div class="inv">${S.inv.map((k,i)=>card(k).replace('class="it"',`class="it ${upI===i?"on":""}" data-i="${i}"`)).join("")}</div>`
@@ -407,6 +466,18 @@ function renderUp(){
   $("#upChance").disabled = c==null;
   $("#upBtn").disabled = !(upI>=0 && upT);
 }
+$("#upSrcSlot").onclick=()=>{ $("#upSrc").classList.add("open"); $("#upTgt").classList.remove("open"); };
+$("#upTgtSlot").onclick=()=>{ $("#upTgt").classList.add("open"); $("#upSrc").classList.remove("open"); };
+$("#showInv").onclick=()=>{ $("#upSrc").classList.toggle("open"); $("#upTgt").classList.remove("open"); };
+$("#showTargets").onclick=()=>{ $("#upTgt").classList.toggle("open"); $("#upSrc").classList.remove("open"); };
+document.querySelectorAll("[data-up-preset]").forEach(b=>b.onclick=()=>{
+  if(upI<0 || upSpin) return;
+  const v=Number(b.dataset.upPreset), source=item(S.inv[upI]).value;
+  const wanted=v<11 ? source*v : source*(S.cfg.upgradeMult||0.8)/(v/100);
+  const keys=Object.keys(S.cfg.items||{}).filter(k=>k!=="coin"&&item(k).value>source);
+  keys.sort((a,b)=>Math.abs(Math.log(item(a).value/wanted))-Math.abs(Math.log(item(b).value/wanted)));
+  if(keys.length){ upT=keys[0]; renderUp(); document.querySelectorAll("[data-up-preset]").forEach(x=>x.classList.toggle("on",x===b)); }
+});
 function spinNeedle(roll,c){
   return new Promise(res=>{
     const n=$("#needle");
