@@ -168,10 +168,15 @@ const server = http.createServer(async (req, res) => {
       return res.end(img);
     } catch { res.writeHead(404); return res.end(); }
   }
+  if (req.method === "GET" && urlPath === "/health") { // быстрая проверка версии: открыть /health в браузере
+    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+    return res.end(JSON.stringify({ version: "images-v3", cases: Object.keys(CASES), itemsWithImages: Object.entries(ITEMS).filter(([, v]) => v.img).map(([k]) => k) }));
+  }
   if (req.method === "GET" && /^\/img\/[a-z0-9_-]+\.(png|webp|jpg)$/.test(urlPath)) {
     try {
       const ext = urlPath.split(".").pop();
-      const buf = fs.readFileSync(path.join(__dirname, urlPath)); // сначала читаем файл: нет файла -> 404
+      const name = urlPath.slice(5); // ищем в img/, потом рядом с server.js
+      const p1 = path.join(__dirname, "img", name), buf = fs.readFileSync(fs.existsSync(p1) ? p1 : path.join(__dirname, name)); // нет файла -> 404
       res.writeHead(200, { "Content-Type": ext === "jpg" ? "image/jpeg" : "image/" + ext, "Cache-Control": "public, max-age=3600" });
       return res.end(buf);
     } catch { res.writeHead(404); return res.end(); }
