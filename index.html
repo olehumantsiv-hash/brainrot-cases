@@ -58,6 +58,10 @@ nav button.on{color:var(--pumpkin);background:var(--card)}
 .pk{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
 .pk button{background:#0000004d;border:1px solid var(--line);color:var(--bone);border-radius:12px;padding:12px 0;font:600 15px Rubik,sans-serif;cursor:pointer}
 .pk button:hover{border-color:var(--pumpkin)}
+#amt{width:100%;background:#0000004d;border:1px solid var(--line);border-radius:12px;color:var(--bone);font:600 16px Rubik,sans-serif;padding:12px;margin-bottom:10px;text-align:center}
+#amt.bad{border-color:var(--blood)}
+.pk button.sel{border-color:var(--pumpkin);background:#ff8a1f26}
+#amtErr{color:var(--blood);font-size:13px;min-height:18px;margin-bottom:6px}
 .trade{margin-top:8px;font-size:13px;color:var(--muted)}
 :focus-visible{outline:2px solid var(--lilac);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.strip{transition:none!important}}
@@ -66,7 +70,7 @@ nav button.on{color:var(--pumpkin);background:var(--card)}
 <body>
 <header>
   <h1>Brainrot Cases</h1>
-  <div class="bal"><span id="bal">0 ⭐</span><button id="plus" aria-label="Пополнить">+</button></div>
+  <div class="bal"><span id="bal">0 🪙</span><button id="plus" aria-label="Пополнить">+</button></div>
 </header>
 
 <main>
@@ -100,10 +104,12 @@ nav button.on{color:var(--pumpkin);background:var(--card)}
 </div></div>
 
 <div class="modal" id="mTop"><div class="sheet">
-  <h2>Пополнение</h2>
-  <p style="color:var(--muted)">Telegram Stars зачисляются 1 к 1.</p>
+  <h2>Депозит</h2>
+  <p style="color:var(--muted);margin-bottom:6px">Оплата Telegram Stars ⭐<br>1 ⭐ = 1 🪙 на баланс. Минимум 100 ⭐.</p>
   <div class="pk" id="pk"></div>
-  <button class="btn alt" id="topClose" style="width:100%">Закрыть</button>
+  <input id="amt" type="number" inputmode="numeric" min="100" step="1" placeholder="Своя сумма от 100">
+  <div id="amtErr"></div>
+  <div class="row"><button class="btn alt" id="topClose">Закрыть</button><button class="btn" id="payBtn">Пополнить</button></div>
   <p class="trade">Пополнение трейдом в Roblox: скоро.</p>
 </div></div>
 
@@ -119,7 +125,7 @@ const R = {
   legendary:{n:"Legendary",c:"var(--c-legendary)"}, mythic:{n:"Mythic",c:"var(--c-mythic)"},
   god:{n:"Brainrot God",c:"var(--c-god)"}, secret:{n:"Secret",c:"var(--c-secret)"}
 };
-// v = условная цена продажи в ⭐ (настраивается в админке позже)
+// v = условная цена продажи в 🪙 (настраивается в админке позже)
 const I = {
   noobini:{name:"Noobini Pizzanini",r:"common",e:"🍕",inc:"1/с",v:3},
   pipi:{name:"Pipi Corni",r:"common",e:"🌽",inc:"1.7K/с",v:5},
@@ -159,7 +165,7 @@ let S = JSON.parse(localStorage.getItem("brc") || '{"bal":100,"inv":[]}');
 const save = () => localStorage.setItem("brc", JSON.stringify(S));
 const $ = s => document.querySelector(s);
 const fmt = n => n.toLocaleString("ru-RU");
-function render(){ $("#bal").textContent = fmt(S.bal) + " ⭐"; save(); }
+function render(){ $("#bal").textContent = fmt(S.bal) + " 🪙"; save(); }
 
 async function api(path, body){
   const r = await fetch(API_URL + path, {method:"POST",headers:{"Content-Type":"application/json"},
@@ -185,7 +191,7 @@ if(tg) tg.BackButton.onClick(()=>show("cases"));
 
 $("#caseGrid").innerHTML = CASES.map(c=>`
   <div class="case" tabindex="0" role="button" data-id="${c.id}" style="--glow:${c.glow}">
-    <div class="art">${c.e}</div><b>${c.name}</b><small>${c.sub}</small><div class="price">${fmt(c.price)} ⭐</div>
+    <div class="art">${c.e}</div><b>${c.name}</b><small>${c.sub}</small><div class="price">${fmt(c.price)} 🪙</div>
   </div>`).join("");
 document.querySelectorAll(".case").forEach(el=>{
   const go=()=>openCase(el.dataset.id);
@@ -203,7 +209,7 @@ function pick(c){
 function openCase(id){
   cur = CASES.find(c=>c.id===id);
   $("#oTitle").textContent = cur.name;
-  $("#openBtn").textContent = `Открыть за ${fmt(cur.price)} ⭐`;
+  $("#openBtn").textContent = `Открыть за ${fmt(cur.price)} 🪙`;
   $("#strip").style.transition="none"; $("#strip").style.transform="translateX(0)";
   $("#strip").innerHTML = Object.keys(cur.drop).concat(Object.keys(cur.drop)).map(itemHTML).join("");
   $("#drops").innerHTML = Object.entries(cur.drop).sort((a,b)=>a[1]-b[1]).map(([k,w])=>{
@@ -236,7 +242,7 @@ function showWin(k, demo){
   const i=I[k]; lastWin={k,demo};
   $("#wRar").textContent = R[i.r].n; $("#wRar").style.setProperty("--rc",R[i.r].c);
   $("#wEmoji").textContent = i.e; $("#wName").textContent = i.name;
-  $("#wVal").textContent = (i.inc ? "Доход " + i.inc + " · " : "") + "цена " + fmt(i.v) + " ⭐";
+  $("#wVal").textContent = (i.inc ? "Доход " + i.inc + " · " : "") + "цена " + fmt(i.v) + " 🪙";
   $("#wKeep").textContent = demo ? "Закрыть" : "Оставить";
   $("#wSell").style.display = demo ? "none" : "";
   $("#mWin").classList.add("on");
@@ -254,25 +260,35 @@ function renderInv(){
   $("#invGrid").onclick = e=>{
     const el=e.target.closest(".it"); if(!el) return;
     const k=S.inv[+el.dataset.i];
-    if(confirm(`Продать ${I[k].name} за ${fmt(I[k].v)} ⭐?`)){ S.inv.splice(+el.dataset.i,1); S.bal+=I[k].v; render(); renderInv(); }
+    if(confirm(`Продать ${I[k].name} за ${fmt(I[k].v)} 🪙?`)){ S.inv.splice(+el.dataset.i,1); S.bal+=I[k].v; render(); renderInv(); }
   };
 }
 
-/* ====== Пополнение через Telegram Stars ====== */
-const PACKS=[50,100,250,500,1000,2500];
+/* ====== Депозит через Telegram Stars (минимум 100) ====== */
+const MIN_DEP=100, MAX_DEP=100000, PACKS=[100,250,500,1000,2500,5000];
 $("#pk").innerHTML = PACKS.map(p=>`<button data-p="${p}">${fmt(p)} ⭐</button>`).join("");
-function openTop(){ $("#mTop").classList.add("on"); }
+function markSel(){ const v=+$("#amt").value; document.querySelectorAll("#pk button").forEach(b=>b.classList.toggle("sel",+b.dataset.p===v)); }
+function openTop(){ $("#amt").value=""; $("#amtErr").textContent=""; $("#amt").classList.remove("bad"); markSel(); $("#mTop").classList.add("on"); }
 $("#plus").onclick = $("#topupNav").onclick = openTop;
 $("#topClose").onclick = ()=>$("#mTop").classList.remove("on");
-$("#pk").onclick = async e=>{
-  const b=e.target.closest("button"); if(!b) return; const amount=+b.dataset.p;
-  if(!API_URL || !tg){ S.bal += amount; render(); $("#mTop").classList.remove("on"); alert("Демо-режим: баланс пополнен без оплаты."); return; }
+$("#pk").onclick = e=>{ const b=e.target.closest("button"); if(!b) return; $("#amt").value=b.dataset.p; $("#amtErr").textContent=""; $("#amt").classList.remove("bad"); markSel(); };
+$("#amt").oninput = ()=>{ $("#amtErr").textContent=""; $("#amt").classList.remove("bad"); markSel(); };
+$("#payBtn").onclick = async ()=>{
+  const amount = Math.floor(Number($("#amt").value));
+  if(!amount || amount < MIN_DEP || amount > MAX_DEP){
+    $("#amt").classList.add("bad");
+    $("#amtErr").textContent = `Сумма от ${fmt(MIN_DEP)} до ${fmt(MAX_DEP)} ⭐`;
+    return;
+  }
+  if(!API_URL || !tg){ $("#amtErr").textContent = "Оплата заработает после запуска сервера."; return; }
+  $("#payBtn").disabled = true;
   try{
     const {link} = await api("/api/invoice", {amount});
     tg.openInvoice(link, async status=>{
-      if(status==="paid"){ await syncBalance(); $("#mTop").classList.remove("on"); }
+      $("#payBtn").disabled = false;
+      if(status==="paid"){ await syncBalance(); setTimeout(syncBalance,3000); $("#mTop").classList.remove("on"); }
     });
-  }catch(err){ alert("Не удалось создать счёт: " + err.message); }
+  }catch(err){ $("#payBtn").disabled = false; $("#amtErr").textContent = "Не удалось создать счёт: " + err.message; }
 };
 
 render(); syncBalance();
