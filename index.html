@@ -11,13 +11,28 @@
 :root{--bg:#0b0613;--card:#1a0f2b;--line:#33214f;--acc:#ff7a00;--acc2:#a855ff;--text:#f4ecff;--muted:#9886b8;--red:#ff4466;--green:#39ffb0;color-scheme:dark}
 *{box-sizing:border-box;margin:0}
 html,body{height:100%}
-body{background:radial-gradient(900px 420px at 50% -8%,#3b1168 0,var(--bg) 62%) fixed;color:var(--text);font:400 15px/1.45 Rubik,system-ui,sans-serif;padding:env(safe-area-inset-top,0) 0 calc(env(safe-area-inset-bottom,0) + 76px)}
+body{background:radial-gradient(900px 420px at 50% -8%,#3b1168 0,var(--bg) 62%) fixed;color:var(--text);font:400 15px/1.45 Rubik,system-ui,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
 h1,h2{font-family:Unbounded,system-ui,sans-serif;font-weight:800}
-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;position:sticky;top:0;z-index:5;background:#0b0613e8;backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;position:sticky;top:0;z-index:5;background:#0b0613e8;backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .logo{font-size:20px;letter-spacing:.06em;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
 .bal{display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 5px 5px 14px;font-weight:600}
 .bal button{background:var(--acc);color:#2a1200;border:0;border-radius:50%;width:28px;height:28px;font-size:18px;font-weight:700;cursor:pointer}
-main{max-width:640px;margin:0 auto;padding:16px}
+.app-layout{min-height:100vh}
+.sidebar{position:fixed;inset:0 auto 0 0;width:276px;display:flex;flex-direction:column;gap:10px;padding:14px 10px max(12px,env(safe-area-inset-bottom,0));background:#20172a;border-right:1px solid #4a3657;z-index:30}
+.side-user,.side-balance{display:flex;align-items:center;gap:12px;background:#271e31;border:1px solid #43354d;border-radius:13px;padding:10px}
+.side-avatar{width:42px;height:42px;display:grid;place-items:center;flex:none;border-radius:12px;background:linear-gradient(135deg,#ffc06b,#ff8a36);color:#fff;font:800 18px Unbounded,sans-serif}
+.side-user small{display:block;color:#b8a8c5;font-size:10px}.side-user b{display:block;font-size:14px;line-height:1.2;overflow-wrap:anywhere}
+.side-balance{justify-content:center;font-size:14px;font-weight:700;padding:9px}
+.side-nav{display:flex;flex-direction:column;gap:5px;flex:1;margin-top:3px}
+.side-nav button{display:flex;align-items:center;gap:12px;width:100%;min-height:43px;padding:9px 12px;border:1px solid transparent;border-radius:10px;background:transparent;color:#b8a8c5;text-align:left;font:600 12px Rubik,sans-serif;cursor:pointer}
+.side-nav button svg{width:19px;height:19px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.side-nav button:hover{background:#ffffff0a;color:#f4ecff}
+.side-nav button.on{background:#38283e;border-color:#a97347;box-shadow:inset 0 -2px #ff9a3d;color:#ffc481}
+.side-nav .profile-link{margin-top:auto}
+.workspace{min-height:100vh;margin-left:276px}
+main{max-width:760px;margin:0 auto;padding:18px}
+#menuToggle{display:none;align-items:center;justify-content:center;width:38px;height:38px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font-size:20px;cursor:pointer}
+#navScrim{display:none}
 .view{display:none}.view.on{display:block}
 h2.t{font-size:18px;margin:0 0 12px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
@@ -81,9 +96,6 @@ h2.t{font-size:18px;margin:0 0 12px}
 .inv .it{flex:none;width:auto;cursor:pointer}
 .inv .it.on{outline:2px solid var(--acc)}
 .empty{color:var(--muted);text-align:center;padding:32px 0}
-nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#0b0613f2;border-top:1px solid var(--line);padding:6px 8px calc(env(safe-area-inset-bottom,0) + 6px);backdrop-filter:blur(10px)}
-nav button{flex:1;background:none;border:0;color:var(--muted);font:600 12px Rubik,sans-serif;padding:8px 4px;cursor:pointer;border-radius:12px}
-nav button.on{color:var(--acc);background:var(--card)}
 .modal{position:fixed;inset:0;background:#000000b8;display:none;align-items:center;justify-content:center;z-index:20;padding:20px}
 .modal.on{display:flex}
 .sheet{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px;width:100%;max-width:360px;text-align:center}
@@ -171,13 +183,38 @@ nav button.on{color:var(--acc);background:var(--card)}
 .upgrade-screen .pick-labels button{background:#24170f;border-color:#a65e30;color:#ffe0c2}.upgrade-screen #upSrc,.upgrade-screen #upTgt{background:#19110c;border-color:#614027}
 .it .item-price{font-size:10px;line-height:1.1;color:#ffcb8d;white-space:nowrap}
 .upgrade-screen #upSrc .it .item-price,.upgrade-screen #upTgt .it .item-price{font-size:8px}
-@media (prefers-reduced-motion:reduce){.strip{transition:none!important}}
+@media (max-width:760px){
+  .sidebar{width:min(310px,calc(100vw - 54px));transform:translateX(-105%);transition:transform .22s ease;box-shadow:12px 0 38px #0008;padding-top:max(12px,env(safe-area-inset-top,0))}
+  body.nav-open .sidebar{transform:translateX(0)}
+  .workspace{margin-left:0}
+  #menuToggle{display:flex;flex:none}
+  header{padding:10px 12px;gap:9px}
+  header .logo{font-size:16px;margin-right:auto}
+  header .bal{font-size:12px;padding-left:9px;gap:5px}
+  header .bal button{width:28px;height:28px}
+  main{padding:14px 12px}
+  #navScrim{position:fixed;inset:0;background:#0009;z-index:29}
+  body.nav-open #navScrim{display:block}
+}
+@media (prefers-reduced-motion:reduce){.strip,.sidebar{transition:none!important}}
 </style>
 </head>
 <body>
+<div class="app-layout">
+<aside class="sidebar" id="sidebar">
+  <div class="side-user"><div class="side-avatar" id="sideAva">?</div><div><small>Telegram</small><b id="sideName">Игрок</b></div></div>
+  <div class="side-balance">🪙 <span id="sideBal">0</span></div>
+  <nav class="side-nav" aria-label="Разделы">
+    <button data-go="cases" class="on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4.4 7.7 7.6 4.4 7.6-4.4M12 12v9"/></svg><span>Кейсы</span></button>
+    <button data-go="up"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 2-9 12h7l-1 8 10-13h-7l.5-7Z"/></svg><span>Апгрейд</span></button>
+    <button data-go="me" class="profile-link"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 3.5-6 8-6s7.2 2 8 6"/></svg><span>Профиль</span></button>
+  </nav>
+</aside>
+<div class="workspace">
 <header>
+  <button id="menuToggle" aria-label="Открыть меню" aria-expanded="false">☰</button>
   <h1 class="logo">BRAINCASE</h1>
-  <div class="bal"><span id="bal">0 🪙</span><button id="plus" aria-label="Пополнить">+</button><button id="snd" aria-label="Звук" style="background:var(--line);color:var(--text);font-size:14px">🔊</button></div>
+  <div class="bal"><span id="bal">0 🪙</span><button id="snd" aria-label="Звук" style="background:var(--line);color:var(--text);font-size:14px">🔊</button></div>
 </header>
 
 <main>
@@ -193,22 +230,15 @@ nav button.on{color:var(--acc);background:var(--card)}
     <button class="back" id="back">‹ Все кейсы</button>
     <h2 class="t" id="oTitle"></h2>
     <div class="stage"><div class="strip" id="strip"></div></div>
+    <div id="batchBox" class="row" style="margin:12px 0"></div>
     <div class="row"><button class="btn" id="openBtn"></button></div>
     <p class="info" id="oInfo"></p>
     <div class="rtpbox" id="oRtp"></div>
     <div class="drops2" id="oDrops"></div>
   </section>
-
-  <section class="view" id="v-games">
-    <h2 class="t">Игры</h2>
-    <div class="gcard" data-play="up"><b class="game-title"><span class="game-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M18.8 3.5 7.6 17.1c-.5.6-.1 1.5.7 1.5h7.1l-1 9.9 12-14.2c.5-.6.1-1.5-.7-1.5h-7.4l.5-9.3Z" fill="url(#upgradeBolt)" stroke="#ffd4a8" stroke-width="1.2" stroke-linejoin="round"/><defs><linearGradient id="upgradeBolt" x1="8" y1="27" x2="25" y2="5" gradientUnits="userSpaceOnUse"><stop stop-color="#ff7a00"/><stop offset="1" stop-color="#a855ff"/></linearGradient></defs></svg></span>Апгрейд</b><p>Улучши брейнрота. Шанс = цена / цель × 80%</p></div>
-    <div class="gcard" data-play="crash"><b>🚀 Краш</b><p>Забери множитель до краша. Ставка от 1 🪙</p></div>
-    <div class="gcard" data-play="dice"><b>🎲 Дайсы</b><p>Меньше или больше 50. Выплата ×1.92</p></div>
-  </section>
-
-  <section class="view" id="v-up">
+<section class="view" id="v-up">
    <div class="upgrade-screen">
-    <button class="back" data-to="games">‹ Игры</button>
+    <button class="back" data-to="cases">‹ Кейсы</button>
     <h2 class="t">Апгрейд</h2>
     <p class="info">Цены в монетах 🪙. Выбери предмет и цель.</p>
     <div class="wheelBox"><div class="wheel" id="wheel">
@@ -239,50 +269,25 @@ nav button.on{color:var(--acc);background:var(--card)}
    </div>
   </section>
 
-  <section class="view" id="v-crash">
-    <button class="back" data-to="games">‹ Игры</button>
-    <h2 class="t">Краш</h2>
-    <div class="crash" id="crashM">1.00×</div>
-    <input class="money" id="crashAmt" type="number" min="1" placeholder="Ставка 🪙">
-    <div class="row"><button class="btn" id="crashBet">Ставка</button><button class="btn red" id="crashOut" disabled>Забрать</button></div>
-    <p class="info" id="crashInfo">Множитель растёт. Успей забрать до краша.</p>
-  </section>
-
-  <section class="view" id="v-dice">
-    <button class="back" data-to="games">‹ Игры</button>
-    <h2 class="t">Дайсы</h2>
-    <div class="dice-num" id="diceN">50</div>
-    <input class="money" id="diceAmt" type="number" min="1" placeholder="Ставка 🪙">
-    <div class="row"><button class="btn alt" id="diceUnder">UNDER 50 · ×1.92</button><button class="btn" id="diceOver">OVER 50 · ×1.92</button></div>
-    <p class="info" id="diceInfo">Выпадет число 0–99.</p>
-  </section>
-
   <section class="view" id="v-me">
     <div class="me"><div class="ava" id="ava">?</div><div><b id="uname">—</b><span id="ubal"></span></div></div>
-    <div class="row" style="margin-bottom:18px"><button class="btn" id="topupBtn">Пополнить ⭐</button></div>
+    <div id="statsBox" class="info" style="margin:0 0 18px"></div>
     <h2 class="t">Инвентарь</h2>
     <div id="invBox"></div>
   </section>
 </main>
-
-<nav>
-  <button data-go="cases" class="on">Кейсы</button>
-  <button data-go="games">Игры</button>
-  <button data-go="me">Кабинет</button>
-</nav>
-
+</div>
+</div>
+<div id="navScrim"></div>
 <div class="modal" id="mWin"><div class="sheet">
   <div class="big" id="wPic"></div><h2 id="wName"></h2><div id="wVal" style="color:var(--muted)"></div>
   <div class="row" style="margin-top:14px"><button class="btn" id="wOk">Отлично</button></div>
 </div></div>
 
-<div class="modal" id="mTop"><div class="sheet">
-  <h2>Депозит</h2>
-  <p style="color:var(--muted);margin-bottom:6px">Оплата Telegram Stars ⭐<br>1 ⭐ = 1 🪙. Минимум 1 ⭐.</p>
-  <div class="pk" id="pk"></div>
-  <input id="amt" type="number" inputmode="numeric" min="1" step="1" placeholder="Своя сумма от 1">
-  <div id="amtErr"></div>
-  <div class="row"><button class="btn alt" id="topClose">Закрыть</button><button class="btn" id="payBtn">Пополнить</button></div>
+<div class="modal" id="mSellAll"><div class="sheet">
+  <h2>Продать инвентарь?</h2>
+  <p id="sellAllText" style="color:var(--muted);margin:12px 0"></p>
+  <div class="row"><button class="btn alt" id="sellAllCancel">Отмена</button><button class="btn" id="sellAllConfirm">Продать всё</button></div>
 </div></div>
 
 <script>
@@ -296,8 +301,8 @@ const FALLBACK_ITEMS = {
   coin:{name:"1 монета",e:"🪙",c:"#ffd24a",value:1},
   dragon:{name:"Dragon Cannelloni",e:"🐉",c:"#ff7a00",value:1500}
 };
-const S = { bal:0, inv:[], subClaimed:false, user:{username:"",first_name:""},
-  cfg:{ allinPrice:100, dragonChance:0.05, subReward:10, dicePayout:1.92, crashK:0.06, upgradeMult:0.8, items:FALLBACK_ITEMS, cases:{} } };
+const S = { bal:0, inv:[], subClaimed:false, stats:{casesOpened:0,upgrades:0,coinsEarned:0}, user:{username:"",first_name:""},
+  cfg:{ subReward:10, upgradeMult:0.8, items:FALLBACK_ITEMS, cases:{} } };
 const item = k => (S.cfg.items && S.cfg.items[k]) || FALLBACK_ITEMS[k] || {name:k,e:"❓",c:"#9aa0b4",value:0};
 
 async function api(path, data){
@@ -310,7 +315,7 @@ function apply(d){
   if(d.balance != null) S.bal = Number(d.balance) || 0;
   if(d.inv) S.inv = d.inv;
   if(d.subClaimed != null) S.subClaimed = !!d.subClaimed;
-  if(d.cashback != null) S.cashback = Number(d.cashback) || 0;
+  if(d.stats) S.stats = d.stats;
   if(d.user) S.user = d.user;
   if(d.cfg) S.cfg = Object.assign({}, S.cfg, d.cfg);
   render();
@@ -324,25 +329,15 @@ const card = k => `<div class="it" style="--rc:${item(k).c||'#9aa0b4'}"><div cla
 const CATS = [["all","Все"],["halloween","🎃 Хэллоуин"],["water","🌊 Водные"],["dragon","🐉 Драконы"]];
 let catFilter = "all";
 const xfmt = n => String(Math.round(Number(n)*10)/10).replace(".", ",");
-async function claimCashback(){
-  try{ apply(await api("/api/cashback", {})); if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success"); }
-  catch(err){ alert(err.message); }
-}
 function renderCases(){
-  const order = ["grave","deep","vamp","hound","lair","king","throne","allin"];
+  const order = ["grave","deep","vamp","hound","lair","king","throne"];
   const cs = S.cfg.cases || {};
   $("#cats").innerHTML = CATS.map(([id,t])=>`<button class="cat ${id===catFilter?"on":""}" data-cat="${id}">${t}</button>`).join("");
   $("#cats").onclick = e => { const b=e.target.closest(".cat"); if(b){ catFilter=b.dataset.cat; renderCases(); } };
-  const rate = Math.round((S.cfg.cashbackRate||0)*100), avail = S.cashback||0;
-  $("#cbBox").innerHTML = rate ? `<div class="cb"><div><b>Кэшбэк ${rate}%</b><small>возвращаем часть проигранного в кейсах</small></div><button id="cbBtn" ${avail<1?"disabled":""}>Забрать ${fmt(avail)} 🪙</button></div>` : "";
-  const cbb = $("#cbBtn"); if(cbb) cbb.onclick = claimCashback;
+  $("#cbBox").innerHTML = "";
   const all = catFilter==="all";
   let html = order.filter(id=>cs[id] && (cs[id].special ? all : (all || cs[id].cat===catFilter))).map(id=>{
     const c = cs[id];
-    if(c.special){
-      const art = c.art==="allin" ? `<img src="allin.png" alt="">` : c.art;
-      return `<div class="case wide" data-id="${id}" style="--g:${c.g||"#ff7a00aa"}"><div class="art">${art}</div><div><b>${c.name}</b><span class="tag">${fmt(c.price)} 🪙</span></div></div>`;
-    }
     return `<div class="case cc ${c.cat==="water"?"water":""}" data-id="${id}" style="--g:${c.g||"#ff7a00"}">
       <span class="badge">x${xfmt(c.maxX)}</span>
       <b class="cname">${c.name}</b>
@@ -361,12 +356,15 @@ function renderCases(){
 
 function render(){
   $("#bal").textContent = fmt(S.bal) + " 🪙"; $("#ubal").textContent = "Баланс: " + fmt(S.bal) + " 🪙";
+  $("#sideBal").textContent = fmt(S.bal);
   const name = S.user.username ? "@" + S.user.username : (S.user.first_name || "Игрок");
-  $("#uname").textContent = name; $("#ava").textContent = (name.replace("@","")[0] || "?").toUpperCase();
+  $("#uname").textContent = name; $("#sideName").textContent = name;
+  $("#ava").textContent = $("#sideAva").textContent = (name.replace("@","")[0] || "?").toUpperCase();
+  $("#statsBox").innerHTML = `Кейсов открыто: <b>${fmt(S.stats.casesOpened)}</b> · Апгрейдов: <b>${fmt(S.stats.upgrades)}</b><br>Виртуальных монет заработано: <b>${fmt(S.stats.coinsEarned)} 🪙</b>`;
   if($("#v-cases").classList.contains("on")) renderCases();
   const box = $("#invBox");
   box.innerHTML = S.inv.length
-    ? `<div class="inv">${S.inv.map((k,i)=>card(k).replace('class="it"',`class="it" data-i="${i}"`)).join("")}</div><p class="info">Нажмите предмет, чтобы продать</p>`
+    ? `<div class="row" style="margin:0 0 10px"><button class="btn red" id="sellAllBtn">Продать всё</button></div><div class="inv">${S.inv.map((k,i)=>card(k).replace('class="it"',`class="it" data-i="${i}"`)).join("")}</div><p class="info">Нажмите предмет, чтобы продать его отдельно</p>`
     : '<div class="empty">Пока пусто. Откройте первый кейс.</div>';
   if($("#v-up").classList.contains("on")) renderUp();
 }
@@ -399,11 +397,12 @@ document.addEventListener("visibilitychange",()=>{ if(!document.hidden) sync(); 
 
 function show(v){
   document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on", x.id==="v-"+v));
-  document.querySelectorAll("nav [data-go]").forEach(b=>{
-    const on = b.dataset.go===v || (["open"].includes(v)&&b.dataset.go==="cases") || (["up","crash","dice"].includes(v)&&b.dataset.go==="games");
+  const activeView = v==="open" ? "cases" : v;
+  document.querySelectorAll(".side-nav [data-go]").forEach(b=>{
+    const on = b.dataset.go===activeView;
     b.classList.toggle("on", on);
   });
-  if(tg) (v==="open"||v==="up"||v==="crash"||v==="dice") ? tg.BackButton.show() : tg.BackButton.hide();
+  if(tg) (v==="open"||v==="up") ? tg.BackButton.show() : tg.BackButton.hide();
   if(v==="cases") renderCases();
   if(v==="up"){
     if(upI>=S.inv.length){ upI=-1; upT=""; }
@@ -412,27 +411,34 @@ function show(v){
     else { $("#upTgt").classList.add("open"); }
   }
 }
-document.querySelectorAll("nav [data-go]").forEach(b=>b.onclick=()=>show(b.dataset.go));
+const closeNav=()=>{ document.body.classList.remove("nav-open"); $("#menuToggle").setAttribute("aria-expanded","false"); };
+document.querySelectorAll(".side-nav [data-go]").forEach(b=>b.onclick=()=>{ show(b.dataset.go); closeNav(); });
+$("#menuToggle").onclick=()=>{ const open=document.body.classList.toggle("nav-open"); $("#menuToggle").setAttribute("aria-expanded",String(open)); };
+$("#navScrim").onclick=closeNav;
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeNav(); });
 $("#back").onclick = () => show("cases");
 document.querySelectorAll("[data-to]").forEach(b=>b.onclick=()=>show(b.dataset.to));
 if(tg) tg.BackButton.onClick(()=>{
   if($("#v-open").classList.contains("on")) show("cases");
-  else show("games");
+  else show("cases");
 });
-document.querySelectorAll("#v-games .gcard").forEach(el=>el.onclick=()=>show(el.dataset.play));
 
 $("#invBox").onclick = async e => {
+  if(e.target.closest("#sellAllBtn")) { openSellAllConfirm(); return; }
   const el = e.target.closest(".it"); if(!el) return;
   const k = S.inv[+el.dataset.i]; if(!item(k)) return;
-  if(!confirm(`Продать ${item(k).name} за ${fmt(item(k).value)} 🪙?`)) return;
+  if(!confirm(`Продать ${item(k).name} за ${fmt(item(k).value)} виртуальных 🪙?`)) return;
   try{ apply(await api("/api/sell", {index:+el.dataset.i})); }catch(err){ alert(err.message); }
 };
 
-let cur=null, spinning=false;
+let cur=null, spinning=false, batchCount=1;
 function openCase(id){
   cur = id;
   const strip = $("#strip"); strip.style.transition="none"; strip.style.transform="translateX(0)";
   const c = (S.cfg.cases||{})[id];
+  batchCount=1;
+  $("#batchBox").innerHTML = id==="sub" ? "" : [1,2,3,4,5].map(n=>`<button class="btn alt batch-choice ${n===1?"on":""}" data-count="${n}" style="padding:8px 12px">${n}</button>`).join("");
+  $("#batchBox").onclick = e => { const b=e.target.closest("[data-count]"); if(!b) return; batchCount=Number(b.dataset.count); $("#batchBox").querySelectorAll("[data-count]").forEach(x=>x.classList.toggle("on",x===b)); updateOpenButton(); };
   if(id==="sub"){
     $("#oTitle").textContent = "CHANNEL CASE";
     $("#openBtn").textContent = S.subClaimed ? "Уже получено" : "Подписался, проверить";
@@ -442,10 +448,10 @@ function openCase(id){
     const ch=$("#chLink"); if(ch) ch.onclick = e => { if(tg){ e.preventDefault(); tg.openTelegramLink("https://t.me/braincasegg"); } };
   } else {
     $("#oTitle").textContent = (c && c.name) || id.toUpperCase();
-    $("#openBtn").textContent = `Открыть за ${fmt((c&&c.price)||0)} 🪙`;
+    updateOpenButton();
     $("#openBtn").disabled = false;
     const pool = (c && c.pool) || ["dragon"];
-    $("#oInfo").textContent = id==="allin" ? `Шанс дракона: ${+(S.cfg.dragonChance*100).toFixed(2)}%. Иначе 1 монета.` : "Приз считается на сервере.";
+    $("#oInfo").textContent = "Все награды виртуальные и поступают в коллекцию.";
     strip.innerHTML = Array(10).fill(0).map((_,i)=>card(pool[i%pool.length])).join("");
     if(c && c.chances){
       $("#oRtp").textContent = `RTP ${xfmt(c.rtp)}%: в среднем игрокам возвращается ${xfmt(c.rtp)}% от цены кейса. Самый дешёвый приз стоит 1/3 цены, самый дорогой — до x${xfmt(c.maxX)}.`;
@@ -455,17 +461,20 @@ function openCase(id){
   if(id==="sub"){ $("#oRtp").textContent=""; $("#oDrops").innerHTML=""; }
   show("open");
 }
+function updateOpenButton(){ const c=(S.cfg.cases||{})[cur]; const total=(c?.price||0)*batchCount; $("#openBtn").textContent=`Открыть ${batchCount} за ${fmt(total)} 🪙`; }
 $("#openBtn").onclick = async () => {
   if(spinning) return;
   unlock();
-  const price = cur==="sub" ? 0 : ((S.cfg.cases||{})[cur]||{}).price || 0;
-  if(cur!=="sub" && S.bal < price){ openTop(); return; }
+  const price = cur==="sub" ? 0 : (((S.cfg.cases||{})[cur]||{}).price || 0) * batchCount;
+  if(cur!=="sub" && S.bal < price){ alert("Недостаточно виртуальных монет"); return; }
   spinning = true; $("#openBtn").disabled = true;
   try{
-    const r = await api("/api/open", {case:cur});
-    await animate(r.win==="coins"?"coin":r.win);
+    const r = await api("/api/open", {case:cur, count:batchCount});
+    const wins=r.wins||[r.win];
+    if(cur!=="sub") await animate(wins[wins.length-1]);
     apply(r); if(cur==="sub") S.subClaimed = true; render();
-    showWin(r);
+    if(wins.length>1){ $("#wPic").innerHTML=`<div class="inv">${wins.map(k=>card(k)).join("")}</div>`; $("#wName").textContent=`Получено предметов: ${wins.length}`; $("#wVal").textContent="Добавлены в виртуальную коллекцию"; $("#mWin").classList.add("on"); sndWin(false); }
+    else showWin(cur==="sub"?r:{...r,win:wins[0]});
   }catch(err){ alert(err.message); }
   finally{ spinning=false; $("#openBtn").disabled = (cur==="sub" && S.subClaimed); }
 };
@@ -588,97 +597,18 @@ $("#upBtn").onclick = async () => {
   $("#upBtn").disabled = !(upI>=0 && upT);
 };
 
-let crashTimer=null, crashStart=0;
-function stopCrash(){ if(crashTimer){ cancelAnimationFrame(crashTimer); crashTimer=null; } }
-function drawCrash(){
-  const k = S.cfg.crashK || 0.06;
-  const m = Math.exp(k * (Date.now()-crashStart)/1000);
-  $("#crashM").textContent = m.toFixed(2)+"×";
-  crashTimer = requestAnimationFrame(drawCrash);
+function openSellAllConfirm(){
+  if(!S.inv.length) return;
+  const total=S.inv.reduce((sum,k)=>sum+(item(k).value||0),0);
+  $("#sellAllText").textContent=`Будет продано ${S.inv.length} предметов за ${fmt(total)} виртуальных 🪙. Это действие нельзя отменить.`;
+  $("#mSellAll").classList.add("on");
 }
-$("#crashBet").onclick = async () => {
-  const amount = Math.floor(Number($("#crashAmt").value));
-  if(!amount || amount<1){ alert("Ставка от 1 🪙"); return; }
-  if(S.bal<amount){ openTop(); return; }
-  try{
-    const r = await api("/api/crash/bet", {amount});
-    apply(r);
-    crashStart = r.start || Date.now();
-    $("#crashM").classList.remove("dead");
-    $("#crashBet").disabled = true; $("#crashOut").disabled = false;
-    stopCrash(); drawCrash();
-    pollCrash();
-  }catch(e){ alert(e.message); }
-};
-let crashPoll=null;
-function pollCrash(){
-  if(crashPoll) clearInterval(crashPoll);
-  crashPoll = setInterval(async ()=>{
-    try{
-      const r = await api("/api/crash/tick", {});
-      if(r.crashed){ crashEnd(r); }
-    }catch(e){ crashEnd({crashed:true, crashAt:1, win:0, balance:S.bal, inv:S.inv}); }
-  }, 250);
-}
-async function crashEnd(r){
-  if(crashPoll){ clearInterval(crashPoll); crashPoll=null; }
-  stopCrash();
-  $("#crashM").classList.add("dead");
-  $("#crashM").textContent = (r.crashAt||1).toFixed(2)+"×";
-  $("#crashBet").disabled = false; $("#crashOut").disabled = true;
-  apply(r);
-  $("#crashInfo").textContent = r.win ? `Забрал ${fmt(r.win)} 🪙` : `Краш на ${(r.crashAt||1).toFixed(2)}×`;
-}
-$("#crashOut").onclick = async () => {
-  try{ crashEnd(await api("/api/crash/cash", {})); }
-  catch(e){ alert(e.message); crashEnd({crashed:true, crashAt:1, win:0, balance:S.bal, inv:S.inv}); }
-};
-
-async function playDice(side){
-  const amount = Math.floor(Number($("#diceAmt").value));
-  if(!amount || amount<1){ alert("Ставка от 1 🪙"); return; }
-  if(S.bal<amount){ openTop(); return; }
-  $("#diceUnder").disabled = $("#diceOver").disabled = true;
-  try{
-    const r = await api("/api/dice", {amount, side});
-    $("#diceN").textContent = String(r.roll).padStart(2,"0");
-    $("#diceN").style.color = r.win ? "var(--green)" : "var(--red)";
-    apply(r);
-    $("#diceInfo").textContent = r.win ? `Выигрыш ${fmt(r.payout)} 🪙` : "Проигрыш";
-  }catch(e){ alert(e.message); }
-  finally{ $("#diceUnder").disabled = $("#diceOver").disabled = false; }
-}
-$("#diceUnder").onclick = () => playDice("under");
-$("#diceOver").onclick = () => playDice("over");
-
-const MIN_DEP=1, MAX_DEP=100000, PACKS=[1,5,10,50,100,500];
-$("#pk").innerHTML = PACKS.map(p=>`<button data-p="${p}">${fmt(p)} ⭐</button>`).join("");
-const markSel = () => document.querySelectorAll("#pk button").forEach(b=>b.classList.toggle("sel",+b.dataset.p===+$("#amt").value));
-function openTop(){ $("#amt").value=""; $("#amtErr").textContent=""; $("#amt").classList.remove("bad"); markSel(); $("#mTop").classList.add("on"); }
-$("#plus").onclick = $("#topupBtn").onclick = openTop;
-$("#topClose").onclick = () => $("#mTop").classList.remove("on");
-$("#pk").onclick = e => { const b=e.target.closest("button"); if(!b) return; $("#amt").value=b.dataset.p; $("#amt").classList.remove("bad"); markSel(); };
-$("#amt").oninput = () => { $("#amtErr").textContent=""; $("#amt").classList.remove("bad"); markSel(); };
-async function waitForCredit(prev){
-  for(let i=0;i<12;i++){ await new Promise(r=>setTimeout(r,1500)); try{ const me=await api("/api/me",{}); if(me.balance>prev){ apply(me); return true; } }catch(e){} }
-  return false;
-}
-$("#payBtn").onclick = async () => {
-  const amount = Math.floor(Number($("#amt").value));
-  if(!amount || amount<MIN_DEP || amount>MAX_DEP){ $("#amt").classList.add("bad"); $("#amtErr").textContent=`Сумма от ${fmt(MIN_DEP)} до ${fmt(MAX_DEP)} ⭐`; return; }
-  if(!API_URL || !tg){ $("#amtErr").textContent="Оплата работает только внутри Telegram-бота."; return; }
-  $("#payBtn").disabled = true;
-  try{
-    const {link} = await api("/api/invoice", {amount});
-    tg.openInvoice(link, async status=>{
-      $("#payBtn").disabled = false;
-      if(status==="paid"){
-        $("#amtErr").style.color="var(--acc2)"; $("#amtErr").textContent="Оплата прошла, зачисляем…";
-        const ok = await waitForCredit(S.bal); $("#amtErr").style.color="";
-        if(ok) $("#mTop").classList.remove("on"); else $("#amtErr").textContent="Платёж принят, баланс обновится через минуту.";
-      } else if(status==="failed") $("#amtErr").textContent="Оплата не прошла. Попробуйте ещё раз.";
-    });
-  }catch(err){ $("#payBtn").disabled=false; $("#amtErr").textContent="Не удалось создать счёт: "+err.message; }
+$("#sellAllCancel").onclick=()=>$("#mSellAll").classList.remove("on");
+$("#sellAllConfirm").onclick=async()=>{
+  $("#sellAllConfirm").disabled=true;
+  try{ const r=await api("/api/sell-all",{}); apply(r); $("#mSellAll").classList.remove("on"); }
+  catch(e){ alert(e.message); }
+  finally{ $("#sellAllConfirm").disabled=false; }
 };
 
 renderCases(); render(); sync();
