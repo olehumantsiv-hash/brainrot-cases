@@ -171,8 +171,9 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && /^\/img\/[a-z0-9_-]+\.(png|webp|jpg)$/.test(urlPath)) {
     try {
       const ext = urlPath.split(".").pop();
-      res.writeHead(200, { "Content-Type": ext === "jpg" ? "image/jpeg" : "image/" + ext, "Cache-Control": "public, max-age=86400" });
-      return res.end(fs.readFileSync(path.join(__dirname, urlPath)));
+      const buf = fs.readFileSync(path.join(__dirname, urlPath)); // сначала читаем файл: нет файла -> 404
+      res.writeHead(200, { "Content-Type": ext === "jpg" ? "image/jpeg" : "image/" + ext, "Cache-Control": "public, max-age=3600" });
+      return res.end(buf);
     } catch { res.writeHead(404); return res.end(); }
   }
   if (req.method !== "POST") {
