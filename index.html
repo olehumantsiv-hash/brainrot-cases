@@ -107,6 +107,7 @@ h2.t{font-size:18px;margin:0 0 12px}
 .ava{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font:800 24px Unbounded,sans-serif;flex:none}
 .me b{font-size:18px;display:block}.me span{color:var(--muted)}
 .inv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.batch-wins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%;max-height:55vh;overflow:auto}.batch-win .it{width:100%;box-sizing:border-box}.batch-num{display:block;margin-bottom:4px;font-size:11px;color:var(--acc)}.sheet .big.batch-openings{height:auto;max-height:55vh;overflow:auto;width:100%;font-size:initial}
 .inv .it{flex:none;width:auto;cursor:pointer}
 .inv .it.on{outline:2px solid var(--acc)}
 .empty{color:var(--muted);text-align:center;padding:32px 0}
@@ -322,6 +323,7 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
     <h2 class="t" id="oTitle"></h2>
     <div class="stage"><div class="strip" id="strip"></div></div>
     <div id="batchBox" class="row" style="margin:12px 0"></div>
+    <div class="row" style="margin:0 0 8px"><button class="btn alt" data-fast-animation>⚡ Быстрая анимация: выкл</button></div>
     <div class="row"><button class="btn" id="openBtn"></button></div>
     <p class="info" id="oInfo"></p>
     <div class="rtpbox" id="oRtp"></div>
@@ -349,10 +351,11 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
     </div>
     <div class="up-actions">
       <button class="btn upgrade-main" id="upBtn" disabled>Прокачать</button>
+      <button class="btn alt" data-fast-animation>⚡ Быстрая анимация: выкл</button>
     </div>
     <div class="fast-label">Быстрый выбор</div>
     <div class="up-presets">
-      <button type="button" data-up-preset="2">x2</button><button type="button" data-up-preset="5">x5</button><button type="button" data-up-preset="10">x10</button><button type="button" data-up-preset="30">30%</button><button type="button" data-up-preset="50">50%</button><button type="button" data-up-preset="75">75%</button>
+      <button type="button" data-up-preset="2">x2</button><button type="button" data-up-preset="5">x5</button><button type="button" data-up-preset="10">x10</button><button type="button" data-up-preset="100">x100</button><button type="button" data-up-preset="30">30%</button><button type="button" data-up-preset="50">50%</button><button type="button" data-up-preset="75">75%</button>
     </div>
     <div class="pick-labels"><button type="button" id="showInv">Мои предметы</button><button type="button" id="showTargets">Желаемые предметы</button></div>
     <div id="upSrc"></div>
@@ -732,7 +735,11 @@ $("#invBox").onclick = async e => {
   try{ apply(await api("/api/sell", {index:+el.dataset.i})); }catch(err){ alert(err.message); }
 };
 
-let cur=null, spinning=false, batchCount=1;
+let cur=null, spinning=false, batchCount=1, fastAnimations=false;
+try{ fastAnimations=localStorage.getItem("braincaseFastAnimations")==="1"; }catch{}
+function updateFastAnimationButtons(){ document.querySelectorAll("[data-fast-animation]").forEach(b=>{ b.textContent=`⚡ Быстрая анимация: ${fastAnimations?"вкл":"выкл"}`; b.classList.toggle("on",fastAnimations); }); }
+document.querySelectorAll("[data-fast-animation]").forEach(b=>b.onclick=()=>{ fastAnimations=!fastAnimations; try{localStorage.setItem("braincaseFastAnimations",fastAnimations?"1":"0");}catch{} updateFastAnimationButtons(); });
+updateFastAnimationButtons();
 function openCase(id){
   cur = id;
   const strip = $("#strip"); strip.style.transition="none"; strip.style.transform="translateX(0)";
@@ -785,9 +792,12 @@ $("#openBtn").onclick = async () => {
     }
     const r = await api("/api/open", {case:cur, count:batchCount});
     const wins=r.wins||[r.win];
-    if(cur!=="sub") await animate(wins[wins.length-1]);
+    if(cur!=="sub"){
+      if(wins.length>1 && fastAnimations){ for(const win of wins) await animate(win); }
+      else await animate(wins[wins.length-1]);
+    }
     apply(r); if(cur==="sub") S.subClaimed = true; render();
-    if(wins.length>1){ $("#wPic").innerHTML=`<div class="inv">${wins.map(k=>card(k)).join("")}</div>`; $("#wName").textContent=`Получено предметов: ${wins.length}`; $("#wVal").textContent="Добавлены в виртуальную коллекцию"; $("#mWin").classList.add("on"); sndWin(false); }
+    if(wins.length>1){ $("#wPic").classList.add("batch-openings"); $("#wPic").innerHTML=`<div class="batch-wins">${wins.map((k,i)=>`<div class="batch-win"><span class="batch-num">Открытие ${i+1}</span>${card(k)}</div>`).join("")}</div>`; $("#wName").textContent=`Результаты: ${wins.length} кейсов`; $("#wVal").textContent="Все предметы добавлены в виртуальную коллекцию"; $("#mWin").classList.add("on"); sndWin(false); }
     else showWin(cur==="sub"?r:{...r,win:wins[0]});
   }catch(err){ if(bonusType){ $("#oInfo").textContent=err.message; } else alert(err.message); }
   finally{ spinning=false; if(bonusType) $("#openBtn").disabled=!!S.bonusClaims[bonusType]; else $("#openBtn").disabled = (cur==="sub" && S.subClaimed); }
@@ -797,15 +807,17 @@ function animate(win){
     const N=40, STOP=34, strip=$("#strip"), stage=$(".stage");
     const pool = ((S.cfg.cases||{})[cur]||{}).pool || ["dragon","coin"];
     const seq = Array.from({length:N},(_,i)=> i===STOP ? win : pool[i%pool.length]);
+    const duration = fastAnimations ? 700 : 4200;
     strip.style.transition="none"; strip.style.transform="translateX(0)"; strip.innerHTML = seq.map(card).join("");
-    sndSpin(4200,34);
+    sndSpin(duration,fastAnimations?10:34);
     const target = STOP*108 + 54 - stage.clientWidth/2 + (Math.random()-.5)*60;
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{ strip.style.transition="transform 4.2s cubic-bezier(.12,.7,.1,1)"; strip.style.transform=`translateX(${-target}px)`; }));
-    setTimeout(res, 4400);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ strip.style.transition=`transform ${duration}ms cubic-bezier(.12,.7,.1,1)`; strip.style.transform=`translateX(${-target}px)`; }));
+    setTimeout(res, duration+120);
   });
 }
 function showWin(r,silent){
   const k = r.win==="coins" || r.win==="coin" ? "coin" : r.win;
+  $("#wPic").classList.remove("batch-openings");
   $("#wPic").innerHTML = pic(k);
   if(r.win==="coins") $("#wName").textContent = `+${r.amount} монет`;
   else if(r.win==="coin") $("#wName").textContent = "+1 монета";
@@ -828,7 +840,7 @@ function setWheel(c){
   if(c==null){ z.setAttribute("stroke-dasharray",`0 ${WC}`); z.setAttribute("transform","rotate(-90 100 100)"); $("#wPct").textContent="—"; return; }
   z.setAttribute("stroke-dasharray",`${c*WC} ${WC}`);
   z.setAttribute("transform",`rotate(${-90-c*180} 100 100)`); // зона по центру сверху
-  $("#wPct").textContent=(c*100).toFixed(1)+"%";
+  $("#wPct").textContent=(c*100).toFixed(c*100<1?2:1)+"%";
 }
 function renderUp(){
   if(upSpin) return;
@@ -841,19 +853,21 @@ function renderUp(){
     tgtSlot.innerHTML=upT?`<div class="pic">${pic(upT)}</div><span>${item(upT).name}</span><small class="item-price">${fmt(item(upT).value)} 🪙</small>`:"<span>Цель</span>";
   }
   const src = $("#upSrc");
-  src.innerHTML = S.inv.length
-    ? `<div class="inv">${S.inv.map((k,i)=>card(k).replace('class="it"',`class="it ${upI===i?"on":""}" data-i="${i}"`)).join("")}</div>`
-    : '<div class="empty">Нет предметов для апгрейда</div>';
+  if(upI>=0 && item(S.inv[upI]).available===false){ upI=-1; upT=""; }
+  const sources = S.inv.map((k,i)=>({k,i})).filter(({k})=>item(k).available!==false);
+  src.innerHTML = sources.length
+    ? `<div class="inv">${sources.map(({k,i})=>card(k).replace('class="it"',`class="it ${upI===i?"on":""}" data-i="${i}"`)).join("")}</div>`
+    : '<div class="empty">Нет доступных предметов для апгрейда</div>';
     src.onclick = e => { if(upSpin) return; const el=e.target.closest(".it"); if(!el) return; upI=+el.dataset.i; upT=""; src.classList.remove("open"); $("#upTgt").classList.add("open"); renderUp(); };
-  const keys = Object.keys(S.cfg.items||{}).filter(k=>k!=="coin"&&item(k).value>10);
+  const keys = Object.keys(S.cfg.items||{}).filter(k=>k!=="coin"&&item(k).value>10&&item(k).available!==false);
   const srcVal = S.inv[upI] ? item(S.inv[upI]).value : 0;
   $("#upTgt").innerHTML = keys.filter(k=>item(k).value>srcVal).map(k=>
     card(k).replace('class="it"',`class="it ${upT===k?"on":""}" data-k="${k}"`)
   ).join("") || '<div class="empty" style="grid-column:1/-1">Выберите предмет</div>';
   $("#upTgt").onclick = e => { if(upSpin) return; const el=e.target.closest("[data-k]"); if(!el) return; upT=el.dataset.k; renderUp(); };
   let c=null;
-  if(upI>=0 && upT) c = Math.min(0.9, Math.max(0.01, (item(S.inv[upI]).value / item(upT).value) * (S.cfg.upgradeMult||0.8)));
-  $("#upChance").textContent = "Шанс: "+(c==null?"—":(c*100).toFixed(1)+"%");
+  if(upI>=0 && upT) c = Math.min(0.9, Math.max(0.000001, (item(S.inv[upI]).value / item(upT).value) * (S.cfg.upgradeMult||0.8)));
+  $("#upChance").textContent = "Шанс: "+(c==null?"—":(c*100).toFixed(c*100<1?2:1)+"%");
   $("#wheel").classList.remove("win","lose");
   $("#wSub").textContent = c==null ? "Выберите предметы" : "Шанс апгрейда";
   setWheel(c);
@@ -867,8 +881,8 @@ $("#showTargets").onclick=()=>{ $("#upTgt").classList.toggle("open"); $("#upSrc"
 document.querySelectorAll("[data-up-preset]").forEach(b=>b.onclick=()=>{
   if(upI<0 || upSpin) return;
   const v=Number(b.dataset.upPreset), source=item(S.inv[upI]).value;
-  const wanted=v<11 ? source*v : source*(S.cfg.upgradeMult||0.8)/(v/100);
-  const keys=Object.keys(S.cfg.items||{}).filter(k=>k!=="coin"&&item(k).value>10&&item(k).value>source);
+  const wanted=v===100 ? source*100 : (v<11 ? source*v : source*(S.cfg.upgradeMult||0.8)/(v/100));
+  const keys=Object.keys(S.cfg.items||{}).filter(k=>k!=="coin"&&item(k).value>10&&item(k).available!==false&&item(k).value>source);
   keys.sort((a,b)=>Math.abs(Math.log(item(a).value/wanted))-Math.abs(Math.log(item(b).value/wanted)));
   if(keys.length){ upT=keys[0]; renderUp(); document.querySelectorAll("[data-up-preset]").forEach(x=>x.classList.toggle("on",x===b)); }
 });
@@ -878,11 +892,11 @@ function spinNeedle(roll,c){
     const target=(((roll-c/2)*360)%360+360)%360;   // 0° = верх, зона: ±c·180°
     const cur=((needleAng%360)+360)%360;
     needleAng += ((target-cur+360)%360) + 360*5;   // всегда вперёд, 5 полных оборотов
-    const dur = matchMedia("(prefers-reduced-motion:reduce)").matches ? 600 : 4800;
-    sndSpin(dur,40,true);
+    const dur = fastAnimations ? 650 : (matchMedia("(prefers-reduced-motion:reduce)").matches ? 600 : 4800);
+    sndSpin(dur,fastAnimations?10:40,true);
     n.style.transition=`transform ${dur}ms cubic-bezier(.15,.65,.08,1)`;
     n.style.transform=`rotate(${needleAng}deg)`;
-    setTimeout(res, dur+150);
+    setTimeout(res, dur+80);
   });
 }
 $("#upBtn").onclick = async () => {
@@ -900,7 +914,7 @@ $("#upBtn").onclick = async () => {
     $("#wSub").textContent = r.ok ? "УСПЕХ" : "НЕУДАЧА";
     r.ok ? sndWin(true) : sndFail();
     if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred(r.ok?"success":"error");
-    await new Promise(x=>setTimeout(x,900));
+    await new Promise(x=>setTimeout(x,fastAnimations?80:900));
   }catch(e){ alert(e.message); r=null; }
   finally{ upSpin=false; lockSync=false; }
   if(r){

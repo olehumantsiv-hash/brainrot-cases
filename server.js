@@ -184,8 +184,9 @@ const ADMIN_IDS = (process.env.ADMIN_IDS || "").split(",").map(x => x.trim()).fi
 const pendingBonus = new Set();
 
 const publicItems = (ownedKeys = []) => Object.fromEntries(Object.entries(ITEMS)
-  .filter(([k, v]) => v.value > 10 || ownedKeys.includes(k))
-  .map(([k, v]) => [k, { name: v.name, value: v.value, e: v.e, c: v.c, img: v.img || null }]));
+  .filter(([k, v]) => (v.value > 10 && (v.rarity !== "og" || k === "skibidi")) || ownedKeys.includes(k))
+  .map(([k, v]) => [k, { name: v.name, value: v.value, e: v.e, c: v.c, img: v.img || null,
+    available: v.value > 10 && (v.rarity !== "og" || k === "skibidi") }]));
 const publicCases = () => Object.fromEntries(Object.entries(CASES).map(([id, c]) => {
   return [id, {
     name: c.name, price: c.price, art: c.art, g: c.g, special: c.special || null, cat: c.cat || "special",
@@ -254,6 +255,7 @@ async function adminCmd(text) {
   if (cmd === "/giveitem" || cmd === "/takeitem") {
     const k = (arg || "").toLowerCase();
     if (!ITEMS[k]) return "Нет такого брейнрота. Доступно: " + Object.keys(ITEMS).join(", ");
+    if (cmd === "/giveitem" && ITEMS[k].rarity === "og" && k !== "skibidi") return "Этот OG-предмет отключён. Исключение — skibidi.";
     if (cmd === "/giveitem") { u.inv.push(k); }
     else { const i = u.inv.indexOf(k); if (i < 0) return "У игрока нет этого предмета."; u.inv.splice(i, 1); }
     await saveDb();
@@ -612,9 +614,9 @@ const server = http.createServer(async (req, res) => {
     const i = Math.floor(Number(body.index));
     const srcKey = u.inv[i];
     const tgtKey = String(body.target || "");
-    if (!ITEMS[srcKey] || !ITEMS[tgtKey] || ITEMS[tgtKey].value <= 10) return send(400, { error: "Выберите предметы дороже 10 монет" });
+    if (!ITEMS[srcKey] || !ITEMS[tgtKey] || ITEMS[tgtKey].value <= 10 || (ITEMS[tgtKey].rarity === "og" && tgtKey !== "skibidi") || (ITEMS[srcKey].rarity === "og" && srcKey !== "skibidi")) return send(400, { error: "Этот предмет больше нельзя использовать в апгрейде" });
     if (ITEMS[tgtKey].value <= ITEMS[srcKey].value) return send(400, { error: "Цель должна быть дороже" });
-    const chance = Math.min(0.9, Math.max(0.01, (ITEMS[srcKey].value / ITEMS[tgtKey].value) * UPGRADE_MULT));
+    const chance = Math.min(0.9, Math.max(0.000001, (ITEMS[srcKey].value / ITEMS[tgtKey].value) * UPGRADE_MULT));
     const roll = crypto.randomInt(1_000_000) / 1_000_000;
     const ok = roll < chance;
     u.inv.splice(i, 1);
@@ -717,6 +719,28 @@ async function poll() {
 
 async function start() {
   await initDb();
+  let migratedOgItems = 0, migrationNeeded = false;
+  for (const u of Object.values(db.users)) {
+    if (u.ogCleanupVersion === 1) continue;
+    let compensation = 0;
+    u.inv = Array.isArray(u.inv) ? u.inv.filter(k => {
+      const item = ITEMS[k];
+      if (item?.rarity === "og" && k !== "skibidi") { compensation += item.value; return false; }
+      return true;
+    }) : [];
+    if (compensation) {
+      u.balance = (Number(u.balance) || 0) + compensation;
+      if (!u.stats || typeof u.stats !== "object") u.stats = {};
+      u.stats.coinsEarned = (Number(u.stats.coinsEarned) || 0) + compensation;
+      migratedOgItems++;
+    }
+    u.ogCleanupVersion = 1;
+    migrationNeeded = true;
+  }
+  if (migrationNeeded) {
+    await saveDb();
+    if (migratedOgItems) console.log(`Отключённые OG-предметы заменены монетами у ${migratedOgItems} игроков.`);
+  }
   server.listen(PORT, () => console.log("API на порту", PORT));
   tgApi("getMe", {}).then(info => { if (info?.ok && info.result?.username) botUsername = info.result.username; }).catch(error => console.error("getMe:", error.message));
   poll();
