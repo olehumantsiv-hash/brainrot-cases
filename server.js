@@ -183,16 +183,15 @@ for (const u of Object.values(db.users)) if (Array.isArray(u.inv)) u.inv = u.inv
 const ADMIN_IDS = (process.env.ADMIN_IDS || "").split(",").map(x => x.trim()).filter(Boolean);
 const pendingBonus = new Set();
 
-const publicItems = () => Object.fromEntries(Object.entries(ITEMS).map(([k, v]) => [k, { name: v.name, value: v.value, e: v.e, c: v.c, img: v.img || null }]));
+const publicItems = (ownedKeys = []) => Object.fromEntries(Object.entries(ITEMS)
+  .filter(([k, v]) => v.value > 10 || ownedKeys.includes(k))
+  .map(([k, v]) => [k, { name: v.name, value: v.value, e: v.e, c: v.c, img: v.img || null }]));
 const publicCases = () => Object.fromEntries(Object.entries(CASES).map(([id, c]) => {
-  const tot = c.drops ? c.drops.reduce((s, d) => s + d[1], 0) : 0;
   return [id, {
     name: c.name, price: c.price, art: c.art, g: c.g, special: c.special || null, cat: c.cat || "special",
     pool: c.drops ? [...new Set(c.drops.map(d => d[0]))] : ["dragon", "coin"],
     count: c.drops ? c.drops.length : 2,
-    rtp: c.stats ? Math.round(c.stats.rtp * 1000) / 10 : null,
     maxX: c.stats ? Math.round(c.stats.maxX * 100) / 100 : null,
-    chances: c.drops ? Object.fromEntries(c.drops.map(([k, w]) => [k, Math.round(w / tot * 10000) / 100])) : null,
   }];
 }));
 
@@ -358,7 +357,7 @@ const mePayload = (user, u) => ({
   isAdmin: ADMIN_IDS.includes(String(user.id)), partner: partnerPayload(user.id),
   user: { username: user.username || "", first_name: user.first_name || "" },
   cfg: { bonusChannel: CHANNEL, bonusBotTag: BOT_TAG, bonusMin: BONUS_MIN, bonusMax: BONUS_MAX, upgradeMult: UPGRADE_MULT,
-    items: publicItems(), cases: publicCases() },
+    items: publicItems(u.inv), cases: publicCases() },
 });
 
 const server = http.createServer(async (req, res) => {
@@ -613,7 +612,7 @@ const server = http.createServer(async (req, res) => {
     const i = Math.floor(Number(body.index));
     const srcKey = u.inv[i];
     const tgtKey = String(body.target || "");
-    if (!ITEMS[srcKey] || !ITEMS[tgtKey]) return send(400, { error: "Выберите предметы" });
+    if (!ITEMS[srcKey] || !ITEMS[tgtKey] || ITEMS[tgtKey].value <= 10) return send(400, { error: "Выберите предметы дороже 10 монет" });
     if (ITEMS[tgtKey].value <= ITEMS[srcKey].value) return send(400, { error: "Цель должна быть дороже" });
     const chance = Math.min(0.9, Math.max(0.01, (ITEMS[srcKey].value / ITEMS[tgtKey].value) * UPGRADE_MULT));
     const roll = crypto.randomInt(1_000_000) / 1_000_000;

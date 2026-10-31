@@ -1,7 +1,8 @@
 // Каталог брейнротов (список: gameboost.com/blog/all-brainrots-steal-a-brainrot).
 // Цена value = рубли. Реальные цены — в RUB ниже (они всегда главнее). Остальные — ОЦЕНКА по доходу (est()),
 // подогнанная под реальные цены: Ketchuru 20, Garama 40, Dragon Cannelloni 900 (в монетах).
-const RUB = { dragon: 900, garama: 40, ketchuru: 20, spaghetti: 18, orcaledon: 25, casaboo: 500, skibidi: 14000, lasupreme: 2000, spookypumpky: 140, fragrama: 110, capitano: 100 }; // реальные цены в монетах; остальные - оценка
+const RUB = { dragon: 900, garama: 40, ketchuru: 20, spaghetti: 18, orcaledon: 25, casaboo: 500, skibidi: 14000, lasupreme: 2000, spookypumpky: 140, fragrama: 110, capitano: 100,
+  reinito: 200, mobybros: 1110, tirilikalika: 1080, gingergerat: 1200, ketupat: 20, burguro: 80 };
 
 const COLORS = { common:"#9aa0b4", rare:"#38bdf8", epic:"#a855ff", legendary:"#fbbf24", mythic:"#fb7185", god:"#ff7a00", secret:"#ff4ecd", og:"#ffd24a" };
 // [id, название, редкость, доход/сек, эмодзи]
@@ -40,7 +41,9 @@ const ROWS = [
   ["spaghetti","Spaghetti Tualetti","secret",6e7,"🍝"], ["fragola","Fragola La La La","secret",1e8,"🍓"], ["cooki","Cooki and Milki","secret",1.55e8,"🍪"],
   ["strawberry","Strawberry Elephant","og",7.5e8,"🍓"],
   ["spookypumpky","Spooky and Pumpky","secret",1.6e8,"🎃"], ["fragrama","Fragrama and Chocrama","secret",1.5e8,"🍫"], ["capitano","Capitano Moby","secret",1.2e8,"🐳"],
-  ["tralaledon","Tralaledon","secret",2.75e7,"🦖"], ["mobybros","Moby Bros","secret",3e7,"🐋"],
+  ["tralaledon","Tralaledon","secret",2.75e7,"🦖"], ["mobybros","Moby Bros","secret",2.25e8,"🐋"],
+  ["tirilikalika","Tirilikalika Tirilikalako","secret",4.25e7,"🐔"], ["gingergerat","Ginger Gerat","secret",7.5e7,"🍪"],
+  ["ketupat","Ketupat Kepat","secret",3.5e7,"🟩"], ["burguro","Burguro and Fryuro","secret",1.5e8,"🍔"],
   ["skibidi","Skibidi Toilet","og",4.5e8,"🚽"], ["headless","Headless Horseman","og",6e8,"🎃"], ["meowl","Meowl","og",6e8,"🦉"], ["spyderelephant","Spyder Elephant","og",1e9,"🐘"],
 ];
 const IMG = { dragon: "https://static.wikia.nocookie.net/stealabr/images/a/a5/Dragon_Cannelloni.png/revision/latest/scale-to-width-down/1200" };

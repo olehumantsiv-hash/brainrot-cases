@@ -440,7 +440,6 @@ function renderCases(){
       <span class="badge">x${xfmt(c.maxX)}</span>
       <b class="cname">${c.name}</b>
       <div class="art">${c.art}</div>
-      <span class="pill">RTP ${xfmt(c.rtp)}%</span>
       <div class="cfoot"><span>${c.count} предм.</span><span class="cprice">🪙 ${fmt(c.price)}</span></div></div>`;
   }).join("");
   if(!html) html = `<p class="info" style="grid-column:1/-1">В этой категории пока нет кейсов.</p>`;
@@ -766,10 +765,8 @@ function openCase(id){
     const pool = (c && c.pool) || ["dragon"];
     $("#oInfo").textContent = "Все награды виртуальные и поступают в коллекцию.";
     strip.innerHTML = Array(10).fill(0).map((_,i)=>card(pool[i%pool.length])).join("");
-    if(c && c.chances){
-      $("#oRtp").textContent = `RTP ${xfmt(c.rtp)}%: в среднем игрокам возвращается ${xfmt(c.rtp)}% от цены кейса. Самый дешёвый приз стоит 1/3 цены, самый дорогой — до x${xfmt(c.maxX)}.`;
-      $("#oDrops").innerHTML = Object.entries(c.chances).sort((a,b)=>item(b[0]).value-item(a[0]).value).map(([k,p])=>`<div class="dr">${card(k)}<span class="ch">${String(p).replace(".", ",")}%</span></div>`).join("");
-    } else { $("#oRtp").textContent=""; $("#oDrops").innerHTML=""; }
+    $("#oRtp").textContent = "Возможные награды";
+    $("#oDrops").innerHTML = pool.slice().sort((a,b)=>item(b).value-item(a).value).map(k=>`<div class="dr">${card(k)}</div>`).join("");
   }
   if(id==="sub"){ $("#oRtp").textContent=""; $("#oDrops").innerHTML=""; }
   show("open");
@@ -848,7 +845,7 @@ function renderUp(){
     ? `<div class="inv">${S.inv.map((k,i)=>card(k).replace('class="it"',`class="it ${upI===i?"on":""}" data-i="${i}"`)).join("")}</div>`
     : '<div class="empty">Нет предметов для апгрейда</div>';
     src.onclick = e => { if(upSpin) return; const el=e.target.closest(".it"); if(!el) return; upI=+el.dataset.i; upT=""; src.classList.remove("open"); $("#upTgt").classList.add("open"); renderUp(); };
-  const keys = Object.keys(S.cfg.items||{}).filter(k=>k!=="coin");
+  const keys = Object.keys(S.cfg.items||{}).filter(k=>k!=="coin"&&item(k).value>10);
   const srcVal = S.inv[upI] ? item(S.inv[upI]).value : 0;
   $("#upTgt").innerHTML = keys.filter(k=>item(k).value>srcVal).map(k=>
     card(k).replace('class="it"',`class="it ${upT===k?"on":""}" data-k="${k}"`)
@@ -871,7 +868,7 @@ document.querySelectorAll("[data-up-preset]").forEach(b=>b.onclick=()=>{
   if(upI<0 || upSpin) return;
   const v=Number(b.dataset.upPreset), source=item(S.inv[upI]).value;
   const wanted=v<11 ? source*v : source*(S.cfg.upgradeMult||0.8)/(v/100);
-  const keys=Object.keys(S.cfg.items||{}).filter(k=>k!=="coin"&&item(k).value>source);
+  const keys=Object.keys(S.cfg.items||{}).filter(k=>k!=="coin"&&item(k).value>10&&item(k).value>source);
   keys.sort((a,b)=>Math.abs(Math.log(item(a).value/wanted))-Math.abs(Math.log(item(b).value/wanted)));
   if(keys.length){ upT=keys[0]; renderUp(); document.querySelectorAll("[data-up-preset]").forEach(x=>x.classList.toggle("on",x===b)); }
 });
