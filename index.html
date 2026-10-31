@@ -8,18 +8,18 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Rubik:wght@400;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0b0613;--card:#1a0f2b;--line:#33214f;--acc:#ff7a00;--acc2:#a855ff;--text:#f4ecff;--muted:#9886b8;--red:#ff4466;--green:#39ffb0;color-scheme:dark}
+:root{--bg:#090b16;--card:#151a2b;--line:#2d3349;--acc:#ff9d21;--acc2:#ff5b35;--text:#f7f4ff;--muted:#9ca4bc;--red:#ff496a;--green:#45e0a5;color-scheme:dark}
 *{box-sizing:border-box;margin:0}
 html,body{height:100%}
-body{background:radial-gradient(900px 420px at 50% -8%,#3b1168 0,var(--bg) 62%) fixed;color:var(--text);font:400 15px/1.45 Rubik,system-ui,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+body{background:radial-gradient(900px 420px at 50% -8%,#51300d 0,transparent 62%),radial-gradient(760px 540px at 100% 95%,#172044 0,transparent 70%),var(--bg) fixed;color:var(--text);font:400 15px/1.45 Rubik,system-ui,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
 h1,h2{font-family:Unbounded,system-ui,sans-serif;font-weight:800}
-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;position:sticky;top:0;z-index:5;background:#0b0613e8;backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-.logo{font-size:20px;letter-spacing:.06em;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;position:sticky;top:0;z-index:5;background:#090b16e8;backdrop-filter:blur(10px);border-bottom:1px solid #34394a}
+.logo{font-size:20px;letter-spacing:.06em;background:linear-gradient(90deg,#ffca55,#ff7438);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 20px #ff922022}
 .bal{display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 5px 5px 14px;font-weight:600}
 .bal button{background:var(--acc);color:#2a1200;border:0;border-radius:50%;width:28px;height:28px;font-size:18px;font-weight:700;cursor:pointer}
 .bal .topup-quick{background:#a87be1;color:#21112f;font-size:20px;line-height:1}
 .app-layout{min-height:100vh}
-.sidebar{position:fixed;inset:0 auto 0 0;width:276px;display:flex;flex-direction:column;gap:10px;padding:14px 10px max(12px,env(safe-area-inset-bottom,0));background:#20172a;border-right:1px solid #4a3657;z-index:30}
+.sidebar{position:fixed;inset:0 auto 0 0;width:276px;display:flex;flex-direction:column;gap:10px;padding:14px 10px max(12px,env(safe-area-inset-bottom,0));background:linear-gradient(180deg,#191d30,#101321 80%);border-right:1px solid #353b52;z-index:30}
 .side-user,.side-balance{display:flex;align-items:center;gap:12px;background:#271e31;border:1px solid #43354d;border-radius:13px;padding:10px}
 .side-avatar{width:42px;height:42px;display:grid;place-items:center;flex:none;border-radius:12px;background:linear-gradient(135deg,#ffc06b,#ff8a36);color:#fff;font:800 18px Unbounded,sans-serif}
 .side-user small{display:block;color:#b8a8c5;font-size:10px}.side-user b{display:block;font-size:14px;line-height:1.2;overflow-wrap:anywhere}
@@ -28,7 +28,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;pa
 .side-nav button{display:flex;align-items:center;gap:12px;width:100%;min-height:43px;padding:9px 12px;border:1px solid transparent;border-radius:10px;background:transparent;color:#b8a8c5;text-align:left;font:600 12px Rubik,sans-serif;cursor:pointer}
 .side-nav button svg{width:19px;height:19px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .side-nav button:hover{background:#ffffff0a;color:#f4ecff}
-.side-nav button.on{background:#38283e;border-color:#a97347;box-shadow:inset 0 -2px #ff9a3d;color:#ffc481}
+.side-nav button.on{background:linear-gradient(100deg,#ff98232b,#ff5a2412);border-color:#b16b2c;box-shadow:inset 3px 0 #ffad34;color:#ffd094}
 .side-nav .profile-link{margin-top:auto}
 .bonus-grid{display:grid;gap:12px}
 .bonus-card{background:linear-gradient(150deg,#2a1a36,#17101f);border:1px solid #513d60;border-radius:16px;padding:16px}
@@ -44,7 +44,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;pa
 .topup-card{background:linear-gradient(150deg,#2a1a36,#17101f);border:1px solid #513d60;border-radius:16px;padding:16px;display:grid;gap:12px}.topup-card label{font-size:13px;color:var(--muted)}.topup-card input[type=number]{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#110a19;color:var(--text);font:600 16px Rubik,sans-serif}.terms-check{display:flex;align-items:flex-start;gap:9px;color:var(--muted);font-size:12px}.terms-check input{margin-top:3px;accent-color:var(--acc)}.terms-copy{font-size:12px;color:var(--muted);padding:10px;background:#ffffff08;border-radius:10px}.topup-status{min-height:20px;color:var(--green);font-size:13px}
 .deposit-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.deposit-option{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(160deg,#241240,var(--card));color:var(--text);cursor:pointer}.deposit-option.selected{border-color:var(--green);box-shadow:0 0 18px #39ffb044}.deposit-option .it{width:100%;min-width:0}.deposit-option>strong{font-size:12px;color:#ffe0c2}.deposit-form{display:grid;gap:10px;margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:14px;background:#1a1025}.deposit-form input{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:#100b19;color:var(--text);font:14px Rubik,sans-serif}.deposit-history{display:grid;gap:8px;margin-top:12px}.deposit-history-row{padding:11px;border:1px solid var(--line);border-radius:11px;background:#1a1025;font-size:12px}.deposit-history-row small{display:block;color:var(--muted);margin-top:3px}.topup-tabs{display:flex;gap:8px;margin:0 0 12px}.topup-tab{flex:1;padding:10px 8px;border:1px solid var(--line);border-radius:12px;background:#1a1025;color:var(--muted);font:600 12px Rubik,sans-serif}.topup-tab.on{background:#38283e;border-color:#a97347;color:#ffc481}.promo-feedback{font-size:12px;min-height:18px}.promo-feedback.valid{color:var(--green)}.promo-feedback.invalid{color:#ff718c}
 .deposit-qty{display:flex;align-items:center;gap:12px}.deposit-qty button,.withdraw-qty button{border:1px solid var(--line);border-radius:9px;background:#100b19;color:var(--text);padding:5px 12px;font:700 18px Rubik,sans-serif}.deposit-qty b,.withdraw-qty b{min-width:24px;text-align:center}.inventory-entry{display:grid;gap:5px;min-width:0}.inventory-entry>.it{width:100%;box-sizing:border-box;cursor:default}.inventory-actions{display:flex;gap:4px}.inventory-actions .btn{padding:7px 4px;font-size:11px;border-radius:8px}.withdraw-options{display:grid;gap:7px;text-align:left}.withdraw-option{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:7px 9px;border:1px solid var(--line);border-radius:9px}.withdraw-option small{display:block;color:var(--muted);font-size:10px}.withdraw-item-icon img{width:42px;height:42px;object-fit:contain}.withdraw-item-info{display:flex;align-items:center;gap:7px;min-width:0}.withdraw-qty{display:flex;align-items:center;gap:5px;flex:none}.withdraw-qty button{padding:3px 9px;font-size:16px}
-.workspace{min-height:100vh;margin-left:276px}
+.workspace{min-height:100vh;margin-left:276px;background:radial-gradient(ellipse at 50% -4%,#59320d66 0,transparent 36%),radial-gradient(ellipse at 100% 34%,#2425543b 0,transparent 35%)}
 main{max-width:760px;margin:0 auto;padding:18px}
 #menuToggle{display:none;align-items:center;justify-content:center;width:38px;height:38px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font-size:20px;cursor:pointer}
 #navScrim{display:none}
@@ -65,7 +65,7 @@ h2.t{font-size:18px;margin:0 0 12px}
 .cats::-webkit-scrollbar{display:none}
 .cat{flex:0 0 auto;background:#ffffff10;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:8px 14px;font:600 13px Rubik,sans-serif;cursor:pointer;white-space:nowrap}
 .cat.on{background:linear-gradient(135deg,#ff7a00,#ff3d00);border-color:transparent;color:#fff}
-.grid .cc{position:relative;min-height:236px;padding:16px 10px 12px;justify-content:space-between;gap:0;background:radial-gradient(120% 80% at 50% 40%,color-mix(in srgb,var(--g) 34%,transparent),transparent 70%),linear-gradient(180deg,#1c0f2e,#120a1f);border-color:color-mix(in srgb,var(--g) 50%,#2a1840);border-radius:22px;overflow:visible}
+.grid .cc{position:relative;min-height:236px;padding:16px 10px 12px;justify-content:space-between;gap:0;background:radial-gradient(120% 80% at 50% 40%,color-mix(in srgb,var(--g) 38%,transparent),transparent 70%),linear-gradient(180deg,#20243a,#111522);border-color:color-mix(in srgb,var(--g) 50%,#31384b);border-radius:15px 15px 20px 20px;overflow:visible;box-shadow:0 10px 25px #0004}
 .cc::before{content:"🕸️";position:absolute;left:8px;top:6px;font-size:22px;opacity:.28;pointer-events:none}
 .cc.water::before{content:"🫧"}
 .cc.color::before{content:"✨"}
@@ -166,7 +166,12 @@ h2.t{font-size:18px;margin:0 0 12px}
 .up-slot{height:78px;min-width:0;border:1px solid #9360b3;background:#21182b;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:5px;color:#d8baff;font-size:10px;overflow:hidden}.up-slot .pic{height:42px;display:flex;align-items:center;justify-content:center;font-size:28px}.up-slot .pic img{max-width:42px;max-height:40px;object-fit:contain}.up-slot .item-price{font-size:9px;color:#ffbd73}
 .up-slot.selected{border-color:#ff9c42;box-shadow:0 0 10px #ff7a0033;color:#fff}.up-slot .pic{font-size:26px;line-height:1.05}.up-slot img{max-width:42px;max-height:40px;object-fit:contain}.up-slot span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 .slot-arrow{text-align:center;font-size:23px;color:#fff;text-shadow:0 0 8px #fff8}
-.upgrade-screen .up-actions{gap:7px;margin:0 4px 10px}
+.upgrade-screen .up-actions{display:flex;align-items:center;gap:8px;margin:0 4px 10px}
+.upgrade-screen .up-actions .upgrade-main{flex:1}
+.fast-toggle{flex:none!important;width:38px;height:38px;padding:0;border-radius:12px;background:#ffd348!important;border:1px solid #fff0a4!important;color:#3b2600!important;box-shadow:0 0 15px #ffc92855;font-size:21px;line-height:1}
+.fast-toggle.on{background:#ffac20!important;box-shadow:0 0 20px #ffc928aa,inset 0 0 0 2px #fff2b5}
+.upgrade-screen .fast-toggle{flex:none;width:38px;height:38px;padding:0;border-radius:12px;background:#ffd348!important;border:1px solid #fff0a4!important;color:#3b2600!important;box-shadow:0 0 15px #ffc92855;font-size:21px;line-height:1}
+.upgrade-screen .fast-toggle.on{background:#ffac20!important;box-shadow:0 0 20px #ffc928aa, inset 0 0 0 2px #fff2b5}
 .upgrade-screen .chance-btn{padding:7px 10px;border-radius:4px;font-size:10px;background:#17121e!important;border:1px solid #614176!important;color:#d9b8fb!important}
 .upgrade-screen .upgrade-main{border-radius:3px;background:linear-gradient(100deg,#ff7a0077,#b65a1877)!important;color:#160d19;border:1px solid #d99854;font-size:14px;letter-spacing:.04em;padding:10px;text-transform:uppercase}
 .upgrade-screen .upgrade-main::after{content:"›";font-size:20px;margin-left:8px;vertical-align:-1px}
@@ -200,6 +205,20 @@ h2.t{font-size:18px;margin:0 0 12px}
 .upgrade-screen .pick-labels button{background:#24170f;border-color:#a65e30;color:#ffe0c2}.upgrade-screen #upSrc,.upgrade-screen #upTgt{background:#19110c;border-color:#614027}
 .it .item-price{font-size:10px;line-height:1.1;color:#ffcb8d;white-space:nowrap}
 .upgrade-screen #upSrc .it .item-price,.upgrade-screen #upTgt .it .item-price{font-size:8px}
+.game-hero{position:relative;isolation:isolate;overflow:hidden;min-height:160px;margin:0 0 16px;padding:20px;border:1px solid #85501d;border-radius:19px;background:linear-gradient(110deg,#201b22 2%,#201829 52%,#101629 100%);box-shadow:0 14px 35px #0007,inset 0 1px #ffd37a33}
+.game-hero::before{content:"";position:absolute;inset:-45% -10% auto 42%;height:240px;background:radial-gradient(ellipse,#ff9d214d,transparent 65%);z-index:-1}
+.game-hero::after{content:"🧠";position:absolute;right:8%;top:13px;font-size:90px;opacity:.2;transform:rotate(12deg);filter:drop-shadow(0 0 20px #ff9d21);z-index:-1}
+.hero-kicker{display:inline-flex;gap:7px;align-items:center;color:#ffc45c;font:800 10px Unbounded,sans-serif;letter-spacing:.09em;text-transform:uppercase}
+.game-hero h2{max-width:440px;margin:12px 0 7px;font-size:clamp(20px,4vw,29px);line-height:1.15;color:#fff4df;text-shadow:0 3px 18px #ff8b2833}
+.game-hero p{max-width:390px;color:#c4c6d5;font-size:12px;margin:0 0 15px}
+.hero-cta{border:1px solid #ffd07a;border-radius:10px;padding:10px 15px;background:linear-gradient(100deg,#ffad31,#ff6b2f);color:#271404;font:800 11px Unbounded,sans-serif;box-shadow:0 5px 18px #ff812944;cursor:pointer}
+.home-feed{margin:0 0 17px;padding:13px;border:1px solid #33394e;border-radius:15px;background:linear-gradient(140deg,#171c2b,#101320);box-shadow:0 9px 24px #0003}
+.home-feed-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+.home-feed-head h3{font:700 11px Unbounded,sans-serif;color:#f3eaff}.feed-live{font-size:9px;color:#7ef0b5;text-transform:uppercase;letter-spacing:.1em}.feed-live::before{content:"";display:inline-block;width:6px;height:6px;margin-right:5px;border-radius:50%;background:#58eb9d;box-shadow:0 0 9px #58eb9d}
+.drop-scroller{margin:0;padding:2px 2px 9px;scrollbar-color:#ff9d21 transparent}.drop-card{border-radius:11px;background:linear-gradient(160deg,#262a3c,#141725);border-color:#3d4359;border-bottom:2px solid #ffb733}.drop-card:hover{border-color:#ffcf77;box-shadow:0 7px 22px #ff9d2126}
+.admin-tabs{display:flex;gap:8px;margin:4px 0 14px}.admin-tab{flex:1;padding:11px 8px;border:1px solid #3c4257;border-radius:11px;background:#121725;color:#aeb5cb;font:700 11px Unbounded,sans-serif;cursor:pointer}.admin-tab.on{background:linear-gradient(110deg,#ff9e252b,#ff5b351c);border-color:#cc8534;color:#ffce7a}
+.admin-requests{display:grid;gap:9px}.admin-request{display:grid;gap:7px;padding:12px;border:1px solid #363d54;border-radius:13px;background:linear-gradient(145deg,#1a2031,#121624)}.admin-request-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.admin-request-head b{font:700 11px Unbounded,sans-serif;color:#ffd089}.admin-status{font-size:10px;color:#aeb5cb}.admin-request p{font-size:12px;color:#e4e6ef}.admin-request small{color:#aeb5cb}.admin-request-actions{display:flex;gap:6px}.admin-request-actions .btn{padding:9px 7px;border-radius:9px;font-size:11px}
+.view.on{animation:viewEnter .24s ease-out}@keyframes viewEnter{from{opacity:.6;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 @media (max-width:760px){
   .sidebar{width:min(310px,calc(100vw - 54px));transform:translateX(-105%);transition:transform .22s ease;box-shadow:12px 0 38px #0008;padding-top:max(12px,env(safe-area-inset-top,0))}
   body.nav-open .sidebar{transform:translateX(0)}
@@ -232,7 +251,6 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
     <button data-go="partner"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21c.7-4 3-6 7-6s6.3 2 7 6M17 8h5m-2.5-2.5v5"/></svg><span>Медиа / партнёры</span></button>
     <button data-go="admin" id="adminNav" style="display:none"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 14 8l5 2-5 2-2 5-2-5-5-2 5-2 2-5Z"/><path d="M19 16v5m-2.5-2.5h5"/></svg><span>Админ-панель</span></button>
     <button data-go="up"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 2-9 12h7l-1 8 10-13h-7l.5-7Z"/></svg><span>Апгрейд</span></button>
-    <button data-go="withdraw"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v13H4zM8 7V4h8v3M8 12h8m-8 4h5"/></svg><span>Вывод</span></button>
     <button data-go="me" class="profile-link"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 3.5-6 8-6s7.2 2 8 6"/></svg><span>Профиль</span></button>
   </nav>
 </aside>
@@ -246,9 +264,8 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
 <main>
   <div id="errBanner"></div>
   <section class="view on" id="v-cases">
-    <h2 class="t">Кейсы</h2>
-    <h3 style="font:600 12px Unbounded,sans-serif;color:#d8c9ed;margin:0 0 5px">✦ Последние дропы</h3>
-    <div id="liveFeed" class="drop-scroller"></div>
+    <div class="game-hero"><span class="hero-kicker">✦ Braincase collection</span><h2>Открой кейс.<br>Собери свою легенду.</h2><p>Редкие брейнроты, яркие коллекции и быстрые апгрейды — всё в твоём инвентаре.</p><button class="hero-cta" id="heroCases">ВЫБРАТЬ КЕЙС&nbsp; ↘</button></div>
+    <div class="home-feed"><div class="home-feed-head"><h3>✦ Последние открытия</h3><span class="feed-live">Live</span></div><div id="liveFeed" class="drop-scroller"></div></div>
     <div id="cbBox"></div>
     <div class="cats" id="cats"></div>
     <div class="grid" id="caseGrid"></div>
@@ -311,7 +328,11 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
   </section>
 
   <section class="view" id="v-admin">
-    <h2 class="t">Админ-панель</h2>
+    <h2 class="t">Мои заявки</h2>
+    <div class="admin-tabs"><button class="admin-tab on" data-admin-tab="deposits">💎 Депозиты</button><button class="admin-tab" data-admin-tab="withdrawals">📦 Выводы</button></div>
+    <p class="info" id="adminRequestMsg" style="text-align:left;margin:0 0 10px"></p>
+    <div id="adminRequests" class="admin-requests"></div>
+    <h2 class="t" style="margin-top:22px">Промокоды партнёров</h2>
     <div class="admin-card">
       <p>Создать промокод медиа-партнёру. За пополнения его рефералов начисляется 20% в игровых монетах.</p>
       <label for="adminPartner">Telegram @username или ID игрока</label><input id="adminPartner" placeholder="@username или ID">
@@ -326,7 +347,7 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
     <h2 class="t" id="oTitle"></h2>
     <div class="stage"><div class="strip" id="strip"></div></div>
     <div id="batchBox" class="row" style="margin:12px 0"></div>
-    <div class="row" style="margin:0 0 8px"><button class="btn alt" data-fast-animation>⚡ Быстрая анимация: выкл</button></div>
+    <div class="row" style="margin:0 0 8px"><button class="btn fast-toggle" data-fast-animation type="button" aria-label="Быстрая анимация выключена" aria-pressed="false" title="Быстрая анимация">⚡</button></div>
     <div class="row"><button class="btn" id="openBtn"></button></div>
     <p class="info" id="oInfo"></p>
     <div class="rtpbox" id="oRtp"></div>
@@ -354,7 +375,7 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
     </div>
     <div class="up-actions">
       <button class="btn upgrade-main" id="upBtn" disabled>Прокачать</button>
-      <button class="btn alt" data-fast-animation>⚡ Быстрая анимация: выкл</button>
+      <button class="btn fast-toggle" data-fast-animation type="button" aria-label="Быстрая анимация выключена" aria-pressed="false" title="Быстрая анимация">⚡</button>
     </div>
     <div class="fast-label">Быстрый выбор</div>
     <div class="up-presets">
@@ -423,6 +444,8 @@ const FALLBACK_ITEMS = {
 let selectedDepositItems={}, depositPromoTouched=false, depositPromoValid=false, depositPromoCheckId=0, depositPromoTimer=null, currentTopupTab="stars";
 const S = { bal:0, inv:[], liveFeed:[], depositRequests:[], withdrawRequests:[], depositPromo:"", partner:null, isAdmin:false, subClaimed:false, bonusClaims:{subscription:false,nickname:false}, stats:{casesOpened:0,upgrades:0,coinsEarned:0}, user:{username:"",first_name:""},
   cfg:{ bonusChannel:"@braincasegg", bonusBotTag:"braincase_game", bonusMin:1, bonusMax:10, upgradeMult:0.8, items:FALLBACK_ITEMS, cases:{} } };
+let adminRequestTab="deposits", adminRequestData={deposits:[],withdrawals:[]}, adminRequestsFetchedAt=0, adminRequestsLoading=false;
+const htmlSafe = value => String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 const item = k => (S.cfg.items && S.cfg.items[k]) || FALLBACK_ITEMS[k] || {name:k,e:"❓",c:"#9aa0b4",value:0};
 
 async function api(path, data){
@@ -643,9 +666,42 @@ function renderPartner(){
   $("#partnerWithdraw").disabled=!p.availableCoins;
 }
 function renderAdmin(){
-  if(!S.isAdmin){ $("#adminPromoMsg").textContent="Нет доступа."; $("#createPromoBtn").disabled=true; }
-  else $("#createPromoBtn").disabled=false;
+  if(!S.isAdmin){ $("#adminPromoMsg").textContent="Нет доступа."; $("#createPromoBtn").disabled=true; $("#adminRequests").innerHTML='<div class="empty">Нет доступа к заявкам.</div>'; return; }
+  $("#createPromoBtn").disabled=false;
+  document.querySelectorAll("[data-admin-tab]").forEach(button=>button.classList.toggle("on",button.dataset.adminTab===adminRequestTab));
+  renderAdminRequests();
+  if(!adminRequestsLoading && Date.now()-adminRequestsFetchedAt>10000) loadAdminRequests();
 }
+function renderAdminRequests(){
+  const host=$("#adminRequests"); if(!host)return;
+  const list=adminRequestData[adminRequestTab]||[];
+  if(!list.length){host.innerHTML='<div class="empty">Заявок в этом разделе пока нет.</div>';return;}
+  const isDeposit=adminRequestTab==="deposits";
+  const statusLabels=isDeposit?{pending:"Ожидает принятия",accepted:"Ждём предметы",rejected:"Отклонена",credited:"Зачислено"}:{pending:"Ожидает принятия",accepted:"Ожидает выдачи",rejected:"Отклонена",completed:"Выдано"};
+  host.innerHTML=list.map(request=>{
+    const id=htmlSafe(request.id), player=htmlSafe(request.username?`@${request.username}`:request.userId), game=htmlSafe(request.gameUsername||"—");
+    const details=isDeposit?`<p><b>Игрок:</b> ${player} <small>· ID ${htmlSafe(request.userId)}</small></p><p><b>Username в игре:</b> ${game}</p><p><b>Передаёт:</b> ${htmlSafe(request.itemName||"—")}</p><p><b>Начисление:</b> ${fmt(request.creditCoins||0)} 🪙${request.promoCode?` <small>(промокод ${htmlSafe(request.promoCode)})</small>`:""}</p>`:`<p><b>Игрок:</b> ${player} <small>· ID ${htmlSafe(request.userId)}</small></p><p><b>Username в игре:</b> ${game}</p><p><b>Сдаёт:</b> ${htmlSafe(item(request.sourceKey).name)} · ${fmt(request.sourceValue||0)} 🪙</p><p><b>Получает:</b> ${htmlSafe((request.items||[]).map(x=>`${item(x.itemKey).name} × ${x.count}`).join(", "))}</p><p><b>Остаток:</b> ${fmt(request.remainderCoins||0)} 🪙</p>`;
+    let actions="";
+    if(request.status==="pending") actions=`<button class="btn" data-admin-action="accept" data-admin-id="${id}">Принять</button><button class="btn red" data-admin-action="reject" data-admin-id="${id}">Отклонить</button>`;
+    else if(request.status==="accepted") actions=isDeposit?`<button class="btn" data-admin-action="confirm" data-admin-id="${id}">Подтвердить поступление</button><button class="btn red" data-admin-action="reject" data-admin-id="${id}">Отклонить</button>`:`<button class="btn" data-admin-action="complete" data-admin-id="${id}">Подтвердить выдачу</button><button class="btn red" data-admin-action="reject" data-admin-id="${id}">Отклонить и вернуть</button>`;
+    return `<article class="admin-request"><div class="admin-request-head"><b>Заявка № ${id}</b><span class="admin-status">${statusLabels[request.status]||htmlSafe(request.status)}</span></div>${details}<div class="admin-request-actions">${actions}</div></article>`;
+  }).join("");
+}
+async function loadAdminRequests(force=false){
+  if(!S.isAdmin||adminRequestsLoading||(!force&&Date.now()-adminRequestsFetchedAt<10000))return;
+  adminRequestsLoading=true;$("#adminRequestMsg").textContent="Загружаю заявки…";
+  try{adminRequestData=await api("/api/admin/requests/list",{});adminRequestsFetchedAt=Date.now();$("#adminRequestMsg").textContent="";renderAdminRequests();}
+  catch(error){$("#adminRequestMsg").textContent=error.message;}
+  finally{adminRequestsLoading=false;}
+}
+document.querySelectorAll("[data-admin-tab]").forEach(button=>button.onclick=()=>{adminRequestTab=button.dataset.adminTab;renderAdmin();loadAdminRequests();});
+$("#adminRequests").onclick=async event=>{
+  const button=event.target.closest("[data-admin-action]");if(!button)return;
+  const type=adminRequestTab, id=button.dataset.adminId, action=button.dataset.adminAction;
+  button.disabled=true;$("#adminRequestMsg").textContent=`Обрабатываю заявку ${id}…`;
+  try{adminRequestData=await api("/api/admin/requests/decision",{type,id,action});adminRequestsFetchedAt=Date.now();$("#adminRequestMsg").textContent=`Заявка ${id} обновлена.`;renderAdminRequests();}
+  catch(error){$("#adminRequestMsg").textContent=error.message;button.disabled=false;}
+};
 async function copyPartnerLink(){
   const link=S.partner?.link;
   if(!link){ $("#partnerMsg").textContent="Ссылка пока недоступна: не определён username бота."; return; }
@@ -823,9 +879,10 @@ $("#withdrawSubmit").onclick=async()=>{
 
 let cur=null, spinning=false, batchCount=1, fastAnimations=false;
 try{ fastAnimations=localStorage.getItem("braincaseFastAnimations")==="1"; }catch{}
-function updateFastAnimationButtons(){ document.querySelectorAll("[data-fast-animation]").forEach(b=>{ b.textContent=`⚡ Быстрая анимация: ${fastAnimations?"вкл":"выкл"}`; b.classList.toggle("on",fastAnimations); }); }
+function updateFastAnimationButtons(){ document.querySelectorAll("[data-fast-animation]").forEach(b=>{ b.textContent="⚡"; b.classList.toggle("on",fastAnimations); b.setAttribute("aria-pressed",String(fastAnimations)); b.setAttribute("aria-label",`Быстрая анимация ${fastAnimations?"включена":"выключена"}`); b.title=`Быстрая анимация ${fastAnimations?"включена":"выключена"}`; }); }
 document.querySelectorAll("[data-fast-animation]").forEach(b=>b.onclick=()=>{ fastAnimations=!fastAnimations; try{localStorage.setItem("braincaseFastAnimations",fastAnimations?"1":"0");}catch{} updateFastAnimationButtons(); });
 updateFastAnimationButtons();
+$("#heroCases").onclick=()=>$("#cats").scrollIntoView({behavior:"smooth",block:"start"});
 function openCase(id){
   cur = id;
   const strip = $("#strip"); strip.style.transition="none"; strip.style.transform="translateX(0)";

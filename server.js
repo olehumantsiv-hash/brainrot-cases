@@ -437,7 +437,7 @@ const server = http.createServer(async (req, res) => {
   const urlPath = (req.url || "/").split("?")[0];
   if (req.method === "GET" && urlPath === "/health") { // быстрая проверка версии: открыть /health в браузере
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
-    return res.end(JSON.stringify({ version: "colored-cases-withdraw-v1", cases: Object.keys(CASES), itemsWithImages: Object.entries(ITEMS).filter(([, v]) => v.img).map(([k]) => k) }));
+    return res.end(JSON.stringify({ version: "braincase-redesign-admin-requests-v1", cases: Object.keys(CASES), itemsWithImages: Object.entries(ITEMS).filter(([, v]) => v.img).map(([k]) => k) }));
   }
   if (req.method === "GET" && /^\/img\/[a-z0-9_-]+\.(png|webp|jpg)$/.test(urlPath)) {
     try {
@@ -517,6 +517,63 @@ const server = http.createServer(async (req, res) => {
     try { await saveDb(); }
     catch (error) { db = normalizeDb(JSON.parse(before)); console.error("Could not save promo:", error.message); return send(503, { error: "Не удалось сохранить промокод. Попробуйте ещё раз." }); }
     return send(200, { ok: true, code, partnerId, partner: partnerPayload(partnerId) });
+  }
+
+  if (urlPath === "/api/admin/requests/list") {
+    if (!ADMIN_IDS.includes(uid)) return send(403, { error: "Нет доступа к админ-панели" });
+    const newest = list => Object.values(list).sort((a, b) => b.createdAt - a.createdAt);
+    return send(200, { deposits: newest(db.depositRequests), withdrawals: newest(db.withdrawRequests) });
+  }
+
+  if (urlPath === "/api/admin/requests/decision") {
+    if (!ADMIN_IDS.includes(uid)) return send(403, { error: "Нет доступа к админ-панели" });
+    const type = body.type === "withdrawals" ? "withdrawals" : body.type === "deposits" ? "deposits" : "";
+    const action = String(body.action || "");
+    const id = String(body.id || "");
+    const requests = type === "deposits" ? db.depositRequests : type === "withdrawals" ? db.withdrawRequests : null;
+    const request = requests?.[id];
+    if (!request) return send(404, { error: "Заявка не найдена." });
+    const allowed = type === "deposits"
+      ? (action === "accept" && request.status === "pending") || (action === "reject" && ["pending", "accepted"].includes(request.status)) || (action === "confirm" && request.status === "accepted")
+      : (action === "accept" && request.status === "pending") || (action === "reject" && ["pending", "accepted"].includes(request.status)) || (action === "complete" && request.status === "accepted");
+    if (!allowed) return send(409, { error: `Это действие уже нельзя выполнить: ${request.status}.` });
+    const before = JSON.stringify(db);
+    let userMessage = "";
+    if (type === "deposits") {
+      if (action === "accept") {
+        request.status = "accepted"; request.acceptedAt = Date.now(); request.acceptedBy = uid;
+        userMessage = `Заявка ${id} принята! Примите трейд от нашего бота на игровой username ${request.gameUsername} и передайте брейнроты: ${request.itemName}.`;
+      } else if (action === "reject") {
+        request.status = "rejected"; request.rejectedAt = Date.now(); request.rejectedBy = uid;
+        userMessage = `Заявка ${id} отклонена. Если это ошибка, напишите администратору бота.`;
+      } else {
+        const player = getUser(request.userId);
+        player.balance += request.creditCoins; player.stats.coinsEarned += request.creditCoins;
+        request.status = "credited"; request.creditedAt = Date.now(); request.creditedBy = uid;
+        userMessage = `Поступление по заявке ${id} подтверждено. Начислено ${request.creditCoins} 🪙. Баланс: ${player.balance} 🪙.`;
+      }
+    } else if (action === "accept") {
+      request.status = "accepted"; request.acceptedAt = Date.now(); request.acceptedBy = uid;
+      userMessage = `Заявка на вывод ${id} принята. Мы подготовим ${withdrawItemsText(request.items)} и свяжемся с вами в игре ${request.gameUsername}.`;
+    } else if (action === "reject") {
+      const player = getUser(request.userId);
+      player.inv.push(request.sourceKey);
+      request.status = "rejected"; request.rejectedAt = Date.now(); request.rejectedBy = uid;
+      userMessage = `Заявка на вывод ${id} отклонена. ${ITEMS[request.sourceKey]?.name || request.sourceKey} возвращён в инвентарь.`;
+    } else {
+      const player = getUser(request.userId);
+      player.balance += request.remainderCoins; player.stats.coinsEarned += request.remainderCoins;
+      request.status = "completed"; request.completedAt = Date.now(); request.completedBy = uid;
+      userMessage = `Выдача по заявке ${id} подтверждена: ${withdrawItemsText(request.items)}. Остаток ${request.remainderCoins} 🪙 возвращён на баланс.`;
+    }
+    try { await saveDb(); }
+    catch (error) {
+      db = normalizeDb(JSON.parse(before));
+      console.error("Could not save admin request decision:", error.message);
+      return send(503, { error: "Не удалось сохранить решение. Попробуйте ещё раз." });
+    }
+    await tgApi("sendMessage", { chat_id: request.userId, text: userMessage }).catch(error => console.error("Could not notify request owner:", error.message));
+    return send(200, { ok: true, deposits: Object.values(db.depositRequests).sort((a, b) => b.createdAt - a.createdAt), withdrawals: Object.values(db.withdrawRequests).sort((a, b) => b.createdAt - a.createdAt) });
   }
 
   if (urlPath === "/api/deposit/promo/check") {
