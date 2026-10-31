@@ -437,6 +437,8 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
   <p id="withdrawSource" class="info" style="margin:0 0 8px"></p>
   <label for="withdrawGameUsername">Ваш игровой username</label>
   <input id="withdrawGameUsername" maxlength="32" placeholder="Имя в игре" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:#100b19;color:var(--text);font:14px Rubik,sans-serif;margin:8px 0">
+  <label for="withdrawSlot">Свободное время вывода · Кишинёв · через 3–7 дней</label>
+  <select id="withdrawSlot" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:#100b19;color:var(--text);font:14px Rubik,sans-serif;margin:8px 0 12px"></select>
   <div id="withdrawOptions" class="withdraw-options"></div>
   <p id="withdrawQuote" class="info"></p>
   <p id="withdrawMsg" class="partner-msg"></p>
@@ -468,7 +470,7 @@ const FALLBACK_ITEMS = {
   capitano:{name:"Capitano Moby",e:"🐳",c:"#ff4ecd",value:100,img:"img/capitano.png"}
 };
 let selectedDepositItems={}, depositPromoTouched=false, depositPromoValid=false, depositPromoCheckId=0, depositPromoTimer=null, currentTopupTab="stars";
-const S = { bal:0, inv:[], liveFeed:[], depositRequests:[], withdrawRequests:[], depositPromo:"", partner:null, isAdmin:false, subClaimed:false, bonusClaims:{subscription:false,nickname:false}, stats:{casesOpened:0,upgrades:0,coinsEarned:0}, user:{username:"",first_name:""},
+const S = { bal:0, inv:[], liveFeed:[], depositRequests:[], withdrawRequests:[], busyWithdrawSlots:[], depositPromo:"", partner:null, isAdmin:false, subClaimed:false, bonusClaims:{subscription:false,nickname:false}, stats:{casesOpened:0,upgrades:0,coinsEarned:0}, user:{username:"",first_name:""},
   cfg:{ bonusChannel:"@braincasegg", bonusBotTag:"braincase_game", bonusMin:1, bonusMax:10, upgradeMult:0.8, items:FALLBACK_ITEMS, cases:{} } };
 let adminRequestTab="deposits", adminRequestData={deposits:[],withdrawals:[]}, adminRequestsFetchedAt=0, adminRequestsLoading=false;
 const htmlSafe = value => String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
@@ -486,6 +488,7 @@ function apply(d){
   if(d.liveFeed) S.liveFeed = d.liveFeed;
   if(Array.isArray(d.depositRequests)) S.depositRequests = d.depositRequests;
   if(Array.isArray(d.withdrawRequests)) S.withdrawRequests = d.withdrawRequests;
+  if(Array.isArray(d.busyWithdrawSlots)) S.busyWithdrawSlots = d.busyWithdrawSlots;
   if(d.depositPromo != null){ S.depositPromo=d.depositPromo; if(d.depositPromo&&!depositPromoTouched&&!$("#depositPromoCode").value){ $("#depositPromoCode").value=d.depositPromo; checkDepositPromo(); } }
   if(Object.prototype.hasOwnProperty.call(d,"partner")) S.partner = d.partner;
   if(d.isAdmin != null) S.isAdmin = !!d.isAdmin;
@@ -704,9 +707,10 @@ function renderAdminRequests(){
   if(!list.length){host.innerHTML='<div class="empty">Заявок в этом разделе пока нет.</div>';return;}
   const isDeposit=adminRequestTab==="deposits";
   const statusLabels=isDeposit?{pending:"Ожидает принятия",accepted:"Ждём предметы",rejected:"Отклонена",credited:"Зачислено"}:{pending:"Ожидает принятия",accepted:"Ожидает выдачи",rejected:"Отклонена",completed:"Выдано"};
+  const timeLabel=at=>new Intl.DateTimeFormat("ru-RU",{timeZone:"Europe/Chisinau",dateStyle:"medium",timeStyle:"short"}).format(new Date(at))+" (Кишинёв)";
   host.innerHTML=list.map(request=>{
     const id=htmlSafe(request.id), player=htmlSafe(request.username?`@${request.username}`:request.userId), game=htmlSafe(request.gameUsername||"—");
-    const details=isDeposit?`<p><b>Игрок:</b> ${player} <small>· ID ${htmlSafe(request.userId)}</small></p><p><b>Username в игре:</b> ${game}</p><p><b>Передаёт:</b> ${htmlSafe(request.itemName||"—")}</p><p><b>Начисление:</b> ${fmt(request.creditCoins||0)} 🪙${request.promoCode?` <small>(промокод ${htmlSafe(request.promoCode)})</small>`:""}</p>`:`<p><b>Игрок:</b> ${player} <small>· ID ${htmlSafe(request.userId)}</small></p><p><b>Username в игре:</b> ${game}</p><p><b>Сдаёт:</b> ${htmlSafe(item(request.sourceKey).name)} · ${fmt(request.sourceValue||0)} 🪙</p><p><b>Получает:</b> ${htmlSafe((request.items||[]).map(x=>`${item(x.itemKey).name} × ${x.count}`).join(", "))}</p><p><b>Остаток:</b> ${fmt(request.remainderCoins||0)} 🪙</p>`;
+    const details=isDeposit?`<p><b>Игрок:</b> ${player} <small>· ID ${htmlSafe(request.userId)}</small></p><p><b>Username в игре:</b> ${game}</p><p><b>Передаёт:</b> ${htmlSafe(request.itemName||"—")}</p><p><b>Начисление:</b> ${fmt(request.creditCoins||0)} 🪙${request.promoCode?` <small>(промокод ${htmlSafe(request.promoCode)})</small>`:""}</p>${request.tradeStartAt?`<p><b>Окно передачи:</b> ${timeLabel(request.tradeStartAt)}–${timeLabel(request.tradeUntilAt)}</p>`:""}`:`<p><b>Игрок:</b> ${player} <small>· ID ${htmlSafe(request.userId)}</small></p><p><b>Username в игре:</b> ${game}</p><p><b>Время вывода:</b> ${request.scheduledAt?timeLabel(request.scheduledAt):"—"}</p><p><b>Сдаёт:</b> ${htmlSafe(item(request.sourceKey).name)} · ${fmt(request.sourceValue||0)} 🪙</p><p><b>Получает:</b> ${htmlSafe((request.items||[]).map(x=>`${item(x.itemKey).name} × ${x.count}`).join(", "))}</p><p><b>Остаток:</b> ${fmt(request.remainderCoins||0)} 🪙</p>`;
     let actions="";
     if(request.status==="pending") actions=`<button class="btn" data-admin-action="accept" data-admin-id="${id}">Принять</button><button class="btn red" data-admin-action="reject" data-admin-id="${id}">Отклонить</button>`;
     else if(request.status==="accepted") actions=isDeposit?`<button class="btn" data-admin-action="confirm" data-admin-id="${id}">Подтвердить поступление</button><button class="btn red" data-admin-action="reject" data-admin-id="${id}">Отклонить</button>`:`<button class="btn" data-admin-action="complete" data-admin-id="${id}">Подтвердить выдачу</button><button class="btn red" data-admin-action="reject" data-admin-id="${id}">Отклонить и вернуть</button>`;
@@ -898,7 +902,28 @@ function renderWithdrawalPage(){
   $("#withdrawCatalog").innerHTML=WITHDRAW_KEYS.map(key=>`<article class="deposit-option">${card(key)}<strong>${fmt(item(key).value)} 🪙 за штуку</strong><small>Выдача по заявке</small></article>`).join("");
   $("#withdrawInventory").innerHTML=S.inv.length?S.inv.map((key,index)=>`<div class="inventory-entry">${card(key)}<div class="inventory-actions"><button class="btn alt" data-inventory-action="sell" data-index="${index}">Продать</button><button class="btn" data-inventory-action="withdraw" data-index="${index}">Вывести</button></div></div>`).join(""):'<div class="empty" style="grid-column:1/-1">В инвентаре пока нет предметов для вывода.</div>';
   const labels={pending:"Ждёт решения",accepted:"Принята, ждёт выдачи",rejected:"Отклонена, предмет возвращён",completed:"Выдано"};
-  $("#withdrawHistoryPage").innerHTML=S.withdrawRequests.length?`<h3 style="font:600 13px Unbounded,sans-serif;margin:18px 0 8px">Мои заявки</h3>${S.withdrawRequests.map(r=>`<div class="deposit-history-row">№ ${r.id} · ${r.itemName}<small>${labels[r.status]||r.status}</small></div>`).join("")}`:"";
+  const timeLabel=value=>new Intl.DateTimeFormat("ru-RU",{timeZone:"Europe/Chisinau",dateStyle:"medium",timeStyle:"short"}).format(new Date(value))+" · Кишинёв";
+  $("#withdrawHistoryPage").innerHTML=S.withdrawRequests.length?`<h3 style="font:600 13px Unbounded,sans-serif;margin:18px 0 8px">Мои заявки</h3>${S.withdrawRequests.map(r=>`<div class="deposit-history-row">№ ${r.id} · ${r.itemName}<small>${labels[r.status]||r.status}${r.scheduledAt?` · ${timeLabel(r.scheduledAt)}`:""}</small></div>`).join("")}`:"";
+}
+function makeChisinauEpoch(year,month,day,hour,minute=0){
+  const target=Date.UTC(year,month-1,day,hour,minute);let guess=target;
+  const fmt=new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Chisinau",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"});
+  for(let i=0;i<4;i++){const p=Object.fromEntries(fmt.formatToParts(new Date(guess)).filter(x=>x.type!=="literal").map(x=>[x.type,Number(x.value)]));const shown=Date.UTC(p.year,p.month-1,p.day,p.hour,p.minute);const delta=target-shown;guess+=delta;if(!delta)break;}
+  return guess;
+}
+function populateWithdrawSlots(){
+  const select=$("#withdrawSlot"),now=Date.now(),from=now+3*86400000,to=now+7*86400000,busy=new Set(S.busyWithdrawSlots.map(Number));
+  const fmt=new Intl.DateTimeFormat("ru-RU",{timeZone:"Europe/Chisinau",dateStyle:"full",timeStyle:"short"});
+  const chisinau=new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Chisinau",year:"numeric",month:"2-digit",day:"2-digit"});
+  const today=Object.fromEntries(chisinau.formatToParts(new Date(now)).filter(x=>x.type!=="literal").map(x=>[x.type,Number(x.value)]));
+  const base=Date.UTC(today.year,today.month-1,today.day),slots=[];
+  for(let offset=0;offset<=8;offset++){
+    const d=new Date(base+offset*86400000),year=d.getUTCFullYear(),month=d.getUTCMonth()+1,day=d.getUTCDate();
+    for(const hour of [10,12,14,16,18,20]){const at=makeChisinauEpoch(year,month,day,hour);if(at>=from&&at<=to&&!busy.has(at))slots.push({at,label:fmt.format(new Date(at))+" · Кишинёв"});}
+  }
+  select.innerHTML=slots.length?`<option value="">Выберите время</option>${slots.map(s=>`<option value="${s.at}">${htmlSafe(s.label)}</option>`).join("")}`:'<option value="">Пока нет свободных слотов</option>';
+  select.disabled=!slots.length;
+  return slots.length;
 }
 function openWithdrawModal(index){
   withdrawIndex=index;selectedWithdrawItems={};
@@ -907,7 +932,7 @@ function openWithdrawModal(index){
   $("#withdrawSource").textContent=`Сдаёте ${item(key).name} · ${fmt(item(key).value)} 🪙`;
   $("#withdrawMsg").textContent="";
   try{if(!$("#withdrawGameUsername").value)$("#withdrawGameUsername").value=localStorage.getItem("braincaseGameUsername")||"";}catch{}
-  renderWithdrawOptions();$("#mWithdraw").classList.add("on");
+  populateWithdrawSlots();renderWithdrawOptions();$("#mWithdraw").classList.add("on");
 }
 function renderWithdrawOptions(){
   const value=withdrawIndex>=0?item(S.inv[withdrawIndex]).value:0;
@@ -915,7 +940,7 @@ function renderWithdrawOptions(){
   const total=Object.entries(selectedWithdrawItems).reduce((sum,[key,count])=>sum+item(key).value*count,0);
   const remainder=Math.max(0,value-total);
   $("#withdrawQuote").textContent=total?`К выдаче на ${fmt(total)} 🪙. Остаток ${fmt(remainder)} 🪙 вернётся на баланс после подтверждения выдачи.`:`Выберите количество предметов для получения. Остаток цены вернётся на баланс.`;
-  $("#withdrawSubmit").disabled=!total||total>value;
+  $("#withdrawSubmit").disabled=!total||total>value||!$("#withdrawSlot").value;
 }
 $("#withdrawOptions").onclick=e=>{
   const button=e.target.closest("[data-withdraw-step]");if(!button)return;
@@ -926,16 +951,19 @@ $("#withdrawOptions").onclick=e=>{
   renderWithdrawOptions();
 };
 $("#withdrawGameUsername").oninput=renderWithdrawOptions;
+$("#withdrawSlot").onchange=renderWithdrawOptions;
 $("#withdrawCancel").onclick=()=>$("#mWithdraw").classList.remove("on");
 $("#withdrawSubmit").onclick=async()=>{
   const gameUsername=$("#withdrawGameUsername").value.trim();
   if(gameUsername.length<2){$("#withdrawMsg").textContent="Укажите игровой username.";return;}
+  const scheduledAt=Number($("#withdrawSlot").value);
+  if(!scheduledAt){$("#withdrawMsg").textContent="Выберите свободное время выдачи.";return;}
   try{localStorage.setItem("braincaseGameUsername",gameUsername);}catch{}
   const items=Object.entries(selectedWithdrawItems).map(([item,count])=>({item,count}));
   $("#withdrawSubmit").disabled=true;$("#withdrawMsg").textContent="Создаём заявку…";
   try{
-    const result=await api("/api/withdraw/request",{index:withdrawIndex,sourceKey:S.inv[withdrawIndex],gameUsername,items});
-    $("#mWithdraw").classList.remove("on");apply(result);alert(`Заявка № ${result.request.id} отправлена. Предмет удерживается до решения администратора.`);
+    const result=await api("/api/withdraw/request",{index:withdrawIndex,sourceKey:S.inv[withdrawIndex],gameUsername,items,scheduledAt});
+    $("#mWithdraw").classList.remove("on");apply(result);alert(`Заявка № ${result.request.id} отправлена на ${new Intl.DateTimeFormat("ru-RU",{timeZone:"Europe/Chisinau",dateStyle:"medium",timeStyle:"short"}).format(new Date(scheduledAt))} (Кишинёв). Предмет удерживается до решения администратора.`);
   }catch(error){$("#withdrawMsg").textContent=error.message;}
   finally{renderWithdrawOptions();}
 };

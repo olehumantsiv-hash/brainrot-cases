@@ -313,24 +313,58 @@ async function adminBonusCodeCmd(text, adminId) {
 }
 
 const depositStatusText = status => ({ pending: "ожидает принятия", accepted: "заявка принята, ждём поступления", rejected: "отклонена", credited: "поступление подтверждено" }[status] || status);
+const formatChisinauTime = value => new Intl.DateTimeFormat("ru-RU", { timeZone: "Europe/Chisinau", dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+const depositTradeWindowText = request => request.tradeStartAt
+  ? `Время передачи: ${formatChisinauTime(request.tradeStartAt)}–${formatChisinauTime(request.tradeUntilAt)} (Кишинёв)`
+  : "Время передачи ещё не назначено";
 const depositAdminText = request =>
-  `Заявка на депозит ${request.id}\nИгрок: ${request.username ? "@" + request.username : request.userId} (ID ${request.userId})\nИгровой username: ${request.gameUsername}\nБрейнрот: ${request.itemName}\nНачисление: ${request.baseCoins} 🪙${request.bonusCoins ? ` + бонус ${request.bonusCoins} 🪙 по коду ${request.promoCode}` : ""}\nПромокод: ${request.promoCode || "нет"}\nСтатус: ${depositStatusText(request.status)}`;
+  `Заявка на депозит ${request.id}\nИгрок: ${request.username ? "@" + request.username : request.userId} (ID ${request.userId})\nИгровой username: ${request.gameUsername}\nБрейнрот: ${request.itemName}\nНачисление: ${request.baseCoins} 🪙${request.bonusCoins ? ` + бонус ${request.bonusCoins} 🪙 по коду ${request.promoCode}` : ""}\nПромокод: ${request.promoCode || "нет"}\n${depositTradeWindowText(request)}\nСтатус: ${depositStatusText(request.status)}`;
 
 const withdrawStatusText = status => ({ pending: "ожидает принятия", accepted: "принята, выдача ожидается", rejected: "отклонена, предмет возвращён", completed: "выдано" }[status] || status);
 const withdrawItemsText = items => (items || []).map(({ itemKey, count }) => `${ITEMS[itemKey]?.name || itemKey} × ${count}`).join(", ");
 const withdrawAdminText = request =>
-  `Заявка на вывод ${request.id}\nИгрок: ${request.username ? "@" + request.username : request.userId} (ID ${request.userId})\nИгровой username: ${request.gameUsername}\nСдаёт: ${ITEMS[request.sourceKey]?.name || request.sourceKey} (${request.sourceValue} 🪙)\nПолучает: ${withdrawItemsText(request.items)}\nОстаток после выдачи: ${request.remainderCoins} 🪙\nСтатус: ${withdrawStatusText(request.status)}`;
+  `Заявка на вывод ${request.id}\nИгрок: ${request.username ? "@" + request.username : request.userId} (ID ${request.userId})\nИгровой username: ${request.gameUsername}\nСдаёт: ${ITEMS[request.sourceKey]?.name || request.sourceKey} (${request.sourceValue} 🪙)\nПолучает: ${withdrawItemsText(request.items)}\nОстаток после выдачи: ${request.remainderCoins} 🪙\nВыбранное время: ${request.scheduledAt ? `${formatChisinauTime(request.scheduledAt)} (Кишинёв)` : "не выбрано"}\nСтатус: ${withdrawStatusText(request.status)}`;
 async function handleDepositCallback(query) {
-  const match = /^deposit:(accept|confirm|reject):(D[A-Z0-9]+)$/.exec(String(query.data || ""));
+  const match = /^deposit:(accept|confirm|reject|retry):(D[A-Z0-9]+)$/.exec(String(query.data || ""));
   if (!match) return;
   const [, action, id] = match;
-  if (!ADMIN_IDS.includes(String(query.from.id))) {
-    await tgApi("answerCallbackQuery", { callback_query_id: query.id, text: "Нет доступа к этому действию.", show_alert: true });
-    return;
-  }
   const request = db.depositRequests[id];
   if (!request) {
     await tgApi("answerCallbackQuery", { callback_query_id: query.id, text: "Заявка не найдена.", show_alert: true });
+    return;
+  }
+  if (action === "retry") {
+    if (String(query.from.id) !== String(request.userId)) {
+      await tgApi("answerCallbackQuery", { callback_query_id: query.id, text: "Эта кнопка предназначена игроку из заявки.", show_alert: true });
+      return;
+    }
+    if (request.status !== "accepted") {
+      await tgApi("answerCallbackQuery", { callback_query_id: query.id, text: "Заявка уже не ожидает передачи.", show_alert: true });
+      return;
+    }
+    if (Date.now() < Number(request.tradeUntilAt || 0)) {
+      await tgApi("answerCallbackQuery", { callback_query_id: query.id, text: `Текущая попытка ещё идёт. Повторить можно после ${formatChisinauTime(request.tradeUntilAt)}.`, show_alert: true });
+      return;
+    }
+    const before = JSON.stringify(db);
+    request.tradeStartAt = Date.now() + 5 * 60 * 1000;
+    request.tradeUntilAt = request.tradeStartAt + 5 * 60 * 1000;
+    request.tradeRetries = (request.tradeRetries || 0) + 1;
+    try { await saveDb(); }
+    catch (error) {
+      db = normalizeDb(JSON.parse(before));
+      console.error("Could not schedule deposit retry:", error.message);
+      await tgApi("answerCallbackQuery", { callback_query_id: query.id, text: "Не удалось сохранить время. Попробуйте ещё раз.", show_alert: true });
+      return;
+    }
+    const retryText = `Повторная попытка по заявке ${id} назначена на ${formatChisinauTime(request.tradeStartAt)}. Будьте в игре в течение 5 минут — до ${formatChisinauTime(request.tradeUntilAt)} (Кишинёв).`;
+    await tgApi("answerCallbackQuery", { callback_query_id: query.id, text: "Повторная попытка назначена через 5 минут." });
+    await tgApi("sendMessage", { chat_id: request.userId, text: retryText, reply_markup: { inline_keyboard: [[{ text: "Не получилось — повторить через 5 мин", callback_data: `deposit:retry:${id}` }]] } }).catch(() => {});
+    for (const adminId of ADMIN_IDS) await tgApi("sendMessage", { chat_id: adminId, text: `${depositAdminText(request)}\n\nИгрок запросил повторную попытку.` }).catch(() => {});
+    return;
+  }
+  if (!ADMIN_IDS.includes(String(query.from.id))) {
+    await tgApi("answerCallbackQuery", { callback_query_id: query.id, text: "Нет доступа к этому действию.", show_alert: true });
     return;
   }
   if ((action === "accept" && request.status !== "pending") || (action === "confirm" && request.status !== "accepted") || (action === "reject" && !["pending", "accepted"].includes(request.status))) {
@@ -343,7 +377,9 @@ async function handleDepositCallback(query) {
     request.status = "accepted";
     request.acceptedAt = Date.now();
     request.acceptedBy = String(query.from.id);
-    userMessage = `Заявка ${id} принята! Примите трейд от нашего бота на игровой username ${request.gameUsername} и передайте указанные брейнроты: ${request.itemName}. После передачи дождитесь подтверждения поступления.`;
+    request.tradeStartAt = Date.now();
+    request.tradeUntilAt = request.tradeStartAt + 5 * 60 * 1000;
+    userMessage = `Заявка ${id} принята! Окно передачи: ${formatChisinauTime(request.tradeStartAt)}–${formatChisinauTime(request.tradeUntilAt)} (Кишинёв). Будьте в игре в это время, примите трейд от нашего бота на игровой username ${request.gameUsername} и передайте брейнроты: ${request.itemName}. Если не успели, нажмите кнопку ниже: новая попытка будет назначена через 5 минут.`;
   } else if (action === "reject") {
     request.status = "rejected";
     request.rejectedAt = Date.now();
@@ -373,7 +409,7 @@ async function handleDepositCallback(query) {
     ]] } : { inline_keyboard: [] };
     await tgApi("editMessageText", { chat_id: query.message.chat.id, message_id: query.message.message_id, text: depositAdminText(request), reply_markup: keyboard }).catch(() => {});
   }
-  await tgApi("sendMessage", { chat_id: request.userId, text: userMessage }).catch(error => console.error("Could not notify deposit owner:", error.message));
+  await tgApi("sendMessage", { chat_id: request.userId, text: userMessage, ...(action === "accept" ? { reply_markup: { inline_keyboard: [[{ text: "Не получилось — повторить через 5 мин", callback_data: `deposit:retry:${id}` }]] } } : {}) }).catch(error => console.error("Could not notify deposit owner:", error.message));
 }
 async function handleWithdrawCallback(query) {
   const match = /^withdraw:(accept|complete|reject):(W[A-Z0-9]+)$/.exec(String(query.data || ""));
@@ -450,6 +486,7 @@ const mePayload = (user, u) => ({
   depositPromo: db.promos[db.referrals[String(user.id)]?.code] ? db.referrals[String(user.id)].code : "",
   depositRequests: Object.values(db.depositRequests).filter(request => request.userId === String(user.id)).sort((a, b) => b.createdAt - a.createdAt).slice(0, 10),
   withdrawRequests: Object.values(db.withdrawRequests).filter(request => request.userId === String(user.id)).sort((a, b) => b.createdAt - a.createdAt).slice(0, 20),
+  busyWithdrawSlots: Object.values(db.withdrawRequests).filter(request => ["pending", "accepted"].includes(request.status) && Number.isSafeInteger(Number(request.scheduledAt))).map(request => Number(request.scheduledAt)),
   isAdmin: ADMIN_IDS.includes(String(user.id)), partner: partnerPayload(user.id),
   user: { username: user.username || "", first_name: user.first_name || "" },
   cfg: { bonusChannel: CHANNEL, bonusBotTag: BOT_TAG, bonusMin: BONUS_MIN, bonusMax: BONUS_MAX, upgradeMult: UPGRADE_MULT,
@@ -462,7 +499,7 @@ const server = http.createServer(async (req, res) => {
   const urlPath = (req.url || "/").split("?")[0];
   if (req.method === "GET" && urlPath === "/health") { // быстрая проверка версии: открыть /health в браузере
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
-    return res.end(JSON.stringify({ version: "braincase-new-brainrots-v1", cases: Object.keys(CASES), itemsWithImages: Object.entries(ITEMS).filter(([, v]) => v.img).map(([k]) => k) }));
+    return res.end(JSON.stringify({ version: "braincase-trade-scheduling-v1", cases: Object.keys(CASES), itemsWithImages: Object.entries(ITEMS).filter(([, v]) => v.img).map(([k]) => k) }));
   }
   if (req.method === "GET" && /^\/img\/[a-z0-9_-]+\.(png|webp|jpg)$/.test(urlPath)) {
     try {
@@ -586,7 +623,8 @@ const server = http.createServer(async (req, res) => {
     if (type === "deposits") {
       if (action === "accept") {
         request.status = "accepted"; request.acceptedAt = Date.now(); request.acceptedBy = uid;
-        userMessage = `Заявка ${id} принята! Примите трейд от нашего бота на игровой username ${request.gameUsername} и передайте брейнроты: ${request.itemName}.`;
+        request.tradeStartAt = Date.now(); request.tradeUntilAt = request.tradeStartAt + 5 * 60 * 1000;
+        userMessage = `Заявка ${id} принята! Окно передачи: ${formatChisinauTime(request.tradeStartAt)}–${formatChisinauTime(request.tradeUntilAt)} (Кишинёв). Будьте в игре в это время, примите трейд от нашего бота на игровой username ${request.gameUsername} и передайте брейнроты: ${request.itemName}. Если не успели, нажмите кнопку ниже: новая попытка будет назначена через 5 минут.`;
       } else if (action === "reject") {
         request.status = "rejected"; request.rejectedAt = Date.now(); request.rejectedBy = uid;
         userMessage = `Заявка ${id} отклонена. Если это ошибка, напишите администратору бота.`;
@@ -616,7 +654,7 @@ const server = http.createServer(async (req, res) => {
       console.error("Could not save admin request decision:", error.message);
       return send(503, { error: "Не удалось сохранить решение. Попробуйте ещё раз." });
     }
-    await tgApi("sendMessage", { chat_id: request.userId, text: userMessage }).catch(error => console.error("Could not notify request owner:", error.message));
+    await tgApi("sendMessage", { chat_id: request.userId, text: userMessage, ...(type === "deposits" && action === "accept" ? { reply_markup: { inline_keyboard: [[{ text: "Не получилось — повторить через 5 мин", callback_data: `deposit:retry:${id}` }]] } } : {}) }).catch(error => console.error("Could not notify request owner:", error.message));
     return send(200, { ok: true, deposits: Object.values(db.depositRequests).sort((a, b) => b.createdAt - a.createdAt), withdrawals: Object.values(db.withdrawRequests).sort((a, b) => b.createdAt - a.createdAt) });
   }
 
@@ -707,6 +745,10 @@ const server = http.createServer(async (req, res) => {
     const payoutCoins = payoutItems.reduce((sum, entry) => sum + ITEMS[entry.itemKey].value * entry.count, 0);
     if (!payoutItems.length || !Number.isSafeInteger(payoutCoins) || payoutCoins < 1) return send(400, { error: "Выберите хотя бы один брейнрот для получения." });
     if (payoutCoins > source.value) return send(400, { error: "Стоимость выдачи выше цены выбранного предмета." });
+    const scheduledAt = Number(body.scheduledAt);
+    const now = Date.now();
+    if (!Number.isSafeInteger(scheduledAt) || scheduledAt < now + 3 * 24 * 60 * 60 * 1000 || scheduledAt > now + 7 * 24 * 60 * 60 * 1000) return send(400, { error: "Выберите свободное время от 3 до 7 дней от текущего момента." });
+    if (Object.values(db.withdrawRequests).some(request => ["pending", "accepted"].includes(request.status) && Number(request.scheduledAt) === scheduledAt)) return send(409, { error: "Это время уже заняли. Обновите список и выберите ближайшее свободное." });
     const gameNames = { dragon: "Dragon Cannelloni", garama: "Garama and Madundung", cerberus: "Cerberus", capitano: "Capitano Moby" };
     const before = JSON.stringify(db);
     const id = `W${Date.now().toString(36).toUpperCase()}${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
@@ -714,7 +756,7 @@ const server = http.createServer(async (req, res) => {
       id, userId: uid, username: user.username || "", gameUsername, sourceKey, sourceValue: source.value,
       sourceIndex: index, items: payoutItems, payoutCoins, remainderCoins: source.value - payoutCoins,
       itemName: payoutItems.map(({ itemKey, count }) => `${gameNames[itemKey]} × ${count}`).join(", "),
-      status: "pending", createdAt: Date.now(),
+      scheduledAt, status: "pending", createdAt: now,
     };
     u.inv.splice(index, 1);
     db.withdrawRequests[id] = request;
@@ -940,8 +982,8 @@ async function poll() {
           }
           await tgApi("sendMessage", {
             chat_id: upd.message.chat.id, parse_mode: "HTML",
-            text: "🎃 <b>Добро пожаловать в Braincase!</b>\n\n" +
-              "Собирай брейнротов из кейсов и улучшай коллекцию.\n" +
+            text: "👋 <b>Привет! Добро пожаловать в Braincase!</b>\n\n" +
+              "Здесь ты можешь собирать брейнротов, открывать кейсы и улучшать своих питомцев.\n" +
               "Нажми кнопку ниже, чтобы начать.",
             reply_markup: { inline_keyboard: [[{ text: "Открыть Braincase", web_app: { url: WEBAPP_URL } }]] },
           });
