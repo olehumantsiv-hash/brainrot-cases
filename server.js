@@ -629,6 +629,7 @@ const server = http.createServer(async (req, res) => {
 });
 let offset = 0;
 const paymentSupportAwaiting = new Set();
+const bonusCodeWizard = new Map();
 async function poll() {
   await tgApi("deleteWebhook", {}).catch(() => {});
   for (;;) {
@@ -640,7 +641,32 @@ async function poll() {
         if (upd.callback_query) await handleDepositCallback(upd.callback_query);
         if (upd.message?.from) await touch(upd.message.from.id, upd.message.from.username);
         const mtext = upd.message?.text || "";
-        if (/^\/terms\b/.test(mtext)) {
+        const messageUserId = String(upd.message?.from?.id || "");
+        if (mtext.trim() === "/cancel" && bonusCodeWizard.has(messageUserId)) {
+          bonusCodeWizard.delete(messageUserId);
+          await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: "Создание промокода отменено." });
+        } else if (bonusCodeWizard.has(messageUserId) && mtext && !mtext.startsWith("/")) {
+          const wizard = bonusCodeWizard.get(messageUserId);
+          const answer = mtext.trim();
+          let reply;
+          if (wizard.step === "code") {
+            const code = answer.toUpperCase();
+            if (!/^[A-Z0-9_-]{3,32}$/.test(code)) reply = "Нужно 3–32 латинских символа, цифры, _ или -. Введите название ещё раз или /cancel.";
+            else { wizard.code = code; wizard.step = "uses"; reply = "Сколько раз можно активировать этот код? Введите целое число от 1 до 100000."; }
+          } else if (wizard.step === "uses") {
+            const uses = Number(answer);
+            if (!Number.isSafeInteger(uses) || uses < 1 || uses > 100000) reply = "Введите целое число от 1 до 100000.";
+            else { wizard.uses = uses; wizard.step = "coins"; reply = "Сколько монет выдавать за одну активацию? Введите число от 1 до 1000000000."; }
+          } else {
+            const coins = Number(answer);
+            if (!Number.isSafeInteger(coins) || coins < 1 || coins > 1000000000) reply = "Введите целое число от 1 до 1000000000.";
+            else { reply = await adminBonusCodeCmd(`/bonuscode ${wizard.code} ${wizard.uses} ${coins}`, messageUserId); bonusCodeWizard.delete(messageUserId); }
+          }
+          await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: reply });
+        } else if (/^\/bonuscode(@\w+)?\s*$/.test(mtext)) {
+          if (!ADMIN_IDS.includes(messageUserId)) await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: "Нет доступа. Администратор должен быть указан в ADMIN_IDS." });
+          else { bonusCodeWizard.set(messageUserId, { step: "code" }); await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: "Создание бонусного промокода. Введите его название (3–32 латинских символа, цифры, _ или -). Для отмены отправьте /cancel." }); }
+        } else if (/^\/terms\b/.test(mtext)) {
           await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: "Условия пополнения Braincase:\n• 1 Telegram Star = 1 виртуальная монета.\n• Монеты используются только внутри игры для открытия виртуальных кейсов и не имеют денежной стоимости.\n• Монеты нельзя вывести, обменять на деньги или передать другому игроку.\n• Для вопроса по оплате используйте /paysupport." });
         } else if (/^\/paysupport\b/.test(mtext)) {
           if (ADMIN_IDS.length) {
