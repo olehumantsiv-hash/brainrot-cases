@@ -47,7 +47,8 @@ const ROWS = [
   ["ketupat","Ketupat Kepat","secret",3.5e7,"🟩"], ["burguro","Burguro and Fryuro","secret",1.5e8,"🍔"],
   ["skibidi","Skibidi Toilet","og",4.5e8,"🚽"], ["headless","Headless Horseman","og",6e8,"🎃"], ["meowl","Meowl","og",6e8,"🦉"], ["spyderelephant","Spyder Elephant","og",1e9,"🐘"],
 ];
-const IMG = { dragon: "https://static.wikia.nocookie.net/stealabr/images/a/a5/Dragon_Cannelloni.png/revision/latest/scale-to-width-down/1200" };
+// Для картинок используем локальные файлы <id>.png рядом с server.js.
+const IMG = {};
 
 // Оценка цены (в монетах) по доходу. До 42.5M/с цена растёт плавно, выше (Ketchuru 20 -> Dragon 900) - круче, как на рынке.
 const est = x => x <= 4.25e7 ? 20 * Math.pow(x / 4.25e7, 0.6) : 20 * Math.pow(x / 4.25e7, 2.12);
