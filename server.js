@@ -15,7 +15,7 @@ if (!TOKEN) throw new Error("Задайте BOT_TOKEN");
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) throw new Error("Задайте DATABASE_URL из Supabase PostgreSQL");
 const pool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false }, max: 5, connectionTimeoutMillis: 10000 });
-let db = { users: {}, liveFeed: [], pendingStarPayments: {}, starPayments: {}, promos: {}, referrals: {}, partners: {} };
+let db = { users: {}, liveFeed: [], pendingStarPayments: {}, starPayments: {}, promos: {}, referrals: {}, partners: {}, depositRequests: {} };
 let saveQueue = Promise.resolve();
 const normalizeDb = value => {
   const result = value && typeof value === "object" ? value : { users: {} };
@@ -26,6 +26,7 @@ const normalizeDb = value => {
   if (!result.promos || typeof result.promos !== "object") result.promos = {};
   if (!result.referrals || typeof result.referrals !== "object") result.referrals = {};
   if (!result.partners || typeof result.partners !== "object") result.partners = {};
+  if (!result.depositRequests || typeof result.depositRequests !== "object") result.depositRequests = {};
   return result;
 };
 async function saveDb() {
@@ -154,7 +155,7 @@ function verifyInitData(initData) {
 }
 const getUser = id => {
   const uid = String(id);
-  const u = (db.users[uid] ||= { balance: 100000000 });
+  const u = (db.users[uid] ||= { balance: 0 });
   u.balance = Number(u.balance) || 0;
   u.inv ||= [];
   u.stats ||= {};
@@ -175,6 +176,7 @@ const UPGRADE_MULT = 0.8;
 const { ITEMS, LEGACY } = require("./items");
 const { buildCases } = require("./cases");
 const CASES = buildCases(ITEMS);
+const DEPOSIT_ITEMS = ["dragon", "garama", "capitano", "cerberus"];
 for (const u of Object.values(db.users)) if (Array.isArray(u.inv)) u.inv = u.inv.map(k => ITEMS[k] ? k : (LEGACY[k] || k));
 
 const ADMIN_IDS = (process.env.ADMIN_IDS || "").split(",").map(x => x.trim()).filter(Boolean);
@@ -258,6 +260,65 @@ async function adminCmd(text) {
   }
   return "Неизвестная команда. /admin";
 }
+
+const depositStatusText = status => ({ pending: "ожидает принятия", accepted: "заявка принята, ждём поступления", rejected: "отклонена", credited: "поступление подтверждено" }[status] || status);
+const depositAdminText = request =>
+  `Заявка на депозит ${request.id}\nИгрок: ${request.username ? "@" + request.username : request.userId} (ID ${request.userId})\nИгровой username: ${request.gameUsername}\nБрейнрот: ${request.itemName}\nНачисление: ${request.baseCoins} 🪙${request.bonusCoins ? ` + бонус ${request.bonusCoins} 🪙 по коду ${request.promoCode}` : ""}\nПромокод: ${request.promoCode || "нет"}\nСтатус: ${depositStatusText(request.status)}`;
+async function handleDepositCallback(query) {
+  const match = /^deposit:(accept|confirm|reject):(D[A-Z0-9]+)$/.exec(String(query.data || ""));
+  if (!match) return;
+  const [, action, id] = match;
+  if (!ADMIN_IDS.includes(String(query.from.id))) {
+    await tgApi("answerCallbackQuery", { callback_query_id: query.id, text: "Нет доступа к этому действию.", show_alert: true });
+    return;
+  }
+  const request = db.depositRequests[id];
+  if (!request) {
+    await tgApi("answerCallbackQuery", { callback_query_id: query.id, text: "Заявка не найдена.", show_alert: true });
+    return;
+  }
+  if ((action === "accept" && request.status !== "pending") || (action === "confirm" && request.status !== "accepted") || (action === "reject" && !["pending", "accepted"].includes(request.status))) {
+    await tgApi("answerCallbackQuery", { callback_query_id: query.id, text: `Заявка уже ${depositStatusText(request.status)}.`, show_alert: true });
+    return;
+  }
+  const before = JSON.stringify(db);
+  let userMessage = "";
+  if (action === "accept") {
+    request.status = "accepted";
+    request.acceptedAt = Date.now();
+    request.acceptedBy = String(query.from.id);
+    userMessage = `Заявка ${id} принята. Администратор продолжит обработку и подтвердит поступление после проверки.`;
+  } else if (action === "reject") {
+    request.status = "rejected";
+    request.rejectedAt = Date.now();
+    request.rejectedBy = String(query.from.id);
+    userMessage = `Заявка ${id} отклонена. Если это ошибка, напишите администратору бота.`;
+  } else {
+    const u = getUser(request.userId);
+    u.balance += request.creditCoins;
+    u.stats.coinsEarned += request.creditCoins;
+    request.status = "credited";
+    request.creditedAt = Date.now();
+    request.creditedBy = String(query.from.id);
+    userMessage = `Поступление по заявке ${id} подтверждено. Начислено ${request.baseCoins} 🪙${request.bonusCoins ? ` + бонус ${request.bonusCoins} 🪙` : ""}. Баланс: ${u.balance} 🪙.`;
+  }
+  try { await saveDb(); }
+  catch (error) {
+    db = normalizeDb(JSON.parse(before));
+    console.error("Could not save deposit decision:", error.message);
+    await tgApi("answerCallbackQuery", { callback_query_id: query.id, text: "Не удалось сохранить. Нажмите ещё раз.", show_alert: true });
+    return;
+  }
+  await tgApi("answerCallbackQuery", { callback_query_id: query.id, text: action === "confirm" ? "Монеты зачислены." : action === "accept" ? "Заявка принята." : "Заявка отклонена." });
+  if (query.message) {
+    const keyboard = request.status === "accepted" ? { inline_keyboard: [[
+      { text: "Подтвердить поступление", callback_data: `deposit:confirm:${id}` },
+      { text: "Отклонить поступление", callback_data: `deposit:reject:${id}` },
+    ]] } : { inline_keyboard: [] };
+    await tgApi("editMessageText", { chat_id: query.message.chat.id, message_id: query.message.message_id, text: depositAdminText(request), reply_markup: keyboard }).catch(() => {});
+  }
+  await tgApi("sendMessage", { chat_id: request.userId, text: userMessage }).catch(error => console.error("Could not notify deposit owner:", error.message));
+}
 const subscriptionStatus = async uid => {
   const r = await tgApi("getChatMember", { chat_id: CHANNEL, user_id: uid }).catch(() => null);
   if (!r || !r.ok || !r.result) return null;
@@ -268,6 +329,8 @@ const subscriptionStatus = async uid => {
 const mePayload = (user, u) => ({
   balance: u.balance, inv: u.inv, subClaimed: !!u.subClaimed, bonusClaims: u.bonusClaims, stats: u.stats,
   liveFeed: db.liveFeed.slice(0, 20),
+  depositPromo: db.promos[db.referrals[String(user.id)]?.code] ? db.referrals[String(user.id)].code : "",
+  depositRequests: Object.values(db.depositRequests).filter(request => request.userId === String(user.id)).sort((a, b) => b.createdAt - a.createdAt).slice(0, 10),
   isAdmin: ADMIN_IDS.includes(String(user.id)), partner: partnerPayload(user.id),
   user: { username: user.username || "", first_name: user.first_name || "" },
   cfg: { bonusChannel: CHANNEL, bonusBotTag: BOT_TAG, bonusMin: BONUS_MIN, bonusMax: BONUS_MAX, upgradeMult: UPGRADE_MULT,
@@ -360,6 +423,52 @@ const server = http.createServer(async (req, res) => {
     try { await saveDb(); }
     catch (error) { db = normalizeDb(JSON.parse(before)); console.error("Could not save promo:", error.message); return send(503, { error: "Не удалось сохранить промокод. Попробуйте ещё раз." }); }
     return send(200, { ok: true, code, partnerId, partner: partnerPayload(partnerId) });
+  }
+
+  if (urlPath === "/api/deposit/request") {
+    if (!ADMIN_IDS.length) return send(503, { error: "Администратор не настроен для обработки заявок." });
+    const itemKey = String(body.item || "");
+    if (!DEPOSIT_ITEMS.includes(itemKey) || !ITEMS[itemKey]) return send(400, { error: "Выберите брейнрот из каталога депозитов." });
+    const gameUsername = String(body.gameUsername || "").trim();
+    if (gameUsername.length < 2 || gameUsername.length > 32 || !/^[\p{L}\p{N}_. -]+$/u.test(gameUsername)) {
+      return send(400, { error: "Укажите игровой username длиной от 2 до 32 символов." });
+    }
+    const activeRequest = Object.values(db.depositRequests).find(request => request.userId === uid && ["pending", "accepted"].includes(request.status));
+    if (activeRequest) return send(409, { error: `У вас уже есть активная заявка ${activeRequest.id}. Дождитесь её обработки.` });
+    const promoCode = String(body.promoCode || "").trim().toUpperCase();
+    let promo = null;
+    if (promoCode) {
+      promo = db.promos[promoCode];
+      if (!promo) return send(400, { error: "Промокод не найден или больше не действует." });
+      if (promo.partnerId === uid) return send(400, { error: "Свой промокод использовать нельзя." });
+    }
+    const before = JSON.stringify(db);
+    const id = `D${Date.now().toString(36).toUpperCase()}${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+    const baseCoins = ITEMS[itemKey].value;
+    const bonusCoins = promo ? Math.floor(baseCoins * 0.2) : 0;
+    const request = {
+      id, userId: uid, username: user.username || "", gameUsername, itemKey,
+      itemName: ITEMS[itemKey].name, baseCoins, promoCode: promo ? promoCode : "",
+      bonusCoins, creditCoins: baseCoins + bonusCoins, status: "pending", createdAt: Date.now(),
+    };
+    db.depositRequests[id] = request;
+    try { await saveDb(); }
+    catch (error) { db = normalizeDb(JSON.parse(before)); console.error("Could not save deposit request:", error.message); return send(503, { error: "Не удалось сохранить заявку. Попробуйте позже." }); }
+
+    const alertText = `Заявка на депозит ${id}\nИгрок: ${user.username ? "@" + user.username : user.first_name || uid} (ID ${uid})\nИгровой username: ${gameUsername}\nБрейнрот: ${request.itemName}\nНачисление: ${baseCoins} 🪙${bonusCoins ? ` + бонус ${bonusCoins} 🪙 по коду ${promoCode}` : ""}\nПромокод: ${promoCode || "нет"}`;
+    const notifyResults = await Promise.allSettled(ADMIN_IDS.map(adminId => tgApi("sendMessage", {
+      chat_id: adminId, text: alertText,
+      reply_markup: { inline_keyboard: [[
+        { text: "Принять заявку", callback_data: `deposit:accept:${id}` },
+        { text: "Отклонить", callback_data: `deposit:reject:${id}` },
+      ]] },
+    })));
+    if (!notifyResults.some(result => result.status === "fulfilled" && result.value?.ok)) {
+      delete db.depositRequests[id];
+      await saveDb().catch(() => {});
+      return send(503, { error: "Не удалось отправить заявку администратору. Попробуйте позже." });
+    }
+    return send(200, { request, depositRequests: Object.values(db.depositRequests).filter(entry => entry.userId === uid).sort((a, b) => b.createdAt - a.createdAt).slice(0, 10) });
   }
 
   if (urlPath === "/api/partner/withdraw") {
@@ -473,10 +582,11 @@ async function poll() {
   await tgApi("deleteWebhook", {}).catch(() => {});
   for (;;) {
     try {
-      const r = await tgApi("getUpdates", { offset, timeout: 30, allowed_updates: ["message", "pre_checkout_query"] });
+      const r = await tgApi("getUpdates", { offset, timeout: 30, allowed_updates: ["message", "pre_checkout_query", "callback_query"] });
       if (!r.ok) { console.error("getUpdates:", r.description); await new Promise(x => setTimeout(x, 3000)); continue; }
       for (const upd of r.result) {
         await handlePaymentUpdate(upd);
+        if (upd.callback_query) await handleDepositCallback(upd.callback_query);
         if (upd.message?.from) await touch(upd.message.from.id, upd.message.from.username);
         const mtext = upd.message?.text || "";
         if (/^\/terms\b/.test(mtext)) {
