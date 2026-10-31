@@ -43,6 +43,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;pa
 .drop-scroller{display:flex;gap:9px;overflow-x:auto;padding:4px 3px 13px;margin:-2px 0 12px;scrollbar-width:thin;scrollbar-color:#62407a transparent}.drop-card{flex:0 0 112px;min-height:118px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;padding:8px 7px;background:linear-gradient(160deg,#20182d,#100b19);border:1px solid #49375a;border-bottom:2px solid #d5a83f;border-radius:5px;text-align:center;animation:dropIn .3s ease-out}.drop-pic{height:54px;width:100%;display:grid;place-items:center;font-size:34px;filter:drop-shadow(0 5px 10px #ffb64355)}.drop-pic img{max-width:100%;max-height:54px;object-fit:contain}.drop-name{font-size:10px;line-height:1.2;font-weight:600;max-height:24px;overflow:hidden}.drop-meta{font-size:9px;color:var(--muted);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}.partner-card,.admin-card{display:grid;gap:12px;padding:16px;border:1px solid #513d60;border-radius:16px;background:linear-gradient(150deg,#2a1a36,#17101f)}.partner-stat{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.partner-stat>div{padding:11px;border:1px solid var(--line);border-radius:11px;background:#100b19}.partner-stat b{display:block;color:#ffe0c2;font-size:18px}.partner-stat small{color:var(--muted);font-size:11px}.admin-card input{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:#100b19;color:var(--text);font:14px Rubik,sans-serif}.partner-msg{min-height:20px;color:var(--green);font-size:13px}
 .topup-card{background:linear-gradient(150deg,#2a1a36,#17101f);border:1px solid #513d60;border-radius:16px;padding:16px;display:grid;gap:12px}.topup-card label{font-size:13px;color:var(--muted)}.topup-card input[type=number]{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#110a19;color:var(--text);font:600 16px Rubik,sans-serif}.terms-check{display:flex;align-items:flex-start;gap:9px;color:var(--muted);font-size:12px}.terms-check input{margin-top:3px;accent-color:var(--acc)}.terms-copy{font-size:12px;color:var(--muted);padding:10px;background:#ffffff08;border-radius:10px}.topup-status{min-height:20px;color:var(--green);font-size:13px}
 .deposit-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.deposit-option{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(160deg,#241240,var(--card));color:var(--text);cursor:pointer}.deposit-option.selected{border-color:var(--green);box-shadow:0 0 18px #39ffb044}.deposit-option .it{width:100%;min-width:0}.deposit-option>strong{font-size:12px;color:#ffe0c2}.deposit-form{display:grid;gap:10px;margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:14px;background:#1a1025}.deposit-form input{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:#100b19;color:var(--text);font:14px Rubik,sans-serif}.deposit-history{display:grid;gap:8px;margin-top:12px}.deposit-history-row{padding:11px;border:1px solid var(--line);border-radius:11px;background:#1a1025;font-size:12px}.deposit-history-row small{display:block;color:var(--muted);margin-top:3px}.topup-tabs{display:flex;gap:8px;margin:0 0 12px}.topup-tab{flex:1;padding:10px 8px;border:1px solid var(--line);border-radius:12px;background:#1a1025;color:var(--muted);font:600 12px Rubik,sans-serif}.topup-tab.on{background:#38283e;border-color:#a97347;color:#ffc481}.promo-feedback{font-size:12px;min-height:18px}.promo-feedback.valid{color:var(--green)}.promo-feedback.invalid{color:#ff718c}
+.deposit-qty{display:flex;align-items:center;gap:12px}.deposit-qty button,.withdraw-qty button{border:1px solid var(--line);border-radius:9px;background:#100b19;color:var(--text);padding:5px 12px;font:700 18px Rubik,sans-serif}.deposit-qty b,.withdraw-qty b{min-width:24px;text-align:center}.inventory-entry{display:grid;gap:5px;min-width:0}.inventory-entry>.it{width:100%;box-sizing:border-box;cursor:default}.inventory-actions{display:flex;gap:4px}.inventory-actions .btn{padding:7px 4px;font-size:11px;border-radius:8px}.withdraw-options{display:grid;gap:7px;text-align:left}.withdraw-option{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:7px 9px;border:1px solid var(--line);border-radius:9px}.withdraw-option small{display:block;color:var(--muted);font-size:10px}.withdraw-qty{display:flex;align-items:center;gap:5px}.withdraw-qty button{padding:3px 9px;font-size:16px}
 .workspace{min-height:100vh;margin-left:276px}
 main{max-width:760px;margin:0 auto;padding:18px}
 #menuToggle{display:none;align-items:center;justify-content:center;width:38px;height:38px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font-size:20px;cursor:pointer}
@@ -277,7 +278,7 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
       <p id="topupStatus" class="topup-status"></p>
     </div>
     <div class="topup-card" id="topupDepositPanel" style="display:none">
-      <p class="info" style="text-align:left;margin:0">Выберите брейнрот и укажите игровой username. Заявка попадёт администратору; монеты начислятся только после подтверждения поступления.</p>
+      <p class="info" style="text-align:left;margin:0">Выберите до 5 брейнротов и укажите игровой username. Монеты начислятся только после подтверждения всего депозита администратором.</p>
       <div id="depositGrid" class="deposit-options"></div>
       <div class="deposit-form">
         <label for="depositGameUsername">Ваш игровой username</label>
@@ -373,6 +374,16 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
 </div>
 </div>
 <div id="navScrim"></div>
+<div class="modal" id="mWithdraw"><div class="sheet">
+  <h2>Вывод брейнрота</h2>
+  <p id="withdrawSource" class="info" style="margin:0 0 8px"></p>
+  <label for="withdrawGameUsername">Ваш игровой username</label>
+  <input id="withdrawGameUsername" maxlength="32" placeholder="Имя в игре" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:#100b19;color:var(--text);font:14px Rubik,sans-serif;margin:8px 0">
+  <div id="withdrawOptions" class="withdraw-options"></div>
+  <p id="withdrawQuote" class="info"></p>
+  <p id="withdrawMsg" class="partner-msg"></p>
+  <div class="row"><button class="btn alt" id="withdrawCancel">Отмена</button><button class="btn" id="withdrawSubmit">Создать заявку</button></div>
+</div></div>
 <div class="modal" id="mWin"><div class="sheet">
   <div class="big" id="wPic"></div><h2 id="wName"></h2><div id="wVal" style="color:var(--muted)"></div>
   <div class="row" style="margin-top:14px"><button class="btn" id="wOk">Отлично</button></div>
@@ -395,8 +406,8 @@ const FALLBACK_ITEMS = {
   coin:{name:"1 монета",e:"🪙",c:"#ffd24a",value:1},
   dragon:{name:"Dragon Cannelloni",e:"🐉",c:"#ff7a00",value:1500}
 };
-let selectedDepositItem=null, depositPromoTouched=false, depositPromoValid=false, depositPromoCheckId=0, depositPromoTimer=null, currentTopupTab="stars";
-const S = { bal:0, inv:[], liveFeed:[], depositRequests:[], depositPromo:"", partner:null, isAdmin:false, subClaimed:false, bonusClaims:{subscription:false,nickname:false}, stats:{casesOpened:0,upgrades:0,coinsEarned:0}, user:{username:"",first_name:""},
+let selectedDepositItems={}, depositPromoTouched=false, depositPromoValid=false, depositPromoCheckId=0, depositPromoTimer=null, currentTopupTab="stars";
+const S = { bal:0, inv:[], liveFeed:[], depositRequests:[], withdrawRequests:[], depositPromo:"", partner:null, isAdmin:false, subClaimed:false, bonusClaims:{subscription:false,nickname:false}, stats:{casesOpened:0,upgrades:0,coinsEarned:0}, user:{username:"",first_name:""},
   cfg:{ bonusChannel:"@braincasegg", bonusBotTag:"braincase_game", bonusMin:1, bonusMax:10, upgradeMult:0.8, items:FALLBACK_ITEMS, cases:{} } };
 const item = k => (S.cfg.items && S.cfg.items[k]) || FALLBACK_ITEMS[k] || {name:k,e:"❓",c:"#9aa0b4",value:0};
 
@@ -411,6 +422,7 @@ function apply(d){
   if(d.inv) S.inv = d.inv;
   if(d.liveFeed) S.liveFeed = d.liveFeed;
   if(Array.isArray(d.depositRequests)) S.depositRequests = d.depositRequests;
+  if(Array.isArray(d.withdrawRequests)) S.withdrawRequests = d.withdrawRequests;
   if(d.depositPromo != null){ S.depositPromo=d.depositPromo; if(d.depositPromo&&!depositPromoTouched&&!$("#depositPromoCode").value){ $("#depositPromoCode").value=d.depositPromo; checkDepositPromo(); } }
   if(Object.prototype.hasOwnProperty.call(d,"partner")) S.partner = d.partner;
   if(d.isAdmin != null) S.isAdmin = !!d.isAdmin;
@@ -528,24 +540,27 @@ function render(){
   if($("#v-topup").classList.contains("on")&&currentTopupTab==="deposit") renderDeposits();
   const box = $("#invBox");
   box.innerHTML = S.inv.length
-    ? `<div class="row" style="margin:0 0 10px"><button class="btn red" id="sellAllBtn">Продать всё</button></div><div class="inv">${S.inv.map((k,i)=>card(k).replace('class="it"',`class="it" data-i="${i}"`)).join("")}</div><p class="info">Нажмите предмет, чтобы продать его отдельно</p>`
+    ? `<div class="row" style="margin:0 0 10px"><button class="btn red" id="sellAllBtn">Продать всё</button></div><div class="inv">${S.inv.map((k,i)=>`<div class="inventory-entry">${card(k)}<div class="inventory-actions"><button class="btn alt" data-inventory-action="sell" data-index="${i}">Продать</button><button class="btn" data-inventory-action="withdraw" data-index="${i}">Вывести</button></div></div>`).join("")}</div><p class="info">Для каждого предмета выберите «Продать» или «Вывести».</p>`
     : '<div class="empty">Пока пусто. Откройте первый кейс.</div>';
+  if(S.withdrawRequests.length){
+    const labels={pending:"Ждёт решения",accepted:"Принята, ждёт выдачи",rejected:"Отклонена, предмет возвращён",completed:"Выдано"};
+    box.innerHTML+=`<h3 style="font:600 13px Unbounded,sans-serif;margin:18px 0 8px">Заявки на вывод</h3><div class="deposit-history">${S.withdrawRequests.map(r=>`<div class="deposit-history-row">№ ${r.id} · ${r.itemName}<small>${labels[r.status]||r.status}</small></div>`).join("")}</div>`;
+  }
   if($("#v-up").classList.contains("on")) renderUp();
 }
 
 const DEPOSIT_KEYS=["dragon","garama","capitano","cerberus"];
 const depositStatuses={pending:"Ожидает принятия администратором",accepted:"Заявка принята — ожидается поступление",rejected:"Отклонена",credited:"Поступление подтверждено"};
+const selectedDepositCount=()=>Object.values(selectedDepositItems).reduce((sum,count)=>sum+count,0);
 function renderDeposits(){
   const grid=$("#depositGrid");
-  grid.innerHTML=DEPOSIT_KEYS.filter(key=>S.cfg.items?.[key]).map(key=>`<article class="deposit-option ${selectedDepositItem===key?"selected":""}" data-deposit-item="${key}">${card(key)}<strong>Начисление: ${fmt(item(key).value)} 🪙</strong></article>`).join("");
-  const promo=depositPromoValid;
-  const chosen=selectedDepositItem&&S.cfg.items?.[selectedDepositItem]?item(selectedDepositItem):null;
-  if(!chosen) $("#depositAmount").textContent="Выберите брейнрот из каталога.";
-  else {
-    const bonus=promo?Math.floor(chosen.value*.2):0;
-    $("#depositAmount").textContent=`После подтверждения поступления: ${fmt(chosen.value)} 🪙${bonus?` + ${fmt(bonus)} 🪙 бонуса по промокоду = ${fmt(chosen.value+bonus)} 🪙`:promo?" + бонус 20% по промокоду":""}.`;
-  }
-  $("#depositSubmit").disabled=!chosen;
+  grid.innerHTML=DEPOSIT_KEYS.filter(key=>S.cfg.items?.[key]).map(key=>{const count=selectedDepositItems[key]||0;return `<article class="deposit-option ${count?"selected":""}">${card(key)}<strong>${fmt(item(key).value)} 🪙 за один</strong><div class="deposit-qty"><button type="button" data-deposit-step="-1" data-deposit-item="${key}">−</button><b>${count}</b><button type="button" data-deposit-step="1" data-deposit-item="${key}">+</button></div></article>`;}).join("");
+  const count=selectedDepositCount();
+  const base=Object.entries(selectedDepositItems).reduce((sum,[key,quantity])=>sum+item(key).value*quantity,0);
+  const bonus=depositPromoValid?Math.floor(base*.2):0;
+  $("#depositAmount").textContent=count?`Выбрано ${count}/5. После подтверждения: ${fmt(base)} 🪙${bonus?` + ${fmt(bonus)} 🪙 по промокоду = ${fmt(base+bonus)} 🪙`:""}.`:"Выберите от 1 до 5 брейнротов из каталога.";
+  $("#depositSubmit").disabled=!count;
+  $("#depositSubmit").textContent=count?`Создать заявку (${count}/5)`:"Создать заявку";
   const history=$("#depositHistory");history.replaceChildren();
   if(!S.depositRequests.length){history.textContent="Заявок пока нет.";return;}
   for(const request of S.depositRequests){
@@ -555,8 +570,11 @@ function renderDeposits(){
   }
 }
 $("#depositGrid").onclick=e=>{
-  const option=e.target.closest("[data-deposit-item]");if(!option)return;
-  selectedDepositItem=option.dataset.depositItem;renderDeposits();
+  const button=e.target.closest("[data-deposit-step]");if(!button)return;
+  const key=button.dataset.depositItem, old=selectedDepositItems[key]||0, next=Math.max(0,old+Number(button.dataset.depositStep));
+  if(next>old&&selectedDepositCount()>=5){$("#depositMsg").textContent="В одной заявке можно выбрать не больше 5 брейнротов.";return;}
+  if(next)selectedDepositItems[key]=next;else delete selectedDepositItems[key];
+  $("#depositMsg").textContent="";renderDeposits();
 };
 async function checkDepositPromo(){
   const code=$("#depositPromoCode").value.trim().toUpperCase();
@@ -585,13 +603,14 @@ $("#depositPromoCode").addEventListener("input",()=>{
 });
 $("#depositSubmit").onclick=async()=>{
   const gameUsername=$("#depositGameUsername").value.trim();
-  if(!selectedDepositItem){$("#depositMsg").textContent="Выберите брейнрот.";return;}
+  if(!selectedDepositCount()){$("#depositMsg").textContent="Выберите от 1 до 5 брейнротов.";return;}
   if(!gameUsername){$("#depositMsg").textContent="Укажите свой игровой username.";return;}
   if($("#depositPromoCode").value.trim()&&!depositPromoValid&&!await checkDepositPromo()){$("#depositMsg").textContent="Промокод не найден или не подходит.";return;}
   const button=$("#depositSubmit");button.disabled=true;$("#depositMsg").textContent="Отправляем заявку администратору…";
   try{
-    const result=await api("/api/deposit/request",{item:selectedDepositItem,gameUsername,promoCode:$("#depositPromoCode").value.trim()});
-    apply(result);$("#depositMsg").textContent=`Заявка № ${result.request.id} отправлена. Монеты начислятся после подтверждения поступления.`;
+    const items=Object.entries(selectedDepositItems).map(([item,count])=>({item,count}));
+    const result=await api("/api/deposit/request",{items,gameUsername,promoCode:$("#depositPromoCode").value.trim()});
+    selectedDepositItems={};apply(result);$("#depositMsg").textContent=`Заявка № ${result.request.id} отправлена. Монеты начислятся после подтверждения всего поступления.`;
   }catch(error){$("#depositMsg").textContent=error.message;}
   finally{renderDeposits();}
 };
@@ -729,10 +748,53 @@ if(tg) tg.BackButton.onClick(()=>{
 
 $("#invBox").onclick = async e => {
   if(e.target.closest("#sellAllBtn")) { openSellAllConfirm(); return; }
-  const el = e.target.closest(".it"); if(!el) return;
-  const k = S.inv[+el.dataset.i]; if(!item(k)) return;
-  if(!confirm(`Продать ${item(k).name} за ${fmt(item(k).value)} виртуальных 🪙?`)) return;
-  try{ apply(await api("/api/sell", {index:+el.dataset.i})); }catch(err){ alert(err.message); }
+  const button=e.target.closest("[data-inventory-action]");if(!button)return;
+  const index=Number(button.dataset.index),key=S.inv[index];if(!key)return;
+  if(button.dataset.inventoryAction==="withdraw"){openWithdrawModal(index);return;}
+  if(!confirm(`Продать ${item(key).name} за ${fmt(item(key).value)} виртуальных 🪙?`)) return;
+  try{ apply(await api("/api/sell", {index})); }catch(err){ alert(err.message); }
+};
+
+let withdrawIndex=-1, selectedWithdrawItems={};
+const WITHDRAW_KEYS=["dragon","garama","cerberus","capitano"];
+function openWithdrawModal(index){
+  withdrawIndex=index;selectedWithdrawItems={};
+  const key=S.inv[index];
+  if(!key)return;
+  $("#withdrawSource").textContent=`Сдаёте ${item(key).name} · ${fmt(item(key).value)} 🪙`;
+  $("#withdrawMsg").textContent="";
+  try{if(!$("#withdrawGameUsername").value)$("#withdrawGameUsername").value=localStorage.getItem("braincaseGameUsername")||"";}catch{}
+  renderWithdrawOptions();$("#mWithdraw").classList.add("on");
+}
+function renderWithdrawOptions(){
+  const value=withdrawIndex>=0?item(S.inv[withdrawIndex]).value:0;
+  $("#withdrawOptions").innerHTML=WITHDRAW_KEYS.filter(key=>S.cfg.items?.[key]).map(key=>{const quantity=selectedWithdrawItems[key]||0;return `<div class="withdraw-option"><span>${item(key).name}<small>${fmt(item(key).value)} 🪙 за штуку · до ${Math.floor(value/item(key).value)}</small></span><div class="withdraw-qty"><button type="button" data-withdraw-step="-1" data-item="${key}">−</button><b>${quantity}</b><button type="button" data-withdraw-step="1" data-item="${key}">+</button></div></div>`;}).join("");
+  const total=Object.entries(selectedWithdrawItems).reduce((sum,[key,count])=>sum+item(key).value*count,0);
+  const remainder=Math.max(0,value-total);
+  $("#withdrawQuote").textContent=total?`К выдаче на ${fmt(total)} 🪙. Остаток ${fmt(remainder)} 🪙 вернётся на баланс после подтверждения выдачи.`:`Выберите количество предметов для получения. Остаток цены вернётся на баланс.`;
+  $("#withdrawSubmit").disabled=!total||total>value;
+}
+$("#withdrawOptions").onclick=e=>{
+  const button=e.target.closest("[data-withdraw-step]");if(!button)return;
+  const key=button.dataset.item, old=selectedWithdrawItems[key]||0, next=Math.max(0,old+Number(button.dataset.withdrawStep));
+  const total=Object.entries(selectedWithdrawItems).reduce((sum,[k,count])=>sum+item(k).value*count,0)+item(key).value*(next-old);
+  if(total>(withdrawIndex>=0?item(S.inv[withdrawIndex]).value:0))return;
+  if(next)selectedWithdrawItems[key]=next;else delete selectedWithdrawItems[key];
+  renderWithdrawOptions();
+};
+$("#withdrawGameUsername").oninput=renderWithdrawOptions;
+$("#withdrawCancel").onclick=()=>$("#mWithdraw").classList.remove("on");
+$("#withdrawSubmit").onclick=async()=>{
+  const gameUsername=$("#withdrawGameUsername").value.trim();
+  if(gameUsername.length<2){$("#withdrawMsg").textContent="Укажите игровой username.";return;}
+  try{localStorage.setItem("braincaseGameUsername",gameUsername);}catch{}
+  const items=Object.entries(selectedWithdrawItems).map(([item,count])=>({item,count}));
+  $("#withdrawSubmit").disabled=true;$("#withdrawMsg").textContent="Создаём заявку…";
+  try{
+    const result=await api("/api/withdraw/request",{index:withdrawIndex,sourceKey:S.inv[withdrawIndex],gameUsername,items});
+    $("#mWithdraw").classList.remove("on");apply(result);alert(`Заявка № ${result.request.id} отправлена. Предмет удерживается до решения администратора.`);
+  }catch(error){$("#withdrawMsg").textContent=error.message;}
+  finally{renderWithdrawOptions();}
 };
 
 let cur=null, spinning=false, batchCount=1, fastAnimations=false;
@@ -943,3 +1005,4 @@ renderCases(); render(); sync();
 </script>
 </body>
 </html>
+

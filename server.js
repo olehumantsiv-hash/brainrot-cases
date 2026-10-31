@@ -15,7 +15,7 @@ if (!TOKEN) throw new Error("Задайте BOT_TOKEN");
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) throw new Error("Задайте DATABASE_URL из Supabase PostgreSQL");
 const pool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false }, max: 5, connectionTimeoutMillis: 10000 });
-let db = { users: {}, liveFeed: [], pendingStarPayments: {}, starPayments: {}, promos: {}, referrals: {}, partners: {}, depositRequests: {}, bonusCodes: {} };
+let db = { users: {}, liveFeed: [], pendingStarPayments: {}, starPayments: {}, promos: {}, referrals: {}, partners: {}, depositRequests: {}, withdrawRequests: {}, bonusCodes: {} };
 let saveQueue = Promise.resolve();
 const normalizeDb = value => {
   const result = value && typeof value === "object" ? value : { users: {} };
@@ -27,6 +27,7 @@ const normalizeDb = value => {
   if (!result.referrals || typeof result.referrals !== "object") result.referrals = {};
   if (!result.partners || typeof result.partners !== "object") result.partners = {};
   if (!result.depositRequests || typeof result.depositRequests !== "object") result.depositRequests = {};
+  if (!result.withdrawRequests || typeof result.withdrawRequests !== "object") result.withdrawRequests = {};
   if (!result.bonusCodes || typeof result.bonusCodes !== "object") result.bonusCodes = {};
   return result;
 };
@@ -289,6 +290,11 @@ async function adminBonusCodeCmd(text, adminId) {
 const depositStatusText = status => ({ pending: "ожидает принятия", accepted: "заявка принята, ждём поступления", rejected: "отклонена", credited: "поступление подтверждено" }[status] || status);
 const depositAdminText = request =>
   `Заявка на депозит ${request.id}\nИгрок: ${request.username ? "@" + request.username : request.userId} (ID ${request.userId})\nИгровой username: ${request.gameUsername}\nБрейнрот: ${request.itemName}\nНачисление: ${request.baseCoins} 🪙${request.bonusCoins ? ` + бонус ${request.bonusCoins} 🪙 по коду ${request.promoCode}` : ""}\nПромокод: ${request.promoCode || "нет"}\nСтатус: ${depositStatusText(request.status)}`;
+
+const withdrawStatusText = status => ({ pending: "ожидает принятия", accepted: "принята, выдача ожидается", rejected: "отклонена, предмет возвращён", completed: "выдано" }[status] || status);
+const withdrawItemsText = items => (items || []).map(({ itemKey, count }) => `${ITEMS[itemKey]?.name || itemKey} × ${count}`).join(", ");
+const withdrawAdminText = request =>
+  `Заявка на вывод ${request.id}\nИгрок: ${request.username ? "@" + request.username : request.userId} (ID ${request.userId})\nИгровой username: ${request.gameUsername}\nСдаёт: ${ITEMS[request.sourceKey]?.name || request.sourceKey} (${request.sourceValue} 🪙)\nПолучает: ${withdrawItemsText(request.items)}\nОстаток после выдачи: ${request.remainderCoins} 🪙\nСтатус: ${withdrawStatusText(request.status)}`;
 async function handleDepositCallback(query) {
   const match = /^deposit:(accept|confirm|reject):(D[A-Z0-9]+)$/.exec(String(query.data || ""));
   if (!match) return;
@@ -312,7 +318,7 @@ async function handleDepositCallback(query) {
     request.status = "accepted";
     request.acceptedAt = Date.now();
     request.acceptedBy = String(query.from.id);
-    userMessage = `Заявка ${id} принята! Примите трейд от нашего бота на игровой username ${request.gameUsername} и передайте ему предмет ${request.itemName}. После передачи дождитесь подтверждения поступления.`;
+    userMessage = `Заявка ${id} принята! Примите трейд от нашего бота на игровой username ${request.gameUsername} и передайте указанные брейнроты: ${request.itemName}. После передачи дождитесь подтверждения поступления.`;
   } else if (action === "reject") {
     request.status = "rejected";
     request.rejectedAt = Date.now();
@@ -344,6 +350,68 @@ async function handleDepositCallback(query) {
   }
   await tgApi("sendMessage", { chat_id: request.userId, text: userMessage }).catch(error => console.error("Could not notify deposit owner:", error.message));
 }
+async function handleWithdrawCallback(query) {
+  const match = /^withdraw:(accept|complete|reject):(W[A-Z0-9]+)$/.exec(String(query.data || ""));
+  if (!match) return;
+  const [, action, id] = match;
+  if (!ADMIN_IDS.includes(String(query.from.id))) {
+    await tgApi("answerCallbackQuery", { callback_query_id: query.id, text: "Нет доступа к этому действию.", show_alert: true });
+    return;
+  }
+  const request = db.withdrawRequests[id];
+  if (!request) {
+    await tgApi("answerCallbackQuery", { callback_query_id: query.id, text: "Заявка не найдена.", show_alert: true });
+    return;
+  }
+  if ((action === "accept" && request.status !== "pending") || (action === "complete" && request.status !== "accepted") || (action === "reject" && !["pending", "accepted"].includes(request.status))) {
+    await tgApi("answerCallbackQuery", { callback_query_id: query.id, text: `Заявка уже ${withdrawStatusText(request.status)}.`, show_alert: true });
+    return;
+  }
+  const before = JSON.stringify(db);
+  let userMessage = "";
+  if (action === "accept") {
+    request.status = "accepted";
+    request.acceptedAt = Date.now();
+    request.acceptedBy = String(query.from.id);
+    userMessage = `Заявка на вывод ${id} принята. Мы подготовим ${withdrawItemsText(request.items)} и свяжемся с вами в игре ${request.gameUsername}. Остаток ${request.remainderCoins} 🪙 будет начислен после подтверждения выдачи.`;
+  } else if (action === "reject") {
+    const u = getUser(request.userId);
+    u.inv.push(request.sourceKey);
+    request.status = "rejected";
+    request.rejectedAt = Date.now();
+    request.rejectedBy = String(query.from.id);
+    userMessage = `Заявка на вывод ${id} отклонена. ${ITEMS[request.sourceKey]?.name || request.sourceKey} возвращён в инвентарь.`;
+  } else {
+    const u = getUser(request.userId);
+    u.balance += request.remainderCoins;
+    u.stats.coinsEarned += request.remainderCoins;
+    request.status = "completed";
+    request.completedAt = Date.now();
+    request.completedBy = String(query.from.id);
+    userMessage = `Вывод по заявке ${id} завершён: ${withdrawItemsText(request.items)}. Остаток ${request.remainderCoins} 🪙 возвращён на баланс.`;
+  }
+  try { await saveDb(); }
+  catch (error) {
+    db = normalizeDb(JSON.parse(before));
+    console.error("Could not save withdraw decision:", error.message);
+    await tgApi("answerCallbackQuery", { callback_query_id: query.id, text: "Не удалось сохранить. Нажмите ещё раз.", show_alert: true });
+    return;
+  }
+  await tgApi("answerCallbackQuery", { callback_query_id: query.id, text: action === "complete" ? "Вывод завершён." : action === "accept" ? "Заявка принята." : "Заявка отклонена, предмет возвращён." });
+  if (query.message) {
+    let keyboard = { inline_keyboard: [] };
+    if (request.status === "pending") keyboard = { inline_keyboard: [[
+      { text: "Принять заявку", callback_data: `withdraw:accept:${id}` },
+      { text: "Отклонить", callback_data: `withdraw:reject:${id}` },
+    ]] };
+    else if (request.status === "accepted") keyboard = { inline_keyboard: [[
+      { text: "Подтвердить выдачу", callback_data: `withdraw:complete:${id}` },
+      { text: "Отклонить и вернуть предмет", callback_data: `withdraw:reject:${id}` },
+    ]] };
+    await tgApi("editMessageText", { chat_id: query.message.chat.id, message_id: query.message.message_id, text: withdrawAdminText(request), reply_markup: keyboard }).catch(() => {});
+  }
+  await tgApi("sendMessage", { chat_id: request.userId, text: userMessage }).catch(error => console.error("Could not notify withdraw owner:", error.message));
+}
 const subscriptionStatus = async uid => {
   const r = await tgApi("getChatMember", { chat_id: CHANNEL, user_id: uid }).catch(() => null);
   if (!r || !r.ok || !r.result) return null;
@@ -356,6 +424,7 @@ const mePayload = (user, u) => ({
   liveFeed: db.liveFeed.slice(0, 20),
   depositPromo: db.promos[db.referrals[String(user.id)]?.code] ? db.referrals[String(user.id)].code : "",
   depositRequests: Object.values(db.depositRequests).filter(request => request.userId === String(user.id)).sort((a, b) => b.createdAt - a.createdAt).slice(0, 10),
+  withdrawRequests: Object.values(db.withdrawRequests).filter(request => request.userId === String(user.id)).sort((a, b) => b.createdAt - a.createdAt).slice(0, 20),
   isAdmin: ADMIN_IDS.includes(String(user.id)), partner: partnerPayload(user.id),
   user: { username: user.username || "", first_name: user.first_name || "" },
   cfg: { bonusChannel: CHANNEL, bonusBotTag: BOT_TAG, bonusMin: BONUS_MIN, bonusMax: BONUS_MAX, upgradeMult: UPGRADE_MULT,
@@ -461,8 +530,19 @@ const server = http.createServer(async (req, res) => {
 
   if (urlPath === "/api/deposit/request") {
     if (!ADMIN_IDS.length) return send(503, { error: "Администратор не настроен для обработки заявок." });
-    const itemKey = String(body.item || "");
-    if (!DEPOSIT_ITEMS.includes(itemKey) || !ITEMS[itemKey]) return send(400, { error: "Выберите брейнрот из каталога депозитов." });
+    const rawItems = Array.isArray(body.items) ? body.items : body.item ? [{ item: body.item, count: 1 }] : [];
+    const selectedCounts = new Map();
+    let itemCount = 0;
+    for (const entry of rawItems) {
+      const itemKey = String(entry?.item || "");
+      const count = Number(entry?.count);
+      if (!DEPOSIT_ITEMS.includes(itemKey) || !ITEMS[itemKey] || !Number.isInteger(count) || count < 1 || count > 5) return send(400, { error: "Выберите от 1 до 5 предметов из каталога депозита." });
+      itemCount += count;
+      selectedCounts.set(itemKey, (selectedCounts.get(itemKey) || 0) + count);
+    }
+    if (itemCount < 1 || itemCount > 5) return send(400, { error: "В одной заявке можно передать от 1 до 5 брейнротов." });
+    const depositItems = [...selectedCounts].map(([itemKey, count]) => ({ itemKey, count }));
+    const itemName = depositItems.map(({ itemKey, count }) => `${ITEMS[itemKey].name} × ${count}`).join(", ");
     const gameUsername = String(body.gameUsername || "").trim();
     if (gameUsername.length < 2 || gameUsername.length > 32 || !/^[\p{L}\p{N}_. -]+$/u.test(gameUsername)) {
       return send(400, { error: "Укажите игровой username длиной от 2 до 32 символов." });
@@ -478,11 +558,11 @@ const server = http.createServer(async (req, res) => {
     }
     const before = JSON.stringify(db);
     const id = `D${Date.now().toString(36).toUpperCase()}${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
-    const baseCoins = ITEMS[itemKey].value;
+    const baseCoins = depositItems.reduce((sum, entry) => sum + ITEMS[entry.itemKey].value * entry.count, 0);
     const bonusCoins = promo ? Math.floor(baseCoins * 0.2) : 0;
     const request = {
-      id, userId: uid, username: user.username || "", gameUsername, itemKey,
-      itemName: ITEMS[itemKey].name, baseCoins, promoCode: promo ? promoCode : "",
+      id, userId: uid, username: user.username || "", gameUsername, itemKey: depositItems[0].itemKey, items: depositItems,
+      itemName, baseCoins, promoCode: promo ? promoCode : "",
       bonusCoins, creditCoins: baseCoins + bonusCoins, status: "pending", createdAt: Date.now(),
     };
     db.depositRequests[id] = request;
@@ -503,6 +583,60 @@ const server = http.createServer(async (req, res) => {
       return send(503, { error: "Не удалось отправить заявку администратору. Попробуйте позже." });
     }
     return send(200, { request, depositRequests: Object.values(db.depositRequests).filter(entry => entry.userId === uid).sort((a, b) => b.createdAt - a.createdAt).slice(0, 10) });
+  }
+
+  if (urlPath === "/api/withdraw/request") {
+    if (!ADMIN_IDS.length) return send(503, { error: "Администратор не настроен для обработки заявок." });
+    const index = Number(body.index);
+    const sourceKey = u.inv[index];
+    const source = ITEMS[sourceKey];
+    if (!Number.isInteger(index) || index < 0 || !source) return send(400, { error: "Предмет не найден в инвентаре." });
+    if (String(body.sourceKey || "") !== sourceKey) return send(409, { error: "Инвентарь обновился. Обновите профиль и создайте заявку ещё раз." });
+    const gameUsername = String(body.gameUsername || "").trim();
+    if (gameUsername.length < 2 || gameUsername.length > 32 || !/^[\p{L}\p{N}_. -]+$/u.test(gameUsername)) return send(400, { error: "Укажите игровой username длиной от 2 до 32 символов." });
+    const requested = Array.isArray(body.items) ? body.items : [];
+    const selectedCounts = new Map();
+    for (const entry of requested) {
+      const itemKey = String(entry?.item || "");
+      const count = Number(entry?.count);
+      if (!DEPOSIT_ITEMS.includes(itemKey) || !Number.isSafeInteger(count) || count < 1 || count > 10000) return send(400, { error: "Выберите допустимый брейнрот для вывода." });
+      selectedCounts.set(itemKey, (selectedCounts.get(itemKey) || 0) + count);
+    }
+    const payoutItems = [...selectedCounts].map(([itemKey, count]) => ({ itemKey, count }));
+    const payoutCoins = payoutItems.reduce((sum, entry) => sum + ITEMS[entry.itemKey].value * entry.count, 0);
+    if (!payoutItems.length || !Number.isSafeInteger(payoutCoins) || payoutCoins < 1) return send(400, { error: "Выберите хотя бы один брейнрот для получения." });
+    if (payoutCoins > source.value) return send(400, { error: "Стоимость выдачи выше цены выбранного предмета." });
+    const gameNames = { dragon: "Dragon Cannelloni", garama: "Garama and Madundung", cerberus: "Cerberus", capitano: "Capitano Moby" };
+    const before = JSON.stringify(db);
+    const id = `W${Date.now().toString(36).toUpperCase()}${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+    const request = {
+      id, userId: uid, username: user.username || "", gameUsername, sourceKey, sourceValue: source.value,
+      sourceIndex: index, items: payoutItems, payoutCoins, remainderCoins: source.value - payoutCoins,
+      itemName: payoutItems.map(({ itemKey, count }) => `${gameNames[itemKey]} × ${count}`).join(", "),
+      status: "pending", createdAt: Date.now(),
+    };
+    u.inv.splice(index, 1);
+    db.withdrawRequests[id] = request;
+    try { await saveDb(); }
+    catch (error) {
+      db = normalizeDb(JSON.parse(before));
+      console.error("Could not save withdraw request:", error.message);
+      return send(503, { error: "Не удалось сохранить заявку. Попробуйте позже." });
+    }
+    const alertText = withdrawAdminText(request);
+    const notifyResults = await Promise.allSettled(ADMIN_IDS.map(adminId => tgApi("sendMessage", {
+      chat_id: adminId, text: alertText,
+      reply_markup: { inline_keyboard: [[
+        { text: "Принять заявку", callback_data: `withdraw:accept:${id}` },
+        { text: "Отклонить", callback_data: `withdraw:reject:${id}` },
+      ]] },
+    })));
+    if (!notifyResults.some(result => result.status === "fulfilled" && result.value?.ok)) {
+      db = normalizeDb(JSON.parse(before));
+      await saveDb().catch(() => {});
+      return send(503, { error: "Не удалось отправить заявку администратору. Предмет возвращён в инвентарь." });
+    }
+    return send(200, { request, inv: u.inv, withdrawRequests: Object.values(db.withdrawRequests).filter(entry => entry.userId === uid).sort((a, b) => b.createdAt - a.createdAt).slice(0, 20) });
   }
 
   if (urlPath === "/api/partner/withdraw") {
@@ -639,7 +773,7 @@ async function poll() {
       if (!r.ok) { console.error("getUpdates:", r.description); await new Promise(x => setTimeout(x, 3000)); continue; }
       for (const upd of r.result) {
         await handlePaymentUpdate(upd);
-        if (upd.callback_query) await handleDepositCallback(upd.callback_query);
+        if (upd.callback_query) { await handleDepositCallback(upd.callback_query); await handleWithdrawCallback(upd.callback_query); }
         if (upd.message?.from) await touch(upd.message.from.id, upd.message.from.username);
         const mtext = upd.message?.text || "";
         const messageUserId = String(upd.message?.from?.id || "");
