@@ -37,6 +37,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;pa
 .bonus-card a{color:#ffc481;text-decoration:underline}
 .bonus-card .row{align-items:center}
 .bonus-card .btn{font-size:14px;padding:12px}
+.bonus-card input{width:100%;min-width:0;padding:11px;border:1px solid var(--line);border-radius:10px;background:#100b19;color:var(--text);font:14px Rubik,sans-serif;text-transform:uppercase}
 .bonus-state{font-size:12px;color:var(--green);margin-top:8px;min-height:18px}
 .feed{display:grid;gap:8px;margin:8px 0 18px}.feed-row{display:flex;justify-content:space-between;gap:12px;align-items:center;background:#1a1025;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12px}.feed-row b{color:#ffe0c2}.feed-row small{color:var(--muted);white-space:nowrap}.feed-reward{color:var(--green);text-align:right}
 .drop-scroller{display:flex;gap:9px;overflow-x:auto;padding:4px 3px 13px;margin:-2px 0 12px;scrollbar-width:thin;scrollbar-color:#62407a transparent}.drop-card{flex:0 0 112px;min-height:118px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;padding:8px 7px;background:linear-gradient(160deg,#20182d,#100b19);border:1px solid #49375a;border-bottom:2px solid #d5a83f;border-radius:5px;text-align:center;animation:dropIn .3s ease-out}.drop-pic{height:54px;width:100%;display:grid;place-items:center;font-size:34px;filter:drop-shadow(0 5px 10px #ffb64355)}.drop-pic img{max-width:100%;max-height:54px;object-fit:contain}.drop-name{font-size:10px;line-height:1.2;font-weight:600;max-height:24px;overflow:hidden}.drop-meta{font-size:9px;color:var(--muted);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}.partner-card,.admin-card{display:grid;gap:12px;padding:16px;border:1px solid #513d60;border-radius:16px;background:linear-gradient(150deg,#2a1a36,#17101f)}.partner-stat{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.partner-stat>div{padding:11px;border:1px solid var(--line);border-radius:11px;background:#100b19}.partner-stat b{display:block;color:#ffe0c2;font-size:18px}.partner-stat small{color:var(--muted);font-size:11px}.admin-card input{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:#100b19;color:var(--text);font:14px Rubik,sans-serif}.partner-msg{min-height:20px;color:var(--green);font-size:13px}
@@ -253,6 +254,12 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
     <h2 class="t">Бонусы</h2>
     <p class="info" style="text-align:left;margin:0 0 14px">Выполните задание, чтобы открыть бонус-кейс. Награда — от 1 до 10 виртуальных 🪙. Каждый бонус доступен один раз.</p>
     <p id="bonusMsg" class="info" style="margin:0 0 12px"></p>
+    <article class="bonus-card">
+      <h3>🎟️ Промокод</h3>
+      <p>Введите код, чтобы получить виртуальные монеты. Каждый код можно активировать один раз на игрока.</p>
+      <div class="row"><input id="bonusPromoCode" maxlength="32" placeholder="Введите промокод" autocomplete="off"><button class="btn" id="redeemPromoBtn">Активировать</button></div>
+      <p id="bonusPromoMsg" class="bonus-state"></p>
+    </article>
     <div id="bonusGrid" class="bonus-grid"></div>
   </section>
 
@@ -488,6 +495,21 @@ async function copyBotTag(){
   try{ if(navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(value); else { const t=document.createElement("textarea");t.value=value;t.style.position="fixed";t.style.opacity="0";document.body.append(t);t.select();document.execCommand("copy");t.remove(); } $("#bonusMsg").textContent=`${value} скопирован. Вставьте его в имя профиля Telegram.`; }
   catch{ $("#bonusMsg").textContent=`Скопируйте текст вручную: ${value}`; }
 }
+async function redeemPromoCode(){
+  const code=$("#bonusPromoCode").value.trim().toUpperCase();
+  const message=$("#bonusPromoMsg"), button=$("#redeemPromoBtn");
+  if(!code){message.textContent="Введите промокод.";return;}
+  button.disabled=true;message.textContent="Проверяем промокод…";
+  try{
+    const result=await api("/api/bonus/redeem",{code});
+    apply(result);
+    $("#bonusPromoCode").value="";
+    message.textContent=`Промокод ${result.code} активирован! Начислено ${fmt(result.reward)} 🪙.`;
+  }catch(error){message.textContent=error.message;}
+  finally{button.disabled=false;}
+}
+$("#redeemPromoBtn").onclick=redeemPromoCode;
+$("#bonusPromoCode").addEventListener("keydown",e=>{if(e.key==="Enter")redeemPromoCode();});
 
 function render(){
   $("#bal").textContent = fmt(S.bal) + " 🪙"; $("#ubal").textContent = "Баланс: " + fmt(S.bal) + " 🪙";

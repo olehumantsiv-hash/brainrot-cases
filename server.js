@@ -15,7 +15,7 @@ if (!TOKEN) throw new Error("Задайте BOT_TOKEN");
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) throw new Error("Задайте DATABASE_URL из Supabase PostgreSQL");
 const pool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false }, max: 5, connectionTimeoutMillis: 10000 });
-let db = { users: {}, liveFeed: [], pendingStarPayments: {}, starPayments: {}, promos: {}, referrals: {}, partners: {}, depositRequests: {} };
+let db = { users: {}, liveFeed: [], pendingStarPayments: {}, starPayments: {}, promos: {}, referrals: {}, partners: {}, depositRequests: {}, bonusCodes: {} };
 let saveQueue = Promise.resolve();
 const normalizeDb = value => {
   const result = value && typeof value === "object" ? value : { users: {} };
@@ -27,6 +27,7 @@ const normalizeDb = value => {
   if (!result.referrals || typeof result.referrals !== "object") result.referrals = {};
   if (!result.partners || typeof result.partners !== "object") result.partners = {};
   if (!result.depositRequests || typeof result.depositRequests !== "object") result.depositRequests = {};
+  if (!result.bonusCodes || typeof result.bonusCodes !== "object") result.bonusCodes = {};
   return result;
 };
 async function saveDb() {
@@ -222,6 +223,8 @@ const ADMIN_HELP = "🛠 Админ-команды:\n" +
   "/take @username 500 — забрать монеты\n" +
   "/giveitem @username dragon — выдать брейнрота\n" +
   "/takeitem @username dragon — забрать брейнрота\n" +
+  "/bonuscode NAME USES COINS — создать промокод с лимитом активаций и наградой\n" +
+  "/bonuscodes — список промокодов\n" +
   "/user @username — баланс и инвентарь\n" +
   "Брейнроты: " + Object.keys(ITEMS).join(", ") + "\n" +
   "Игрок должен хотя бы раз открыть бота.";
@@ -259,6 +262,27 @@ async function adminCmd(text) {
     return `✅ @${u.username || id}: ${cmd === "/giveitem" ? "выдан" : "забран"} ${ITEMS[k].name}`;
   }
   return "Неизвестная команда. /admin";
+}
+
+async function adminBonusCodeCmd(text, adminId) {
+  if (!ADMIN_IDS.includes(String(adminId))) return "Нет доступа.";
+  const [rawCommand, rawCode, usesText, coinsText] = text.trim().split(/\s+/);
+  const command = rawCommand.split("@")[0].toLowerCase();
+  if (command === "/bonuscodes") {
+    const rows = Object.entries(db.bonusCodes);
+    return rows.length ? "🎟️ Промокоды:\n" + rows.map(([code, item]) => `${code}: ${item.redeemedBy?.length || 0}/${item.usesLimit} активаций · ${item.coins} 🪙`).join("\n") : "Промокодов пока нет. Создать: /bonuscode NAME USES COINS";
+  }
+  const code = String(rawCode || "").trim().toUpperCase();
+  const usesLimit = Number(usesText), coins = Number(coinsText);
+  if (!/^[A-Z0-9_-]{3,32}$/.test(code)) return "Название: 3–32 латинских символа, цифры, _ или -. Пример: /bonuscode WELCOME 100 500";
+  if (!Number.isSafeInteger(usesLimit) || usesLimit < 1 || usesLimit > 100000) return "Количество активаций должно быть от 1 до 100000.";
+  if (!Number.isSafeInteger(coins) || coins < 1 || coins > 1000000000) return "Награда должна быть от 1 до 1000000000 монет.";
+  if (db.bonusCodes[code] || db.promos[code]) return "Этот код уже занят. Выберите другое название.";
+  const before = JSON.stringify(db);
+  db.bonusCodes[code] = { usesLimit, coins, redeemedBy: [], createdAt: Date.now(), createdBy: String(adminId) };
+  try { await saveDb(); }
+  catch (error) { db = normalizeDb(JSON.parse(before)); console.error("Could not save bonus promo:", error.message); return "Не удалось сохранить промокод. Попробуйте ещё раз."; }
+  return `✅ Промокод ${code} создан. Награда: ${coins} 🪙, активаций: ${usesLimit}.`;
 }
 
 const depositStatusText = status => ({ pending: "ожидает принятия", accepted: "заявка принята, ждём поступления", rejected: "отклонена", credited: "поступление подтверждено" }[status] || status);
@@ -505,6 +529,24 @@ const server = http.createServer(async (req, res) => {
     return send(200, mePayload(user, u));
   }
 
+  if (urlPath === "/api/bonus/redeem") {
+    const code = String(body.code || "").trim().toUpperCase();
+    const bonus = db.bonusCodes[code];
+    if (!bonus) return send(404, { error: "Промокод не найден." });
+    if (!Array.isArray(bonus.redeemedBy)) bonus.redeemedBy = [];
+    if (bonus.redeemedBy.includes(uid)) return send(409, { error: "Вы уже активировали этот промокод." });
+    if (bonus.redeemedBy.length >= Number(bonus.usesLimit)) return send(409, { error: "Лимит активаций промокода исчерпан." });
+    const reward = Number(bonus.coins);
+    if (!Number.isSafeInteger(reward) || reward < 1) return send(500, { error: "У промокода неверно настроена награда." });
+    const before = JSON.stringify(db);
+    bonus.redeemedBy.push(uid);
+    u.balance += reward;
+    u.stats.coinsEarned += reward;
+    try { await saveDb(); }
+    catch (error) { db = normalizeDb(JSON.parse(before)); console.error("Could not save promo redemption:", error.message); return send(503, { error: "Не удалось активировать промокод. Попробуйте ещё раз." }); }
+    return send(200, { code, reward, balance: u.balance, inv: u.inv, stats: u.stats });
+  }
+
   if (urlPath === "/api/bonus/claim") {
     const type = String(body.type || "");
     if (!["subscription", "nickname"].includes(type)) return send(400, { error: "Неизвестный бонус" });
@@ -615,6 +657,9 @@ async function poll() {
           await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: "Обращение отправлено поддержке." });
         } else if (/^\/myid\b/.test(mtext)) {
           await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: "Ваш Telegram ID: " + upd.message.from.id });
+        } else if (/^\/bonuscode(s)?(@\w+)?(\s|$)/.test(mtext)) {
+          const reply = await adminBonusCodeCmd(mtext, upd.message.from.id);
+          await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: reply });
         } else if (/^\/(admin|give|take|giveitem|takeitem|user)(@\w+)?(\s|$)/.test(mtext)) {
           const reply = ADMIN_IDS.includes(String(upd.message.from.id)) ? await adminCmd(mtext) : "Нет доступа.";
           await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: reply });
