@@ -287,7 +287,7 @@ async function handleDepositCallback(query) {
     request.status = "accepted";
     request.acceptedAt = Date.now();
     request.acceptedBy = String(query.from.id);
-    userMessage = `Заявка ${id} принята. Администратор продолжит обработку и подтвердит поступление после проверки.`;
+    userMessage = `Заявка ${id} принята! Примите трейд от нашего бота на игровой username ${request.gameUsername} и передайте ему предмет ${request.itemName}. После передачи дождитесь подтверждения поступления.`;
   } else if (action === "reject") {
     request.status = "rejected";
     request.rejectedAt = Date.now();
@@ -423,6 +423,15 @@ const server = http.createServer(async (req, res) => {
     try { await saveDb(); }
     catch (error) { db = normalizeDb(JSON.parse(before)); console.error("Could not save promo:", error.message); return send(503, { error: "Не удалось сохранить промокод. Попробуйте ещё раз." }); }
     return send(200, { ok: true, code, partnerId, partner: partnerPayload(partnerId) });
+  }
+
+  if (urlPath === "/api/deposit/promo/check") {
+    const code = String(body.code || "").trim().toUpperCase();
+    if (!code) return send(200, { valid: false, error: "Введите промокод." });
+    const promo = db.promos[code];
+    if (!promo) return send(200, { valid: false, error: "Промокод не найден." });
+    if (promo.partnerId === uid) return send(200, { valid: false, error: "Нельзя использовать собственный промокод." });
+    return send(200, { valid: true, percent: 20 });
   }
 
   if (urlPath === "/api/deposit/request") {
