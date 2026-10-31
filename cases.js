@@ -18,17 +18,26 @@ const LINEUP = [
   ["lair",   "ЛОГОВО ДРАКОНОВ",   "🐉", "#ff7a00", ["fragrama","spookypumpky","fragola","draculino","cooki","cerberus","casaboo","dragon","dragonginger","lasupreme","losdragons"], "dragon"],
   ["king",   "КОРОЛЬ ХЭЛЛОУИНА",  "👑", "#ffd24a", ["cerberus","casaboo","dragon","dragonginger","lasupreme","losdragons","headless","meowl","strawberry"], "halloween"],
   ["throne", "ТРОН ТЬМЫ",         "🕯️", "#ff4ecd", ["dragon","dragonginger","lasupreme","losdragons","headless","meowl","strawberry","skibidi","spyderelephant"], "dragon"],
+  ["red",     "КРАСНЫЙ КЕЙС",      "🟥", "#ff4b57", ["garama","capitano","fragrama","fragola","spookypumpky"], "color", 100],
+  ["blue",    "СИНИЙ КЕЙС",        "🟦", "#38bdf8", ["capitano","fragrama","fragola","spookypumpky","draculino","cooki","cerberus"], "color", 250],
+  ["green",   "ЗЕЛЁНЫЙ КЕЙС",      "🟩", "#4ade80", ["spookypumpky","draculino","cooki","cerberus","casaboo"], "color", 400],
+  ["purple",  "ФИОЛЕТОВЫЙ КЕЙС",   "🟪", "#c084fc", ["cooki","cerberus","casaboo","dragon"], "color", 550],
+  ["gold",    "ЗОЛОТОЙ КЕЙС",      "🟨", "#fbbf24", ["cooki","cerberus","casaboo","dragon","dragonginger","lasupreme"], "color", 700],
+  ["rainbow", "РАДУЖНЫЙ КЕЙС",     "🌈", "#f472b6", ["cooki","cerberus","casaboo","dragon","dragonginger","lasupreme","losdragons"], "color", 900],
 ];
 
-function buildCase(ITEMS, id, name, art, g, keys, cat) {
+function buildCase(ITEMS, id, name, art, g, keys, cat, fixedPrice) {
   // OG-предметы не выпадают из кейсов, кроме Skibidi Toilet.
   keys = [...new Set(keys)].filter(k => ITEMS[k] && (ITEMS[k].rarity !== "og" || k === "skibidi"));
   if (keys.length < 2) { console.error(`Кейс ${id}: мало предметов, пропущен`); return null; }
   const vals = keys.map(k => ITEMS[k].value);
   const min = Math.min(...vals), max = Math.max(...vals);
-  // Цена = 3 x самый дешёвый приз (самый дешёвый приз = цена/3, то есть проигрыш максимум x3).
-  // Самый дорогой приз при этом не больше 10 x цена, значит макс/мин <= 30.
-  const price = Math.ceil(min * MAX_LOSS_X);
+  // Для обычных кейсов цена считается от минимального приза; цветные имеют заданную цену.
+  const price = fixedPrice || Math.ceil(min * MAX_LOSS_X);
+  if (min < Math.ceil(price / MAX_LOSS_X)) {
+    console.error(`Кейс ${id}: минимальный приз слишком дешёвый для цены ${price}. Кейс пропущен.`);
+    return null;
+  }
   if (max > price * MAX_WIN_X) {
     console.error(`Кейс ${id}: разброс цен слишком большой (макс/мин = ${(max / min).toFixed(1)}, допустимо до ${MAX_WIN_X * MAX_LOSS_X}). Уберите самый дорогой или самый дешёвый предмет. Кейс пропущен.`);
     return null;
@@ -82,8 +91,8 @@ function buildCase(ITEMS, id, name, art, g, keys, cat) {
 
 function buildCases(ITEMS) {
   const out = {};
-  for (const [id, name, art, g, keys, cat] of LINEUP) {
-    const c = buildCase(ITEMS, id, name, art, g, keys, cat);
+  for (const [id, name, art, g, keys, cat, fixedPrice] of LINEUP) {
+    const c = buildCase(ITEMS, id, name, art, g, keys, cat, fixedPrice);
     if (c) out[id] = c;
   }
   return out;

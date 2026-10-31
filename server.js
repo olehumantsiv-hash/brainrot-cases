@@ -437,7 +437,7 @@ const server = http.createServer(async (req, res) => {
   const urlPath = (req.url || "/").split("?")[0];
   if (req.method === "GET" && urlPath === "/health") { // быстрая проверка версии: открыть /health в браузере
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
-    return res.end(JSON.stringify({ version: "images-v3", cases: Object.keys(CASES), itemsWithImages: Object.entries(ITEMS).filter(([, v]) => v.img).map(([k]) => k) }));
+    return res.end(JSON.stringify({ version: "colored-cases-withdraw-v1", cases: Object.keys(CASES), itemsWithImages: Object.entries(ITEMS).filter(([, v]) => v.img).map(([k]) => k) }));
   }
   if (req.method === "GET" && /^\/img\/[a-z0-9_-]+\.(png|webp|jpg)$/.test(urlPath)) {
     try {
