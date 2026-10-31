@@ -16,14 +16,14 @@ const LINEUP = [
   ["vamp",   "СКЛЕП ВАМПИРА",     "🧛", "#fb7185", ["spaghetti","tictac","ketchuru","orcaledon","garama","capitano","fragrama","fragola","spookypumpky","draculino","cerberus","venuspino","casaboo"], "halloween"],
   ["hound",  "АДСКИЙ ПЁС",        "🐺", "#a855ff", ["garama","capitano","fragrama","spookypumpky","fragola","draculino","cooki","venuspino","pancakeandsyrup","cerberus","casaboo","dragon"], "halloween"],
   ["lair",   "ЛОГОВО ДРАКОНОВ",   "🐉", "#ff7a00", ["fragrama","spookypumpky","fragola","draculino","cooki","venuspino","pancakeandsyrup","hydrabunny","cerberus","casaboo","dragon","lasupreme","losdragons"], "dragon"],
-  ["king",   "КОРОЛЬ ХЭЛЛОУИНА",  "👑", "#ffd24a", ["venuspino","pancakeandsyrup","cerberus","casaboo","dragon","hydrabunny","lasupreme","dragonaquanini","losdragons"], "halloween"],
+  ["king",   "КОРОЛЬ ХЭЛЛОУИНА",  "👑", "#ffd24a", ["venuspino","pancakeandsyrup","casaboo","dragon","hydrabunny","lasupreme","dragonaquanini","losdragons"], "halloween", 1200],
   ["throne", "ТРОН ТЬМЫ",         "🕯️", "#ff4ecd", ["dragon","pancakeandsyrup","hydrabunny","dragonaquanini","dragonginger","lasupreme","losdragons","headless","meowl","strawberry","skibidi","spyderelephant"], "dragon"],
   ["red",     "КРАСНЫЙ КЕЙС",      "🟥", "#ff4b57", ["garama","capitano","fragrama","fragola","spookypumpky","draculino","venuspino","pancakeandsyrup"], "color", 100],
   ["blue",    "СИНИЙ КЕЙС",        "🟦", "#38bdf8", ["capitano","fragrama","fragola","spookypumpky","draculino","venuspino","pancakeandsyrup","cooki","hydrabunny","cerberus","casaboo","dragon"], "color", 250],
-  ["green",   "ЗЕЛЁНЫЙ КЕЙС",      "🟩", "#4ade80", ["spookypumpky","draculino","venuspino","pancakeandsyrup","cooki","cerberus","hydrabunny","casaboo","dragon","dragonaquanini","lasupreme","losdragons"], "color", 400],
-  ["purple",  "ФИОЛЕТОВЫЙ КЕЙС",   "🟪", "#c084fc", ["cooki","venuspino","pancakeandsyrup","cerberus","hydrabunny","casaboo","dragon","lasupreme","dragonaquanini","losdragons"], "color", 550],
-  ["gold",    "ЗОЛОТОЙ КЕЙС",      "🟨", "#fbbf24", ["cooki","venuspino","pancakeandsyrup","cerberus","hydrabunny","casaboo","dragon","lasupreme","dragonaquanini","losdragons"], "color", 700],
-  ["rainbow", "РАДУЖНЫЙ КЕЙС",     "🌈", "#f472b6", ["cooki","venuspino","pancakeandsyrup","cerberus","hydrabunny","casaboo","dragon","lasupreme","dragonaquanini","losdragons","dragonginger"], "color", 900],
+  ["green",   "ЗЕЛЁНЫЙ КЕЙС",      "🟩", "#4ade80", ["spookypumpky","draculino","venuspino","pancakeandsyrup","cerberus","hydrabunny","casaboo","dragon","dragonaquanini","lasupreme","losdragons"], "color", 400],
+  ["purple",  "ФИОЛЕТОВЫЙ КЕЙС",   "🟪", "#c084fc", ["venuspino","pancakeandsyrup","hydrabunny","casaboo","dragon","lasupreme","dragonaquanini","losdragons"], "color", 550],
+  ["gold",    "ЗОЛОТОЙ КЕЙС",      "🟨", "#fbbf24", ["venuspino","pancakeandsyrup","hydrabunny","casaboo","dragon","lasupreme","dragonaquanini","losdragons"], "color", 700],
+  ["rainbow", "РАДУЖНЫЙ КЕЙС",     "🌈", "#f472b6", ["venuspino","pancakeandsyrup","hydrabunny","casaboo","dragon","lasupreme","dragonaquanini","losdragons","dragonginger"], "color", 900],
 ];
 
 function buildCase(ITEMS, id, name, art, g, keys, cat, fixedPrice) {

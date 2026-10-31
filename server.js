@@ -90,10 +90,21 @@ const partnerPayload = partnerId => {
     link: botUsername && p.code ? `https://t.me/${botUsername}?start=${encodeURIComponent(p.code)}` : "",
     referralCount: referrals,
     referralStars: p.referralStars || 0,
+    referralBrainrotCoins: p.referralBrainrotCoins || 0,
     commissionCents: p.commissionCents || 0,
     availableCoins: Math.max(0, Math.floor((p.commissionCents || 0) / 100) - (p.withdrawnCoins || 0)),
     withdrawnCoins: p.withdrawnCoins || 0,
   };
+};
+const recordReferralDeposit = (userId, amount, source) => {
+  const uid = String(userId), value = Number(amount), referral = db.referrals[uid];
+  if (!referral || String(referral.partnerId) === uid || !Number.isSafeInteger(value) || value <= 0) return;
+  const partner = db.partners[String(referral.partnerId)];
+  if (!partner) return;
+  const percent = Math.max(0, Math.min(100, Number(referral.percent) || 20));
+  if (source === "stars") partner.referralStars = (partner.referralStars || 0) + value;
+  else partner.referralBrainrotCoins = (partner.referralBrainrotCoins || 0) + value;
+  partner.commissionCents = (partner.commissionCents || 0) + value * percent;
 };
 async function handlePaymentUpdate(update) {
   const query = update.pre_checkout_query;
@@ -128,19 +139,13 @@ async function handlePaymentUpdate(update) {
   const bonusCoins = Number.isSafeInteger(pending.bonusCoins) && pending.bonusCoins > 0 ? pending.bonusCoins : 0;
   const creditedCoins = order.stars + bonusCoins;
   u.balance += creditedCoins;
-  const referral = db.referrals[order.userId];
-  if (referral && referral.partnerId !== order.userId) {
-    const partner = db.partners[referral.partnerId];
-    if (partner) {
-      partner.referralStars = (partner.referralStars || 0) + order.stars;
-      partner.commissionCents = (partner.commissionCents || 0) + order.stars * Number(referral.percent || 20);
-    }
-  }
+  u.depositWagerRemaining += order.stars;
+  recordReferralDeposit(order.userId, order.stars, "stars");
   db.starPayments[chargeId] = { userId: order.userId, stars: order.stars, at: Date.now() };
   delete db.pendingStarPayments[order.nonce];
   try { await saveDb(); }
   catch (error) { db = normalizeDb(JSON.parse(before)); throw error; }
-  await tgApi("sendMessage", { chat_id: message.chat.id, text: `Оплата ${order.stars} ⭐ подтверждена. Начислено ${order.stars} 🪙${bonusCoins ? ` + бонус ${bonusCoins} 🪙 по промокоду ${pending.promoCode}. Всего ${creditedCoins} 🪙.` : "."} Новый баланс: ${u.balance} 🪙.` });
+  await tgApi("sendMessage", { chat_id: message.chat.id, text: `Оплата ${order.stars} ⭐ подтверждена. Начислено ${order.stars} 🪙${bonusCoins ? ` + бонус ${bonusCoins} 🪙 по промокоду ${pending.promoCode}. Всего ${creditedCoins} 🪙.` : "."} Новый баланс: ${u.balance} 🪙. Перед выводом откройте кейсы на сумму депозита; сейчас осталось отыграть ${u.depositWagerRemaining} 🪙.` });
 }
 
 function verifyInitData(initData) {
@@ -166,6 +171,7 @@ const getUser = id => {
   u.stats.casesOpened = Number(u.stats.casesOpened) || 0;
   u.stats.upgrades = Number(u.stats.upgrades) || 0;
   u.stats.coinsEarned = Number(u.stats.coinsEarned) || 0;
+  u.depositWagerRemaining = Math.max(0, Number(u.depositWagerRemaining) || 0);
   u.bonusClaims ||= { subscription: !!u.subClaimed, nickname: false };
   u.bonusClaims.subscription = !!u.bonusClaims.subscription;
   u.bonusClaims.nickname = !!u.bonusClaims.nickname;
@@ -389,10 +395,12 @@ async function handleDepositCallback(query) {
     const u = getUser(request.userId);
     u.balance += request.creditCoins;
     u.stats.coinsEarned += request.creditCoins;
+    u.depositWagerRemaining += request.baseCoins;
+    recordReferralDeposit(request.userId, request.baseCoins, "brainrots");
     request.status = "credited";
     request.creditedAt = Date.now();
     request.creditedBy = String(query.from.id);
-    userMessage = `Поступление по заявке ${id} подтверждено. Начислено ${request.baseCoins} 🪙${request.bonusCoins ? ` + бонус ${request.bonusCoins} 🪙` : ""}. Баланс: ${u.balance} 🪙.`;
+    userMessage = `Поступление по заявке ${id} подтверждено. Начислено ${request.baseCoins} 🪙${request.bonusCoins ? ` + бонус ${request.bonusCoins} 🪙` : ""}. Баланс: ${u.balance} 🪙. Перед выводом откройте кейсы на сумму депозита; сейчас осталось отыграть ${u.depositWagerRemaining} 🪙.`;
   }
   try { await saveDb(); }
   catch (error) {
@@ -482,6 +490,7 @@ const subscriptionStatus = async uid => {
 
 const mePayload = (user, u) => ({
   balance: u.balance, inv: u.inv, subClaimed: !!u.subClaimed, bonusClaims: u.bonusClaims, stats: u.stats,
+  depositWagerRemaining: u.depositWagerRemaining,
   liveFeed: db.liveFeed.slice(0, 20),
   depositPromo: db.promos[db.referrals[String(user.id)]?.code] ? db.referrals[String(user.id)].code : "",
   depositRequests: Object.values(db.depositRequests).filter(request => request.userId === String(user.id)).sort((a, b) => b.createdAt - a.createdAt).slice(0, 10),
@@ -499,7 +508,7 @@ const server = http.createServer(async (req, res) => {
   const urlPath = (req.url || "/").split("?")[0];
   if (req.method === "GET" && urlPath === "/health") { // быстрая проверка версии: открыть /health в браузере
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
-    return res.end(JSON.stringify({ version: "braincase-item-artwork-v1", cases: Object.keys(CASES), itemsWithImages: Object.entries(ITEMS).filter(([, v]) => v.img).map(([k]) => k) }));
+    return res.end(JSON.stringify({ version: "braincase-referral-wager-values-v1", cases: Object.keys(CASES), itemsWithImages: Object.entries(ITEMS).filter(([, v]) => v.img).map(([k]) => k) }));
   }
   if (req.method === "GET" && /^\/img\/[a-z0-9_-]+\.(png|webp|jpg)$/.test(urlPath)) {
     try {
@@ -631,8 +640,10 @@ const server = http.createServer(async (req, res) => {
       } else {
         const player = getUser(request.userId);
         player.balance += request.creditCoins; player.stats.coinsEarned += request.creditCoins;
+        player.depositWagerRemaining += request.baseCoins;
+        recordReferralDeposit(request.userId, request.baseCoins, "brainrots");
         request.status = "credited"; request.creditedAt = Date.now(); request.creditedBy = uid;
-        userMessage = `Поступление по заявке ${id} подтверждено. Начислено ${request.creditCoins} 🪙. Баланс: ${player.balance} 🪙.`;
+        userMessage = `Поступление по заявке ${id} подтверждено. Начислено ${request.creditCoins} 🪙. Баланс: ${player.balance} 🪙. Перед выводом откройте кейсы на сумму депозита; сейчас осталось отыграть ${player.depositWagerRemaining} 🪙.`;
       }
     } else if (action === "accept") {
       request.status = "accepted"; request.acceptedAt = Date.now(); request.acceptedBy = uid;
@@ -726,6 +737,7 @@ const server = http.createServer(async (req, res) => {
 
   if (urlPath === "/api/withdraw/request") {
     if (!ADMIN_IDS.length) return send(503, { error: "Администратор не настроен для обработки заявок." });
+    if (u.depositWagerRemaining > 0) return send(403, { error: `Перед выводом нужно отыграть сумму депозита. Осталось открыть кейсы на ${u.depositWagerRemaining} 🪙.` });
     const index = Number(body.index);
     const sourceKey = u.inv[index];
     const source = ITEMS[sourceKey];
@@ -863,11 +875,12 @@ const server = http.createServer(async (req, res) => {
     const totalPrice = c.price * count;
     if (u.balance < totalPrice) return send(400, { error: "Недостаточно виртуальных монет" });
     u.balance -= totalPrice;
+    u.depositWagerRemaining = Math.max(0, u.depositWagerRemaining - totalPrice);
     const wins = Array.from({ length: count }, () => pickDrop(c.drops));
     u.inv.push(...wins); u.stats.casesOpened += count;
     for (const win of wins) recordOpen(user, c.name, ITEMS[win].name, win);
     if (!(await persistOrRespond(send))) return;
-    return send(200, { wins, balance: u.balance, inv: u.inv, stats: u.stats });
+    return send(200, { wins, balance: u.balance, inv: u.inv, stats: u.stats, depositWagerRemaining: u.depositWagerRemaining });
   }
 
   if (urlPath === "/api/sell") {

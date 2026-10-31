@@ -1,7 +1,7 @@
 // Каталог брейнротов (список: gameboost.com/blog/all-brainrots-steal-a-brainrot).
 // Цена value = рубли. Реальные цены — в RUB ниже (они всегда главнее). Остальные — ОЦЕНКА по доходу (est()),
 // подогнанная под реальные цены: Ketchuru 20, Garama 40, Dragon Cannelloni 900 (в монетах).
-const RUB = { dragon: 900, dragonginger: 5000, dragonaquanini: 3500, hydrabunny: 1700, pancakeandsyrup: 901, venuspino: 421, garama: 40, ketchuru: 20, spaghetti: 18, orcaledon: 25, casaboo: 500, skibidi: 14000, lasupreme: 2000, spookypumpky: 140, fragrama: 110, capitano: 100,
+const RUB = { dragon: 900, dragonginger: 5000, dragonaquanini: 3500, hydrabunny: 1700, pancakeandsyrup: 901, venuspino: 421, garama: 40, ketchuru: 20, spaghetti: 18, orcaledon: 25, casaboo: 500, skibidi: 14000, lasupreme: 2000, spookypumpky: 140, fragrama: 110, capitano: 100, cerberus: 150, cooki: 125,
   reinito: 200, mobybros: 1110, tirilikalika: 1080, gingergerat: 1200, ketupat: 20, burguro: 80 };
 
 const COLORS = { common:"#9aa0b4", rare:"#38bdf8", epic:"#a855ff", legendary:"#fbbf24", mythic:"#fb7185", god:"#ff7a00", secret:"#ff4ecd", og:"#ffd24a" };
