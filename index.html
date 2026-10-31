@@ -215,6 +215,22 @@ h2.t{font-size:18px;margin:0 0 12px}
 .home-feed{margin:0 0 17px;padding:13px;border:1px solid #33394e;border-radius:15px;background:linear-gradient(140deg,#171c2b,#101320);box-shadow:0 9px 24px #0003}
 .home-feed-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
 .home-feed-head h3{font:700 11px Unbounded,sans-serif;color:#f3eaff}.feed-live{font-size:9px;color:#7ef0b5;text-transform:uppercase;letter-spacing:.1em}.feed-live::before{content:"";display:inline-block;width:6px;height:6px;margin-right:5px;border-radius:50%;background:#58eb9d;box-shadow:0 0 9px #58eb9d}
+.roll-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 2px 6px;color:#d6d9e5;font:700 10px Unbounded,sans-serif;text-transform:uppercase;letter-spacing:.06em}.roll-heading span:last-child{color:#ffc45c}
+.stage{height:194px;margin:0 0 15px;border:1px solid #795023;border-radius:16px;background:radial-gradient(ellipse at 50% 48%,#ff9e2420,transparent 45%),linear-gradient(180deg,#151a28,#0c101a);box-shadow:inset 0 0 26px #0008,0 10px 28px #0006}
+.stage::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,#090c15f0 0%,transparent 17%,transparent 83%,#090c15f0 100%)}
+.stage::after{width:3px;background:linear-gradient(180deg,#ffe29b,#ff9b24 55%,#ffe29b);box-shadow:0 0 8px #ffbf48,0 0 18px #ff921c;z-index:3}
+.strip{gap:10px;padding:21px 0}
+.stage .roll-item{position:relative;flex:0 0 120px;height:150px;gap:4px;padding:9px 6px 6px;border:1px solid color-mix(in srgb,var(--rc) 62%,#292e3c);border-bottom:3px solid var(--rc);border-radius:13px;background:radial-gradient(ellipse at 50% 18%,color-mix(in srgb,var(--rc) 24%,transparent),transparent 75%),linear-gradient(160deg,#252a3c,#151927);box-shadow:inset 0 1px #ffffff12,0 5px 14px #0006}
+.stage .roll-item .pic{height:76px;font-size:42px;filter:drop-shadow(0 5px 9px color-mix(in srgb,var(--rc) 30%,transparent))}
+.stage .roll-item img{height:72px;max-width:100px;object-fit:contain}
+.stage .roll-item b{max-width:100%;font:600 9px/1.15 Rubik,sans-serif;color:#f2f0f7;height:22px;overflow:hidden}
+.stage .roll-item .roll-rarity{padding:2px 5px;border-radius:999px;background:color-mix(in srgb,var(--rc) 24%,#121622);color:var(--rc);font:800 7px Unbounded,sans-serif;letter-spacing:.06em;text-transform:uppercase}
+.stage .roll-item .roll-value{color:#ffd184;font:600 9px Rubik,sans-serif}
+.stage.is-spinning .strip{filter:saturate(1.12)}
+.stage.is-spinning::after{animation:pointerPulse .75s ease-in-out infinite alternate}
+@keyframes pointerPulse{to{box-shadow:0 0 15px #ffdf75,0 0 28px #ff921c;filter:brightness(1.35)}}
+.sheet:has(#wPic:not(.batch-openings)){border-color:#9d6a2b;background:radial-gradient(ellipse at 50% 0,#ff9d212b,transparent 55%),linear-gradient(160deg,#1d2232,#111521);box-shadow:0 24px 70px #000b,0 0 25px #ff9b2222}
+.sheet h2{color:#ffd080}
 .drop-scroller{margin:0;padding:2px 2px 9px;scrollbar-color:#ff9d21 transparent}.drop-card{border-radius:11px;background:linear-gradient(160deg,#262a3c,#141725);border-color:#3d4359;border-bottom:2px solid #ffb733}.drop-card:hover{border-color:#ffcf77;box-shadow:0 7px 22px #ff9d2126}
 .admin-tabs{display:flex;gap:8px;margin:4px 0 14px}.admin-tab{flex:1;padding:11px 8px;border:1px solid #3c4257;border-radius:11px;background:#121725;color:#aeb5cb;font:700 11px Unbounded,sans-serif;cursor:pointer}.admin-tab.on{background:linear-gradient(110deg,#ff9e252b,#ff5b351c);border-color:#cc8534;color:#ffce7a}
 .admin-requests{display:grid;gap:9px}.admin-request{display:grid;gap:7px;padding:12px;border:1px solid #363d54;border-radius:13px;background:linear-gradient(145deg,#1a2031,#121624)}.admin-request-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.admin-request-head b{font:700 11px Unbounded,sans-serif;color:#ffd089}.admin-status{font-size:10px;color:#aeb5cb}.admin-request p{font-size:12px;color:#e4e6ef}.admin-request small{color:#aeb5cb}.admin-request-actions{display:flex;gap:6px}.admin-request-actions .btn{padding:9px 7px;border-radius:9px;font-size:11px}
@@ -345,6 +361,7 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
   <section class="view" id="v-open">
     <button class="back" id="back">‹ Все кейсы</button>
     <h2 class="t" id="oTitle"></h2>
+    <div class="roll-heading"><span id="rollCaseName">Награды кейса</span><span id="rollSpinStatus">Готов к открытию</span></div>
     <div class="stage"><div class="strip" id="strip"></div></div>
     <div id="batchBox" class="row" style="margin:12px 0"></div>
     <div class="row" style="margin:0 0 8px"><button class="btn fast-toggle" data-fast-animation type="button" aria-label="Быстрая анимация выключена" aria-pressed="false" title="Быстрая анимация">⚡</button></div>
@@ -887,6 +904,8 @@ function openCase(id){
   cur = id;
   const strip = $("#strip"); strip.style.transition="none"; strip.style.transform="translateX(0)";
   const c = (S.cfg.cases||{})[id];
+  $("#rollCaseName").textContent=c?.name||"Бонусный кейс";
+  $("#rollSpinStatus").textContent="ГОТОВ К ОТКРЫТИЮ";
   batchCount=1;
   $("#batchBox").innerHTML = id==="sub" ? "" : [1,2,3,4,5].map(n=>`<button class="btn alt batch-choice ${n===1?"on":""}" data-count="${n}" style="padding:8px 12px">${n}</button>`).join("");
   $("#batchBox").onclick = e => { const b=e.target.closest("[data-count]"); if(!b) return; batchCount=Number(b.dataset.count); $("#batchBox").querySelectorAll("[data-count]").forEach(x=>x.classList.toggle("on",x===b)); updateOpenButton(); };
@@ -922,6 +941,10 @@ function openCase(id){
   show("open");
 }
 function updateOpenButton(){ const c=(S.cfg.cases||{})[cur]; const total=(c?.price||0)*batchCount; $("#openBtn").textContent=`Открыть ${batchCount} за ${fmt(total)} 🪙`; }
+function rollCard(k){
+  const i=item(k), rarity=i.rarity||"secret", labels={common:"обычный",rare:"редкий",epic:"эпик",legendary:"легенда",mythic:"мифик",god:"бог",secret:"секрет",og:"OG"};
+  return `<div class="it roll-item rarity-${rarity}" style="--rc:${i.c||"#9aa0b4"}"><span class="roll-rarity">${labels[rarity]||"награда"}</span><div class="pic">${pic(k)}</div><b>${i.name}</b><span class="roll-value">${fmt(i.value)} 🪙</span></div>`;
+}
 $("#openBtn").onclick = async () => {
   if(spinning) return;
   unlock();
@@ -936,26 +959,34 @@ $("#openBtn").onclick = async () => {
     const r = await api("/api/open", {case:cur, count:batchCount});
     const wins=r.wins||[r.win];
     if(cur!=="sub"){
-      if(wins.length>1 && fastAnimations){ for(const win of wins) await animate(win); }
-      else await animate(wins[wins.length-1]);
+      if(wins.length>1 && fastAnimations){ for(let i=0;i<wins.length;i++) await animate(wins[i],i+1,wins.length); }
+      else await animate(wins[wins.length-1],wins.length,wins.length);
     }
     apply(r); if(cur==="sub") S.subClaimed = true; render();
-    if(wins.length>1){ $("#wPic").classList.add("batch-openings"); $("#wPic").innerHTML=`<div class="batch-wins">${wins.map((k,i)=>`<div class="batch-win"><span class="batch-num">Открытие ${i+1}</span>${card(k)}</div>`).join("")}</div>`; $("#wName").textContent=`Результаты: ${wins.length} кейсов`; $("#wVal").textContent="Все предметы добавлены в виртуальную коллекцию"; $("#mWin").classList.add("on"); sndWin(false); }
-    else showWin(cur==="sub"?r:{...r,win:wins[0]});
+    if(wins.length>1){
+      const unitPrice=(S.cfg.cases||{})[cur]?.price||0, totalPrice=unitPrice*wins.length, sellValue=wins.reduce((sum,key)=>sum+item(key).value,0), net=sellValue-totalPrice;
+      $("#wPic").classList.add("batch-openings"); $("#wPic").innerHTML=`<div class="batch-wins">${wins.map((k,i)=>`<div class="batch-win"><span class="batch-num">Открытие ${i+1}</span>${card(k)}</div>`).join("")}</div>`;
+      $("#wName").textContent=`Результаты: ${wins.length} кейсов`;
+      $("#wVal").textContent=`Если продать все: ${fmt(sellValue)} 🪙 · цена кейсов ${fmt(totalPrice)} 🪙 · ${net>=0?`выше цены на ${fmt(net)}`:`ниже цены на ${fmt(Math.abs(net))}`} 🪙`;
+      $("#mWin").classList.add("on"); sndWin(false);
+    }
+    else showWin(cur==="sub"?r:{...r,win:wins[0],casePrice:(S.cfg.cases||{})[cur]?.price||0});
   }catch(err){ if(bonusType){ $("#oInfo").textContent=err.message; } else alert(err.message); }
   finally{ spinning=false; if(bonusType) $("#openBtn").disabled=!!S.bonusClaims[bonusType]; else $("#openBtn").disabled = (cur==="sub" && S.subClaimed); }
 };
-function animate(win){
+function animate(win,opening=1,total=1){
   return new Promise(res=>{
-    const N=40, STOP=34, strip=$("#strip"), stage=$(".stage");
+    const N=58, STOP=48, strip=$("#strip"), stage=$(".stage");
     const pool = ((S.cfg.cases||{})[cur]||{}).pool || ["dragon","coin"];
-    const seq = Array.from({length:N},(_,i)=> i===STOP ? win : pool[i%pool.length]);
-    const duration = fastAnimations ? 700 : 4200;
-    strip.style.transition="none"; strip.style.transform="translateX(0)"; strip.innerHTML = seq.map(card).join("");
+    const seq = Array.from({length:N},(_,i)=> i===STOP ? win : pool[Math.floor(Math.random()*pool.length)]);
+    const duration = fastAnimations ? 720 : 4600;
+    $("#rollSpinStatus").textContent=total>1?`ОТКРЫТИЕ ${opening} ИЗ ${total}`:"КРУТИМ…";
+    stage.classList.add("is-spinning");
+    strip.style.transition="none"; strip.style.transform="translateX(0)"; strip.innerHTML = seq.map(rollCard).join("");
     sndSpin(duration,fastAnimations?10:34);
-    const target = STOP*108 + 54 - stage.clientWidth/2 + (Math.random()-.5)*60;
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{ strip.style.transition=`transform ${duration}ms cubic-bezier(.12,.7,.1,1)`; strip.style.transform=`translateX(${-target}px)`; }));
-    setTimeout(res, duration+120);
+    const target = STOP*130 + 60 - stage.clientWidth/2 + (Math.random()-.5)*24;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ strip.style.transition=`transform ${duration}ms cubic-bezier(.1,.68,.08,1)`; strip.style.transform=`translateX(${-target}px)`; }));
+    setTimeout(()=>{stage.classList.remove("is-spinning");$("#rollSpinStatus").textContent="ОТКРЫТО";res();}, duration+140);
   });
 }
 function showWin(r,silent){
@@ -967,7 +998,9 @@ function showWin(r,silent){
   else if(r.ok===false) $("#wName").textContent = "Неудача";
   else if(r.ok) $("#wName").textContent = item(r.win).name + "!";
   else $("#wName").textContent = (item(r.win).name || r.win) + "!";
-  $("#wVal").textContent = r.win==="coin"||r.win==="coins" ? "Зачислено на баланс" : (ITEMS_SELL(r.win));
+  const prizeValue=r.win==="coin"||r.win==="coins"?0:item(r.win).value;
+  const net=prizeValue-Number(r.casePrice||0);
+  $("#wVal").textContent = r.win==="coin"||r.win==="coins" ? "Зачислено на баланс" : `${ITEMS_SELL(r.win)}${r.casePrice?` · ${net>=0?`выше цены открытия на ${fmt(net)}`:`ниже цены открытия на ${fmt(Math.abs(net))}`} 🪙`:""}`;
   $("#mWin").classList.add("on");
   const bad = r.win==="coin"||r.ok===false;
   if(!silent){ bad ? sndFail() : sndWin(item(r.win).value>=1000); }

@@ -186,7 +186,7 @@ const pendingBonus = new Set();
 
 const publicItems = (ownedKeys = []) => Object.fromEntries(Object.entries(ITEMS)
   .filter(([k, v]) => (v.value > 10 && (v.rarity !== "og" || k === "skibidi")) || ownedKeys.includes(k))
-  .map(([k, v]) => [k, { name: v.name, value: v.value, e: v.e, c: v.c, img: v.img || null,
+  .map(([k, v]) => [k, { name: v.name, value: v.value, e: v.e, c: v.c, rarity: v.rarity, img: v.img || null,
     available: v.value > 10 && (v.rarity !== "og" || k === "skibidi") }]));
 const publicCases = () => Object.fromEntries(Object.entries(CASES).map(([id, c]) => {
   return [id, {

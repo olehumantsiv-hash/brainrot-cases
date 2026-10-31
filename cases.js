@@ -11,18 +11,18 @@ const WEIGHT_TOTAL = 1_000_000;
 
 // [id, название, картинка, цвет, [брейнроты], категория]  категории: halloween | water | dragon
 const LINEUP = [
-  ["grave",  "ПРОКЛЯТАЯ ПЛИТА",   "🪦", "#9aa0b4", ["lospooky","lojolly","hotspotsitos","losbros","moneyreindeer","tictac","spaghetti","ketchuru","orcaledon","garama","capitano","fragrama","spookypumpky","cooki"], "halloween"],
-  ["deep",   "ТЁМНЫЕ ГЛУБИНЫ",    "🌊", "#38bdf8", ["tralaledon","orcaledon","capitano"], "water"],
-  ["vamp",   "СКЛЕП ВАМПИРА",     "🧛", "#fb7185", ["spaghetti","ketchuru","orcaledon","garama","capitano","fragrama","spookypumpky","draculino","cerberus","casaboo"], "halloween"],
+  ["grave",  "ПРОКЛЯТАЯ ПЛИТА",   "🪦", "#9aa0b4", ["lospooky","lojolly","hotspotsitos","celularcini","extinct","losbros","moneyreindeer","tralaledon","esok","tangtang","tictac","spaghetti","ketchuru","orcaledon","garama","capitano","fragrama","fragola","spookypumpky","draculino","cooki"], "halloween"],
+  ["deep",   "ТЁМНЫЕ ГЛУБИНЫ",    "🌊", "#38bdf8", ["orcaledon","garama","capitano","fragrama","fragola","spookypumpky"], "water"],
+  ["vamp",   "СКЛЕП ВАМПИРА",     "🧛", "#fb7185", ["spaghetti","tictac","ketchuru","orcaledon","garama","capitano","fragrama","fragola","spookypumpky","draculino","cerberus","casaboo"], "halloween"],
   ["hound",  "АДСКИЙ ПЁС",        "🐺", "#a855ff", ["garama","capitano","fragrama","spookypumpky","fragola","draculino","cooki","cerberus","casaboo","dragon"], "halloween"],
   ["lair",   "ЛОГОВО ДРАКОНОВ",   "🐉", "#ff7a00", ["fragrama","spookypumpky","fragola","draculino","cooki","cerberus","casaboo","dragon","dragonginger","lasupreme","losdragons"], "dragon"],
   ["king",   "КОРОЛЬ ХЭЛЛОУИНА",  "👑", "#ffd24a", ["cerberus","casaboo","dragon","dragonginger","lasupreme","losdragons","headless","meowl","strawberry"], "halloween"],
   ["throne", "ТРОН ТЬМЫ",         "🕯️", "#ff4ecd", ["dragon","dragonginger","lasupreme","losdragons","headless","meowl","strawberry","skibidi","spyderelephant"], "dragon"],
-  ["red",     "КРАСНЫЙ КЕЙС",      "🟥", "#ff4b57", ["garama","capitano","fragrama","fragola","spookypumpky"], "color", 100],
-  ["blue",    "СИНИЙ КЕЙС",        "🟦", "#38bdf8", ["capitano","fragrama","fragola","spookypumpky","draculino","cooki","cerberus"], "color", 250],
-  ["green",   "ЗЕЛЁНЫЙ КЕЙС",      "🟩", "#4ade80", ["spookypumpky","draculino","cooki","cerberus","casaboo"], "color", 400],
-  ["purple",  "ФИОЛЕТОВЫЙ КЕЙС",   "🟪", "#c084fc", ["cooki","cerberus","casaboo","dragon"], "color", 550],
-  ["gold",    "ЗОЛОТОЙ КЕЙС",      "🟨", "#fbbf24", ["cooki","cerberus","casaboo","dragon","dragonginger","lasupreme"], "color", 700],
+  ["red",     "КРАСНЫЙ КЕЙС",      "🟥", "#ff4b57", ["garama","capitano","fragrama","fragola","spookypumpky","draculino"], "color", 100],
+  ["blue",    "СИНИЙ КЕЙС",        "🟦", "#38bdf8", ["capitano","fragrama","fragola","spookypumpky","draculino","cooki","cerberus","casaboo","dragon"], "color", 250],
+  ["green",   "ЗЕЛЁНЫЙ КЕЙС",      "🟩", "#4ade80", ["spookypumpky","draculino","cooki","cerberus","casaboo","dragon","dragonginger","lasupreme","losdragons"], "color", 400],
+  ["purple",  "ФИОЛЕТОВЫЙ КЕЙС",   "🟪", "#c084fc", ["cooki","cerberus","casaboo","dragon","dragonginger","lasupreme","losdragons"], "color", 550],
+  ["gold",    "ЗОЛОТОЙ КЕЙС",      "🟨", "#fbbf24", ["cooki","cerberus","casaboo","dragon","dragonginger","lasupreme","losdragons"], "color", 700],
   ["rainbow", "РАДУЖНЫЙ КЕЙС",     "🌈", "#f472b6", ["cooki","cerberus","casaboo","dragon","dragonginger","lasupreme","losdragons"], "color", 900],
 ];
 
