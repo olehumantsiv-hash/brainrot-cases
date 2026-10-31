@@ -1,7 +1,7 @@
 // Каталог брейнротов (список: gameboost.com/blog/all-brainrots-steal-a-brainrot).
 // Цена value = рубли. Реальные цены — в RUB ниже (они всегда главнее). Остальные — ОЦЕНКА по доходу (est()),
 // подогнанная под реальные цены: Ketchuru 20, Garama 40, Dragon Cannelloni 900 (в монетах).
-const RUB = { dragon: 900, garama: 40, ketchuru: 20, spaghetti: 18, orcaledon: 25, casaboo: 500, skibidi: 14000, lasupreme: 2000, spookypumpky: 140, fragrama: 110, capitano: 100,
+const RUB = { dragon: 900, dragonginger: 5000, dragonaquanini: 3500, hydrabunny: 1700, pancakeandsyrup: 901, venuspino: 421, garama: 40, ketchuru: 20, spaghetti: 18, orcaledon: 25, casaboo: 500, skibidi: 14000, lasupreme: 2000, spookypumpky: 140, fragrama: 110, capitano: 100,
   reinito: 200, mobybros: 1110, tirilikalika: 1080, gingergerat: 1200, ketupat: 20, burguro: 80 };
 
 const COLORS = { common:"#9aa0b4", rare:"#38bdf8", epic:"#a855ff", legendary:"#fbbf24", mythic:"#fb7185", god:"#ff7a00", secret:"#ff4ecd", og:"#ffd24a" };
@@ -25,7 +25,8 @@ const ROWS = [
   ["lospooky","Los Spooky Combinasionas","secret",2e7,"👻"], ["lojolly","Los Jolly Combinasionas","secret",2e7,"🎄"],
   ["moneyreindeer","Money Money Reindeer","secret",2.5e7,"🦌"], ["casaboo","La Casa Boo","secret",1e8,"🏚️"], ["draculino","Draculino","secret",1.2e8,"🧛"],
   ["reinito","Reinito Sleighito","secret",1.4e8,"🛷"], ["cerberus","Cerberus","secret",1.75e8,"🐺"], ["dragon","Dragon Cannelloni","secret",2.5e8,"🐉"],
-  ["dragonginger","Dragon Gingerini","secret",3.5e8,"🍪"], ["losdragons","Los Dragons","secret",4.25e8,"🐲"],
+  ["hydrabunny","Hydra Bunny","secret",1.85e8,"🐰"], ["pancakeandsyrup","Pancake and Syrup","secret",1.25e8,"🥞"], ["venuspino","Venuspino","secret",1.75e8,"🌵"],
+  ["dragonaquanini","Dragon Aquanini","secret",3.75e8,"🐉"], ["dragonginger","Dragon Gingerini","secret",3.5e8,"🍪"], ["losdragons","Los Dragons","secret",4.25e8,"🐲"],
   ["timcheese","Tim Cheese","common",5,"🧀"], ["fluriflura","Fluriflura","common",9,"🌸"], ["svinina","Svinina Bombardino","common",18,"🐖"],
   ["cocofanto","Cocofanto Elefanto","god",10000,"🐘"], ["antonio","Antonio","god",18500,"🧔"], ["girafa","Girafa Celestre","god",20000,"🦒"],
   ["gattatino","Gattatino Nyanino","god",35000,"🐈‍⬛"], ["chihuanini","Chihuanini Taconini","god",45000,"🌮"], ["matteo","Matteo","god",50000,"🧑"],

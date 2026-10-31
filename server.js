@@ -86,8 +86,8 @@ const partnerPayload = partnerId => {
   if (!p) return null;
   const referrals = Object.values(db.referrals).filter(r => r.partnerId === String(partnerId)).length;
   return {
-    code: p.code,
-    link: botUsername ? `https://t.me/${botUsername}?start=${encodeURIComponent(p.code)}` : "",
+    code: p.code || "",
+    link: botUsername && p.code ? `https://t.me/${botUsername}?start=${encodeURIComponent(p.code)}` : "",
     referralCount: referrals,
     referralStars: p.referralStars || 0,
     commissionCents: p.commissionCents || 0,
@@ -125,7 +125,9 @@ async function handlePaymentUpdate(update) {
   }
   const before = JSON.stringify(db);
   const u = getUser(order.userId);
-  u.balance += order.stars;
+  const bonusCoins = Number.isSafeInteger(pending.bonusCoins) && pending.bonusCoins > 0 ? pending.bonusCoins : 0;
+  const creditedCoins = order.stars + bonusCoins;
+  u.balance += creditedCoins;
   const referral = db.referrals[order.userId];
   if (referral && referral.partnerId !== order.userId) {
     const partner = db.partners[referral.partnerId];
@@ -138,7 +140,7 @@ async function handlePaymentUpdate(update) {
   delete db.pendingStarPayments[order.nonce];
   try { await saveDb(); }
   catch (error) { db = normalizeDb(JSON.parse(before)); throw error; }
-  await tgApi("sendMessage", { chat_id: message.chat.id, text: `Оплата ${order.stars} ⭐ подтверждена. Начислено ${order.stars} 🪙. Новый баланс: ${u.balance} 🪙.` });
+  await tgApi("sendMessage", { chat_id: message.chat.id, text: `Оплата ${order.stars} ⭐ подтверждена. Начислено ${order.stars} 🪙${bonusCoins ? ` + бонус ${bonusCoins} 🪙 по промокоду ${pending.promoCode}. Всего ${creditedCoins} 🪙.` : "."} Новый баланс: ${u.balance} 🪙.` });
 }
 
 function verifyInitData(initData) {
@@ -226,6 +228,7 @@ const ADMIN_HELP = "🛠 Админ-команды:\n" +
   "/takeitem @username dragon — забрать брейнрота\n" +
   "/bonuscode NAME USES COINS — создать промокод с лимитом активаций и наградой\n" +
   "/bonuscodes — список промокодов\n" +
+  "/deletecode CODE — удалить промокод\n" +
   "/user @username — баланс и инвентарь\n" +
   "Брейнроты: " + Object.keys(ITEMS).join(", ") + "\n" +
   "Игрок должен хотя бы раз открыть бота.";
@@ -266,10 +269,32 @@ async function adminCmd(text) {
   return "Неизвестная команда. /admin";
 }
 
+function removePromoCode(code) {
+  const removed = [];
+  if (Object.prototype.hasOwnProperty.call(db.bonusCodes, code)) { delete db.bonusCodes[code]; removed.push("бонусный"); }
+  const promo = db.promos[code];
+  if (promo) {
+    delete db.promos[code];
+    const partner = db.partners[String(promo.partnerId)];
+    if (partner?.code === code) delete partner.code;
+    removed.push("партнёрский");
+  }
+  return removed;
+}
+
 async function adminBonusCodeCmd(text, adminId) {
   if (!ADMIN_IDS.includes(String(adminId))) return "Нет доступа.";
   const [rawCommand, rawCode, usesText, coinsText] = text.trim().split(/\s+/);
   const command = rawCommand.split("@")[0].toLowerCase();
+  if (command === "/deletecode") {
+    const code = String(rawCode || "").trim().toUpperCase();
+    if (!/^[A-Z0-9_-]{3,32}$/.test(code)) return "Укажите код длиной 3–32 символа: /deletecode CODE";
+    const before = JSON.stringify(db), removed = removePromoCode(code);
+    if (!removed.length) return `Код ${code} не найден.`;
+    try { await saveDb(); }
+    catch (error) { db = normalizeDb(JSON.parse(before)); console.error("Could not delete promo:", error.message); return "Не удалось удалить код. Попробуйте ещё раз."; }
+    return `✅ Код ${code} удалён (${removed.join(" и ")}). Уже начисленные монеты сохранены.`;
+  }
   if (command === "/bonuscodes") {
     const rows = Object.entries(db.bonusCodes);
     return rows.length ? "🎟️ Промокоды:\n" + rows.map(([code, item]) => `${code}: ${item.redeemedBy?.length || 0}/${item.usesLimit} активаций · ${item.coins} 🪙`).join("\n") : "Промокодов пока нет. Создать: /bonuscode NAME USES COINS";
@@ -437,7 +462,7 @@ const server = http.createServer(async (req, res) => {
   const urlPath = (req.url || "/").split("?")[0];
   if (req.method === "GET" && urlPath === "/health") { // быстрая проверка версии: открыть /health в браузере
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
-    return res.end(JSON.stringify({ version: "braincase-redesign-admin-requests-v1", cases: Object.keys(CASES), itemsWithImages: Object.entries(ITEMS).filter(([, v]) => v.img).map(([k]) => k) }));
+    return res.end(JSON.stringify({ version: "braincase-new-brainrots-v1", cases: Object.keys(CASES), itemsWithImages: Object.entries(ITEMS).filter(([, v]) => v.img).map(([k]) => k) }));
   }
   if (req.method === "GET" && /^\/img\/[a-z0-9_-]+\.(png|webp|jpg)$/.test(urlPath)) {
     try {
@@ -465,13 +490,21 @@ const server = http.createServer(async (req, res) => {
     if (!Number.isSafeInteger(stars) || stars < MIN_STAR_TOPUP || stars > MAX_STAR_TOPUP) {
       return send(400, { error: `Укажите целое число от ${MIN_STAR_TOPUP} до ${MAX_STAR_TOPUP} ⭐` });
     }
+    const promoCode = String(body.promoCode || "").trim().toUpperCase();
+    let promo = null;
+    if (promoCode) {
+      promo = db.promos[promoCode];
+      if (!promo) return send(400, { error: "Промокод не найден или больше не действует." });
+      if (promo.partnerId === uid) return send(400, { error: "Свой промокод использовать нельзя." });
+    }
+    const bonusCoins = promo ? Math.floor(stars * Number(promo.percent || 20) / 100) : 0;
     const now = Date.now();
     for (const [nonce, order] of Object.entries(db.pendingStarPayments)) {
       if (now - Number(order.createdAt || 0) > 48 * 60 * 60 * 1000) delete db.pendingStarPayments[nonce];
     }
     const nonce = crypto.randomBytes(16).toString("hex");
     const payload = `braincase:${uid}:${nonce}:${stars}`;
-    db.pendingStarPayments[nonce] = { userId: uid, stars, createdAt: now };
+    db.pendingStarPayments[nonce] = { userId: uid, stars, bonusCoins, promoCode: promo ? promoCode : "", createdAt: now };
     try { await saveDb(); }
     catch (error) {
       console.error("Could not save pending Stars order:", error.message);
@@ -481,13 +514,13 @@ const server = http.createServer(async (req, res) => {
     try {
       const invoice = await tgApi("createInvoiceLink", {
         title: "Пополнение Braincase",
-        description: `${stars} виртуальных монет Braincase. Курс: 1 ⭐ = 1 🪙.`,
+        description: `${stars + bonusCoins} виртуальных монет Braincase${bonusCoins ? ` (включая бонус ${bonusCoins} по промокоду ${promoCode})` : ""}. Оплата: ${stars} ⭐.`,
         payload,
         currency: "XTR",
         prices: [{ label: `${stars} виртуальных монет`, amount: stars }],
       });
       if (!invoice?.ok || !invoice.result) throw new Error(invoice?.description || "Telegram не создал счёт");
-      return send(200, { invoiceUrl: invoice.result, stars, coins: stars });
+      return send(200, { invoiceUrl: invoice.result, stars, coins: stars + bonusCoins, bonusCoins, promoCode: promo ? promoCode : "" });
     } catch (error) {
       delete db.pendingStarPayments[nonce];
       await saveDb().catch(() => {});
@@ -517,6 +550,17 @@ const server = http.createServer(async (req, res) => {
     try { await saveDb(); }
     catch (error) { db = normalizeDb(JSON.parse(before)); console.error("Could not save promo:", error.message); return send(503, { error: "Не удалось сохранить промокод. Попробуйте ещё раз." }); }
     return send(200, { ok: true, code, partnerId, partner: partnerPayload(partnerId) });
+  }
+
+  if (urlPath === "/api/admin/promo/delete") {
+    if (!ADMIN_IDS.includes(uid)) return send(403, { error: "Нет доступа к админ-панели" });
+    const code = String(body.code || "").trim().toUpperCase();
+    if (!/^[A-Z0-9_-]{3,32}$/.test(code)) return send(400, { error: "Введите код длиной 3–32 символа: латинские буквы, цифры, _ или -." });
+    const before = JSON.stringify(db), removed = removePromoCode(code);
+    if (!removed.length) return send(404, { error: `Код ${code} не найден.` });
+    try { await saveDb(); }
+    catch (error) { db = normalizeDb(JSON.parse(before)); console.error("Could not delete promo:", error.message); return send(503, { error: "Не удалось удалить код. Попробуйте ещё раз." }); }
+    return send(200, { ok: true, code, removed, partner: Object.keys(db.partners).includes(uid) ? partnerPayload(uid) : null });
   }
 
   if (urlPath === "/api/admin/requests/list") {
@@ -875,7 +919,7 @@ async function poll() {
           await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: "Обращение отправлено поддержке." });
         } else if (/^\/myid\b/.test(mtext)) {
           await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: "Ваш Telegram ID: " + upd.message.from.id });
-        } else if (/^\/bonuscode(s)?(@\w+)?(\s|$)/.test(mtext)) {
+        } else if (/^\/(bonuscode(s)?|deletecode)(@\w+)?(\s|$)/.test(mtext)) {
           const reply = await adminBonusCodeCmd(mtext, upd.message.from.id);
           await tgApi("sendMessage", { chat_id: upd.message.chat.id, text: reply });
         } else if (/^\/(admin|give|take|giveitem|takeitem|user)(@\w+)?(\s|$)/.test(mtext)) {

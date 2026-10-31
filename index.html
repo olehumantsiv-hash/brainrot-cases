@@ -308,6 +308,9 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
       <p>1 Telegram Star = 1 виртуальная 🪙. Минимальное пополнение — 100 ⭐.</p>
       <label for="starsAmount">Количество звёзд</label>
       <input id="starsAmount" type="number" min="100" max="100000" step="1" value="100" inputmode="numeric">
+      <label for="starsPromoCode">Промокод на пополнение (необязательно)</label>
+      <input id="starsPromoCode" maxlength="32" placeholder="Введите промокод" autocomplete="off" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#110a19;color:var(--text);font:600 15px Rubik,sans-serif">
+      <p id="starsPromoStatus" class="promo-feedback" aria-live="polite"></p>
       <p id="topupCoins" class="info" style="margin:0">Начислим: 100 🪙</p>
       <button class="btn" id="buyStarsBtn">Оплатить 100 ⭐</button>
       <p id="topupStatus" class="topup-status"></p>
@@ -355,6 +358,12 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
       <label for="adminPromoCode">Промокод</label><input id="adminPromoCode" placeholder="например, CREATOR20" maxlength="32">
       <button class="btn" id="createPromoBtn">Создать промокод</button>
       <p id="adminPromoMsg" class="partner-msg"></p>
+    </div>
+    <div class="admin-card" style="margin-top:12px">
+      <p>Удалить бонусный или партнёрский промокод. Уже начисленные игрокам монеты и баланс партнёра сохранятся.</p>
+      <label for="adminDeletePromoCode">Код для удаления</label><input id="adminDeletePromoCode" placeholder="Например, WELCOME" maxlength="32">
+      <button class="btn red" id="deletePromoCodeBtn">Удалить код</button>
+      <p id="deletePromoMsg" class="partner-msg"></p>
     </div>
   </section>
 
@@ -683,8 +692,8 @@ function renderPartner(){
   $("#partnerWithdraw").disabled=!p.availableCoins;
 }
 function renderAdmin(){
-  if(!S.isAdmin){ $("#adminPromoMsg").textContent="Нет доступа."; $("#createPromoBtn").disabled=true; $("#adminRequests").innerHTML='<div class="empty">Нет доступа к заявкам.</div>'; return; }
-  $("#createPromoBtn").disabled=false;
+  if(!S.isAdmin){ $("#adminPromoMsg").textContent="Нет доступа."; $("#createPromoBtn").disabled=true; $("#deletePromoCodeBtn").disabled=true; $("#adminRequests").innerHTML='<div class="empty">Нет доступа к заявкам.</div>'; return; }
+  $("#createPromoBtn").disabled=false; $("#deletePromoCodeBtn").disabled=false;
   document.querySelectorAll("[data-admin-tab]").forEach(button=>button.classList.toggle("on",button.dataset.adminTab===adminRequestTab));
   renderAdminRequests();
   if(!adminRequestsLoading && Date.now()-adminRequestsFetchedAt>10000) loadAdminRequests();
@@ -740,11 +749,46 @@ $("#createPromoBtn").onclick=async()=>{
   }catch(error){$("#adminPromoMsg").textContent=error.message;}
   finally{button.disabled=false;}
 };
+$("#deletePromoCodeBtn").onclick=async()=>{
+  const input=$("#adminDeletePromoCode"), code=input.value.trim().toUpperCase(), button=$("#deletePromoCodeBtn");
+  if(!code){$("#deletePromoMsg").textContent="Сначала введи название кода.";return;}
+  if(!confirm(`Удалить промокод ${code}? После этого его нельзя будет активировать. Уже выданные награды сохранятся.`))return;
+  button.disabled=true;$("#deletePromoMsg").textContent=`Удаляю ${code}…`;
+  try{
+    const result=await api("/api/admin/promo/delete",{code});
+    $("#deletePromoMsg").textContent=`Код ${result.code} удалён. Уже начисленные монеты сохранены.`;
+    input.value="";
+    if(result.partner)apply({partner:result.partner});
+  }catch(error){$("#deletePromoMsg").textContent=error.message;}
+  finally{button.disabled=false;}
+};
 
 const starsInput=$("#starsAmount");
+let starsPromoValid=false, starsPromoTimer=null, starsPromoCheckId=0;
+async function checkStarsPromo(){
+  const code=$("#starsPromoCode").value.trim(), checkId=++starsPromoCheckId;
+  if(!code){starsPromoValid=false;$("#starsPromoStatus").textContent="";$("#starsPromoStatus").className="promo-feedback";starsInput.oninput();return true;}
+  $("#starsPromoStatus").textContent="Проверяем промокод…";$("#starsPromoStatus").className="promo-feedback";
+  try{
+    const result=await api("/api/deposit/promo/check",{code});
+    if(checkId!==starsPromoCheckId)return false;
+    starsPromoValid=!!result.valid;
+    $("#starsPromoStatus").textContent=result.valid?"Промокод найден: +20% монет после оплаты.":(result.error||"Промокод не найден.");
+    $("#starsPromoStatus").className=`promo-feedback ${result.valid?"valid":"invalid"}`;
+    starsInput.oninput();return starsPromoValid;
+  }catch(error){
+    if(checkId===starsPromoCheckId){starsPromoValid=false;$("#starsPromoStatus").textContent=error.message||"Не удалось проверить промокод.";$("#starsPromoStatus").className="promo-feedback invalid";starsInput.oninput();}
+    return false;
+  }
+}
+$("#starsPromoCode").addEventListener("input",()=>{
+  starsPromoValid=false;clearTimeout(starsPromoTimer);$("#starsPromoStatus").textContent="";$("#starsPromoStatus").className="promo-feedback";starsInput.oninput();
+  if($("#starsPromoCode").value.trim())starsPromoTimer=setTimeout(checkStarsPromo,350);
+});
 starsInput.oninput=()=>{
   const stars=Math.max(0,Math.floor(Number(starsInput.value)||0));
-  $("#topupCoins").textContent=`Начислим: ${fmt(stars)} 🪙`;
+  const bonus=starsPromoValid?Math.floor(stars*.2):0;
+  $("#topupCoins").textContent=`Начислим: ${fmt(stars+bonus)} 🪙${bonus?` (${fmt(stars)} + ${fmt(bonus)} бонус)`:""}`;
   $("#buyStarsBtn").textContent=`Оплатить ${fmt(stars)} ⭐`;
 };
 $("#buyStarsBtn").onclick=async()=>{
@@ -752,10 +796,12 @@ $("#buyStarsBtn").onclick=async()=>{
   const status=$("#topupStatus");
   if(!Number.isSafeInteger(stars)||stars<100||stars>100000){ status.textContent="Введите целое количество от 100 до 100 000 ⭐."; return; }
   if(!tg||typeof tg.openInvoice!=="function"){ status.textContent="Оплата доступна при открытии игры внутри Telegram."; return; }
+  const promoCode=$("#starsPromoCode").value.trim();
+  if(promoCode&&!await checkStarsPromo()){status.textContent="Промокод не найден или не подходит.";return;}
   const button=$("#buyStarsBtn"); button.disabled=true; status.textContent="Создаём счёт Telegram…";
   try{
-    const invoice=await api("/api/stars/invoice",{stars});
-    status.textContent="Откройте счёт Telegram и подтвердите оплату.";
+    const invoice=await api("/api/stars/invoice",{stars,promoCode});
+    status.textContent=`Откройте счёт Telegram: после оплаты будет начислено ${fmt(invoice.coins)} 🪙${invoice.bonusCoins?` (бонус ${fmt(invoice.bonusCoins)} 🪙).`:"."}`;
     tg.openInvoice(invoice.invoiceUrl, result=>{
       if(result==="paid"){ status.textContent="Платёж подтверждён. Начисляем монеты…"; sync(); }
       else if(result==="pending") status.textContent="Платёж обрабатывается. Баланс обновится автоматически.";
