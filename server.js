@@ -96,12 +96,15 @@ const partnerPayload = partnerId => {
     withdrawnCoins: p.withdrawnCoins || 0,
   };
 };
-const recordReferralDeposit = (userId, amount, source) => {
+const recordReferralDeposit = (userId, amount, source, promoPartnerId = "", promoPercent = 20, promoCode = "") => {
   const uid = String(userId), value = Number(amount), referral = db.referrals[uid];
-  if (!referral || String(referral.partnerId) === uid || !Number.isSafeInteger(value) || value <= 0) return;
-  const partner = db.partners[String(referral.partnerId)];
+  const promoOwner = String(promoPartnerId || "");
+  if (promoOwner && !referral) db.referrals[uid] = { partnerId: promoOwner, code: String(promoCode || ""), percent: Number(promoPercent) || 20, createdAt: Date.now() };
+  const partnerId = String(promoOwner || referral?.partnerId || "");
+  if (!partnerId || partnerId === uid || !Number.isSafeInteger(value) || value <= 0) return;
+  const partner = db.partners[partnerId];
   if (!partner) return;
-  const percent = Math.max(0, Math.min(100, Number(referral.percent) || 20));
+  const percent = Math.max(0, Math.min(100, Number(promoPartnerId ? promoPercent : referral?.percent) || 20));
   if (source === "stars") partner.referralStars = (partner.referralStars || 0) + value;
   else partner.referralBrainrotCoins = (partner.referralBrainrotCoins || 0) + value;
   partner.commissionCents = (partner.commissionCents || 0) + value * percent;
@@ -140,7 +143,8 @@ async function handlePaymentUpdate(update) {
   const creditedCoins = order.stars + bonusCoins;
   u.balance += creditedCoins;
   u.depositWagerRemaining += order.stars;
-  recordReferralDeposit(order.userId, order.stars, "stars");
+  const appliedPromo = db.promos[pending.promoCode];
+  recordReferralDeposit(order.userId, order.stars, "stars", pending.promoPartnerId || appliedPromo?.partnerId || "", pending.promoPercent || appliedPromo?.percent, pending.promoCode);
   db.starPayments[chargeId] = { userId: order.userId, stars: order.stars, at: Date.now() };
   delete db.pendingStarPayments[order.nonce];
   try { await saveDb(); }
@@ -396,7 +400,8 @@ async function handleDepositCallback(query) {
     u.balance += request.creditCoins;
     u.stats.coinsEarned += request.creditCoins;
     u.depositWagerRemaining += request.baseCoins;
-    recordReferralDeposit(request.userId, request.baseCoins, "brainrots");
+    const appliedPromo = db.promos[request.promoCode];
+    recordReferralDeposit(request.userId, request.baseCoins, "brainrots", request.promoPartnerId || appliedPromo?.partnerId || "", request.promoPercent || appliedPromo?.percent, request.promoCode);
     request.status = "credited";
     request.creditedAt = Date.now();
     request.creditedBy = String(query.from.id);
@@ -508,7 +513,7 @@ const server = http.createServer(async (req, res) => {
   const urlPath = (req.url || "/").split("?")[0];
   if (req.method === "GET" && urlPath === "/health") { // быстрая проверка версии: открыть /health в браузере
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
-    return res.end(JSON.stringify({ version: "braincase-referral-wager-values-v1", cases: Object.keys(CASES), itemsWithImages: Object.entries(ITEMS).filter(([, v]) => v.img).map(([k]) => k) }));
+    return res.end(JSON.stringify({ version: "braincase-streamer-promo-referrals-v1", cases: Object.keys(CASES), itemsWithImages: Object.entries(ITEMS).filter(([, v]) => v.img).map(([k]) => k) }));
   }
   if (req.method === "GET" && /^\/img\/[a-z0-9_-]+\.(png|webp|jpg)$/.test(urlPath)) {
     try {
@@ -543,14 +548,18 @@ const server = http.createServer(async (req, res) => {
       if (!promo) return send(400, { error: "Промокод не найден или больше не действует." });
       if (promo.partnerId === uid) return send(400, { error: "Свой промокод использовать нельзя." });
     }
-    const bonusCoins = promo ? Math.floor(stars * Number(promo.percent || 20) / 100) : 0;
+    const promoPercent = promo ? Number(promo.percent) || 20 : 20;
+    const bonusCoins = promo ? Math.floor(stars * promoPercent / 100) : 0;
     const now = Date.now();
     for (const [nonce, order] of Object.entries(db.pendingStarPayments)) {
       if (now - Number(order.createdAt || 0) > 48 * 60 * 60 * 1000) delete db.pendingStarPayments[nonce];
     }
     const nonce = crypto.randomBytes(16).toString("hex");
     const payload = `braincase:${uid}:${nonce}:${stars}`;
-    db.pendingStarPayments[nonce] = { userId: uid, stars, bonusCoins, promoCode: promo ? promoCode : "", createdAt: now };
+    db.pendingStarPayments[nonce] = {
+      userId: uid, stars, bonusCoins, promoCode: promo ? promoCode : "",
+      promoPartnerId: promo ? String(promo.partnerId) : "", promoPercent, createdAt: now,
+    };
     try { await saveDb(); }
     catch (error) {
       console.error("Could not save pending Stars order:", error.message);
@@ -641,7 +650,8 @@ const server = http.createServer(async (req, res) => {
         const player = getUser(request.userId);
         player.balance += request.creditCoins; player.stats.coinsEarned += request.creditCoins;
         player.depositWagerRemaining += request.baseCoins;
-        recordReferralDeposit(request.userId, request.baseCoins, "brainrots");
+        const appliedPromo = db.promos[request.promoCode];
+        recordReferralDeposit(request.userId, request.baseCoins, "brainrots", request.promoPartnerId || appliedPromo?.partnerId || "", request.promoPercent || appliedPromo?.percent, request.promoCode);
         request.status = "credited"; request.creditedAt = Date.now(); request.creditedBy = uid;
         userMessage = `Поступление по заявке ${id} подтверждено. Начислено ${request.creditCoins} 🪙. Баланс: ${player.balance} 🪙. Перед выводом откройте кейсы на сумму депозита; сейчас осталось отыграть ${player.depositWagerRemaining} 🪙.`;
       }
@@ -709,10 +719,11 @@ const server = http.createServer(async (req, res) => {
     const before = JSON.stringify(db);
     const id = `D${Date.now().toString(36).toUpperCase()}${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
     const baseCoins = depositItems.reduce((sum, entry) => sum + ITEMS[entry.itemKey].value * entry.count, 0);
-    const bonusCoins = promo ? Math.floor(baseCoins * 0.2) : 0;
+    const promoPercent = promo ? Number(promo.percent) || 20 : 20;
+    const bonusCoins = promo ? Math.floor(baseCoins * promoPercent / 100) : 0;
     const request = {
       id, userId: uid, username: user.username || "", gameUsername, itemKey: depositItems[0].itemKey, items: depositItems,
-      itemName, baseCoins, promoCode: promo ? promoCode : "",
+      itemName, baseCoins, promoCode: promo ? promoCode : "", promoPartnerId: promo ? String(promo.partnerId) : "", promoPercent,
       bonusCoins, creditCoins: baseCoins + bonusCoins, status: "pending", createdAt: Date.now(),
     };
     db.depositRequests[id] = request;

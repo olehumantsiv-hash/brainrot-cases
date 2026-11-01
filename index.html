@@ -39,6 +39,9 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;pa
 .bonus-card .btn{font-size:14px;padding:12px}
 .bonus-card input{width:100%;min-width:0;padding:11px;border:1px solid var(--line);border-radius:10px;background:#100b19;color:var(--text);font:14px Rubik,sans-serif;text-transform:uppercase}
 .bonus-state{font-size:12px;color:var(--green);margin-top:8px;min-height:18px}
+body.streamer-mode .streamer-sensitive,body.streamer-mode #sideBal{filter:blur(7px);transition:filter .15s ease;user-select:none}
+body.streamer-mode .streamer-sensitive:hover,body.streamer-mode .streamer-sensitive:focus,body.streamer-mode .streamer-sensitive:focus-within,body.streamer-mode #sideBal:hover{filter:none;user-select:text}
+@media(hover:none){body.streamer-mode .streamer-sensitive:active,body.streamer-mode #sideBal:active{filter:none}}
 .feed{display:grid;gap:8px;margin:8px 0 18px}.feed-row{display:flex;justify-content:space-between;gap:12px;align-items:center;background:#1a1025;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12px}.feed-row b{color:#ffe0c2}.feed-row small{color:var(--muted);white-space:nowrap}.feed-reward{color:var(--green);text-align:right}
 .drop-scroller{display:flex;gap:9px;overflow-x:auto;padding:4px 3px 13px;margin:-2px 0 12px;scrollbar-width:thin;scrollbar-color:#62407a transparent}.drop-card{flex:0 0 112px;min-height:118px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;padding:8px 7px;background:linear-gradient(160deg,#20182d,#100b19);border:1px solid #49375a;border-bottom:2px solid #d5a83f;border-radius:5px;text-align:center;animation:dropIn .3s ease-out}.drop-pic{height:54px;width:100%;display:grid;place-items:center;font-size:34px;filter:drop-shadow(0 5px 10px #ffb64355)}.drop-pic img{max-width:100%;max-height:54px;object-fit:contain}.drop-name{font-size:10px;line-height:1.2;font-weight:600;max-height:24px;overflow:hidden}.drop-meta{font-size:9px;color:var(--muted);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}.partner-card,.admin-card{display:grid;gap:12px;padding:16px;border:1px solid #513d60;border-radius:16px;background:linear-gradient(150deg,#2a1a36,#17101f)}.partner-stat{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.partner-stat>div{padding:11px;border:1px solid var(--line);border-radius:11px;background:#100b19}.partner-stat b{display:block;color:#ffe0c2;font-size:18px}.partner-stat small{color:var(--muted);font-size:11px}.admin-card input{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:#100b19;color:var(--text);font:14px Rubik,sans-serif}.partner-msg{min-height:20px;color:var(--green);font-size:13px}
 .topup-card{background:linear-gradient(150deg,#2a1a36,#17101f);border:1px solid #513d60;border-radius:16px;padding:16px;display:grid;gap:12px}.topup-card label{font-size:13px;color:var(--muted)}.topup-card input[type=number]{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#110a19;color:var(--text);font:600 16px Rubik,sans-serif}.terms-check{display:flex;align-items:flex-start;gap:9px;color:var(--muted);font-size:12px}.terms-check input{margin-top:3px;accent-color:var(--acc)}.terms-copy{font-size:12px;color:var(--muted);padding:10px;background:#ffffff08;border-radius:10px}.topup-status{min-height:20px;color:var(--green);font-size:13px}
@@ -274,7 +277,7 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
 <header>
   <button id="menuToggle" aria-label="Открыть меню" aria-expanded="false">☰</button>
   <h1 class="logo">BRAINCASE</h1>
-  <div class="bal"><span id="bal">0 🪙</span><button class="topup-quick" id="topupQuick" aria-label="Пополнить баланс" title="Пополнение через Telegram Stars">+</button><button id="snd" aria-label="Звук" style="background:var(--line);color:var(--text);font-size:14px">🔊</button></div>
+  <div class="bal"><span id="bal">0 🪙</span><button class="topup-quick" id="topupQuick" aria-label="Пополнить баланс" title="Пополнение через Telegram Stars">+</button><button id="settingsToggle" aria-label="Настройки" title="Настройки" style="background:var(--line);color:var(--text);font-size:16px">⚙️</button></div>
 </header>
 
 <main>
@@ -337,7 +340,7 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
     <h2 class="t">Медиа / партнёры</h2>
     <div id="partnerEmpty" class="info" style="text-align:left">Вы не являетесь партнёром.</div>
     <div id="partnerDashboard" class="partner-card" style="display:none">
-      <p>Ваш промокод и ссылка. Игрок должен впервые запустить бота по вашей ссылке. Вы получаете <b>20%</b> от пополнений Stars и депозитов брейнротами в виде виртуальных монет; привязка реферала одноразовая.</p>
+      <p>Ваш промокод и ссылка. Комиссия <b>20%</b> начисляется с пополнений Stars и депозитов брейнротами после подтверждения оплаты; если игрок вводит промокод, комиссия за это пополнение идёт владельцу кода.</p>
       <div class="row"><code id="partnerCode"></code><button class="btn alt" id="copyPartnerLink">Копировать ссылку</button></div>
       <div class="partner-stat"><div><b id="partnerReferrals">0</b><small>Рефералов</small></div><div><b id="partnerStars">0 ⭐ / 0 🪙</b><small>Stars / брейнроты</small></div><div><b id="partnerDue">0 🪙</b><small>Доступно к переводу</small></div><div><b id="partnerWithdrawn">0 🪙</b><small>Переведено на баланс</small></div></div>
       <button class="btn" id="partnerWithdraw">Перевести на игровой баланс</button>
@@ -448,6 +451,15 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
 <div class="modal" id="mWin"><div class="sheet">
   <div class="big" id="wPic"></div><h2 id="wName"></h2><div id="wVal" style="color:var(--muted)"></div>
   <div class="row" style="margin-top:14px"><button class="btn" id="wOk">Отлично</button></div>
+</div></div>
+
+<div class="modal" id="mSettings"><div class="sheet">
+  <h2>Настройки</h2>
+  <p class="info" style="margin:0 0 12px">Звук и защита чувствительной информации на стриме.</p>
+  <div class="row"><span>Звуковые эффекты</span><button class="btn alt" id="settingsSound" type="button" aria-pressed="true">🔊 Звук включён</button></div>
+  <div class="row"><span>Режим стримера</span><button class="btn alt" id="streamerToggle" type="button" aria-pressed="false">Выключен</button></div>
+  <p class="info" style="margin:0">Режим размывает баланс, монеты и подписи о пополнениях. Наведи курсор, чтобы временно показать их.</p>
+  <div class="row"><button class="btn" id="settingsClose" type="button">Готово</button></div>
 </div></div>
 
 <div class="modal" id="mSellAll"><div class="sheet">
@@ -818,15 +830,29 @@ $("#buyStarsBtn").onclick=async()=>{
   }catch(error){ status.textContent=error.message; button.disabled=false; }
 };
 
-let AC, muted=false; try{ muted=localStorage.getItem("mute")==="1"; }catch(e){}
+let AC, muted=false, streamerMode=false; try{ muted=localStorage.getItem("mute")==="1"; streamerMode=localStorage.getItem("braincaseStreamerMode")==="1"; }catch(e){}
 function unlock(){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==="suspended") AC.resume(); }catch(e){} }
 function tone(f,t,d,type="sine",v=.12,f2){ if(muted||!AC) return; try{ const s=AC.currentTime+t,o=AC.createOscillator(),g=AC.createGain(); o.type=type; o.frequency.setValueAtTime(f,s); if(f2) o.frequency.exponentialRampToValueAtTime(f2,s+d); g.gain.setValueAtTime(v,s); g.gain.exponentialRampToValueAtTime(.001,s+d); o.connect(g); g.connect(AC.destination); o.start(s); o.stop(s+d+.02); }catch(e){} }
 function sndSpin(ms,n=36,rise=false){ for(let i=1;i<=n;i++) tone(rise?420+i*20:720,(1-Math.pow(1-i/n,1/3))*ms/1000,.04,"square",.05); }
 const sndWin=big=>{ [523,659,784,1047].forEach((f,i)=>tone(f,i*.09,.25,"triangle",.14)); if(big) [1047,1319,1568].forEach((f,i)=>tone(f,.4+i*.09,.4,"triangle",.14)); };
 const sndFail=()=>tone(300,0,.4,"sawtooth",.1,80);
-const setSnd=()=>{ $("#snd").textContent = muted?"🔇":"🔊"; };
-$("#snd").onclick=()=>{ muted=!muted; try{ localStorage.setItem("mute",muted?"1":"0"); }catch(e){} setSnd(); unlock(); };
-setSnd();
+const setSnd=()=>{ $("#settingsSound").textContent=muted?"🔇 Звук выключен":"🔊 Звук включён"; $("#settingsSound").setAttribute("aria-pressed",String(!muted)); };
+$("#settingsSound").onclick=()=>{ muted=!muted; try{ localStorage.setItem("mute",muted?"1":"0"); }catch(e){} setSnd(); unlock(); };
+const applyStreamerMode=()=>{ document.body.classList.toggle("streamer-mode",streamerMode); $("#streamerToggle").textContent=streamerMode?"Включён":"Выключен"; $("#streamerToggle").setAttribute("aria-pressed",String(streamerMode)); };
+$("#streamerToggle").onclick=()=>{ streamerMode=!streamerMode; try{localStorage.setItem("braincaseStreamerMode",streamerMode?"1":"0");}catch(e){} applyStreamerMode(); scanStreamerSensitive(); };
+$("#settingsToggle").onclick=()=>$("#mSettings").classList.add("on");
+$("#settingsClose").onclick=()=>$("#mSettings").classList.remove("on");
+$("#mSettings").addEventListener("click",e=>{if(e.target===$("#mSettings"))$("#mSettings").classList.remove("on");});
+setSnd();applyStreamerMode();
+function scanStreamerSensitive(){
+  const pattern=/(?:\d[\d\s.,]*\s?(?:🪙|⭐))|(?:баланс\w*|монет\w*|coins?\b|stars?\b|депозит\w*|депо\w*|пополн\w*)/iu;
+  document.querySelectorAll("body *").forEach(el=>{
+    const hasSensitiveText=Array.from(el.childNodes).some(n=>n.nodeType===Node.TEXT_NODE&&pattern.test(n.nodeValue||""));
+    el.classList.toggle("streamer-sensitive",hasSensitiveText);
+  });
+}
+scanStreamerSensitive();
+new MutationObserver(()=>scanStreamerSensitive()).observe(document.body,{subtree:true,childList:true,characterData:true});
 let ready=false, lockSync=false;
 async function sync(){
   if(!API_URL || lockSync) return;
