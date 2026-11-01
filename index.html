@@ -18,6 +18,11 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;pa
 .bal{display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 5px 5px 14px;font-weight:600}
 .bal button{background:var(--acc);color:#2a1200;border:0;border-radius:50%;width:28px;height:28px;font-size:18px;font-weight:700;cursor:pointer}
 .bal .topup-quick{background:#a87be1;color:#21112f;font-size:20px;line-height:1}
+.streamer-toggle{width:auto!important;min-width:34px;padding:0 8px;border-radius:999px!important;background:#292d3d!important;color:#c5cada!important;font:600 11px Rubik,sans-serif!important}
+.streamer-mode .private-balance,.streamer-mode .streamer-word{filter:blur(7px);transition:filter .15s ease;user-select:none}
+.streamer-mode .private-balance:hover,.streamer-mode .private-balance:focus,.streamer-mode .streamer-word:hover,.streamer-mode .streamer-word:focus{filter:none;user-select:text}
+.streamer-word{border-radius:3px}
+.cc .art img{width:100%;height:112px;object-fit:cover;border-radius:12px;box-shadow:0 8px 22px #ff263b55}
 .app-layout{min-height:100vh}
 .sidebar{position:fixed;inset:0 auto 0 0;width:276px;display:flex;flex-direction:column;gap:10px;padding:14px 10px max(12px,env(safe-area-inset-bottom,0));background:linear-gradient(180deg,#191d30,#101321 80%);border-right:1px solid #353b52;z-index:30}
 .side-user,.side-balance{display:flex;align-items:center;gap:12px;background:#271e31;border:1px solid #43354d;border-radius:13px;padding:10px}
@@ -274,7 +279,7 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
 <header>
   <button id="menuToggle" aria-label="Открыть меню" aria-expanded="false">☰</button>
   <h1 class="logo">BRAINCASE</h1>
-  <div class="bal"><span id="bal">0 🪙</span><button class="topup-quick" id="topupQuick" aria-label="Пополнить баланс" title="Пополнение через Telegram Stars">+</button><button id="snd" aria-label="Звук" style="background:var(--line);color:var(--text);font-size:14px">🔊</button></div>
+  <div class="bal"><span id="bal" class="private-balance" tabindex="0">0 🪙</span><button id="streamerToggle" class="streamer-toggle" aria-pressed="false" title="Стример-мод: размыть баланс и запрещённые слова">СТРИМ</button><button class="topup-quick" id="topupQuick" aria-label="Пополнить баланс" title="Пополнение через Telegram Stars">+</button><button id="snd" aria-label="Звук" style="background:var(--line);color:var(--text);font-size:14px">🔊</button></div>
 </header>
 
 <main>
@@ -337,9 +342,9 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
     <h2 class="t">Медиа / партнёры</h2>
     <div id="partnerEmpty" class="info" style="text-align:left">Вы не являетесь партнёром.</div>
     <div id="partnerDashboard" class="partner-card" style="display:none">
-      <p>Ваш промокод и ссылка. Игрок должен впервые запустить бота по вашей ссылке. Вы получаете <b>20%</b> от его пополнений в виде виртуальных монет; привязка реферала одноразовая.</p>
+      <p>Ваш промокод и ссылка. Игрок должен впервые запустить бота по вашей ссылке. Вы получаете <b>20%</b> от пополнений Stars и депозитов брейнротами в виде виртуальных монет; привязка реферала одноразовая.</p>
       <div class="row"><code id="partnerCode"></code><button class="btn alt" id="copyPartnerLink">Копировать ссылку</button></div>
-      <div class="partner-stat"><div><b id="partnerReferrals">0</b><small>Рефералов</small></div><div><b id="partnerStars">0 ⭐</b><small>Пополнения рефералов</small></div><div><b id="partnerDue">0 🪙</b><small>Доступно к переводу</small></div><div><b id="partnerWithdrawn">0 🪙</b><small>Переведено на баланс</small></div></div>
+      <div class="partner-stat"><div><b id="partnerReferrals">0</b><small>Рефералов</small></div><div><b id="partnerStars">0 ⭐ / 0 🪙</b><small>Stars / брейнроты</small></div><div><b id="partnerDue">0 🪙</b><small>Доступно к переводу</small></div><div><b id="partnerWithdrawn">0 🪙</b><small>Переведено на баланс</small></div></div>
       <button class="btn" id="partnerWithdraw">Перевести на игровой баланс</button>
       <p id="partnerMsg" class="partner-msg"></p>
       <p class="info" style="margin:0">Бонус нельзя вывести деньгами: он переводится только в игровой баланс.</p>
@@ -423,6 +428,7 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
   <section class="view" id="v-withdraw">
     <h2 class="t">Вывод брейнротов</h2>
     <p class="info" style="text-align:left;margin:0 0 14px">Каталог выдачи по заявке. Выбери брейнрота из своего инвентаря, укажи игровой username и состав вывода. Администратор подтвердит наличие и обработает заявку.</p>
+    <p id="withdrawWagerNote" class="info" style="text-align:left;margin:0 0 14px"></p>
     <div id="withdrawCatalog" class="deposit-options"></div>
     <h3 style="font:600 13px Unbounded,sans-serif;margin:18px 0 8px">Что обменять из инвентаря</h3>
     <div id="withdrawInventory" class="inv"></div>
@@ -470,7 +476,7 @@ const FALLBACK_ITEMS = {
   capitano:{name:"Capitano Moby",e:"🐳",c:"#ff4ecd",value:100,img:"img/capitano.png"}
 };
 let selectedDepositItems={}, depositPromoTouched=false, depositPromoValid=false, depositPromoCheckId=0, depositPromoTimer=null, currentTopupTab="stars";
-const S = { bal:0, inv:[], liveFeed:[], depositRequests:[], withdrawRequests:[], busyWithdrawSlots:[], depositPromo:"", partner:null, isAdmin:false, subClaimed:false, bonusClaims:{subscription:false,nickname:false}, stats:{casesOpened:0,upgrades:0,coinsEarned:0}, user:{username:"",first_name:""},
+const S = { bal:0, inv:[], liveFeed:[], depositRequests:[], withdrawRequests:[], busyWithdrawSlots:[], depositWagerRemaining:0, depositPromo:"", partner:null, isAdmin:false, subClaimed:false, bonusClaims:{subscription:false,nickname:false}, stats:{casesOpened:0,upgrades:0,coinsEarned:0}, user:{username:"",first_name:""},
   cfg:{ bonusChannel:"@braincasegg", bonusBotTag:"braincase_game", bonusMin:1, bonusMax:10, upgradeMult:0.8, items:FALLBACK_ITEMS, cases:{} } };
 let adminRequestTab="deposits", adminRequestData={deposits:[],withdrawals:[]}, adminRequestsFetchedAt=0, adminRequestsLoading=false;
 const htmlSafe = value => String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
@@ -489,6 +495,7 @@ function apply(d){
   if(Array.isArray(d.depositRequests)) S.depositRequests = d.depositRequests;
   if(Array.isArray(d.withdrawRequests)) S.withdrawRequests = d.withdrawRequests;
   if(Array.isArray(d.busyWithdrawSlots)) S.busyWithdrawSlots = d.busyWithdrawSlots;
+  if(d.depositWagerRemaining != null) S.depositWagerRemaining = Number(d.depositWagerRemaining)||0;
   if(d.depositPromo != null){ S.depositPromo=d.depositPromo; if(d.depositPromo&&!depositPromoTouched&&!$("#depositPromoCode").value){ $("#depositPromoCode").value=d.depositPromo; checkDepositPromo(); } }
   if(Object.prototype.hasOwnProperty.call(d,"partner")) S.partner = d.partner;
   if(d.isAdmin != null) S.isAdmin = !!d.isAdmin;
@@ -520,7 +527,7 @@ function renderCases(){
     return `<div class="case cc ${c.cat==="water"?"water":""} ${c.cat==="color"?"color":""}" data-id="${id}" style="--g:${c.g||"#ff7a00"}">
       <span class="badge">x${xfmt(c.maxX)}</span>
       <b class="cname">${c.name}</b>
-      <div class="art">${c.art}</div>
+      <div class="art">${id==="red"?'<img src="red-case.png" alt="Красный кейс с пиратским сундуком">':c.art}</div>
       <div class="cfoot"><span>${c.count} предм.</span><span class="cprice">🪙 ${fmt(c.price)}</span></div></div>`;
   }).join("");
   if(!html) html = `<p class="info" style="grid-column:1/-1">В этой категории пока нет кейсов.</p>`;
@@ -594,10 +601,11 @@ $("#bonusPromoCode").addEventListener("keydown",e=>{if(e.key==="Enter")redeemPro
 function render(){
   $("#bal").textContent = fmt(S.bal) + " 🪙"; $("#ubal").textContent = "Баланс: " + fmt(S.bal) + " 🪙";
   $("#sideBal").textContent = fmt(S.bal);
+  $("#ubal").classList.add("private-balance"); $("#sideBal").classList.add("private-balance");
   const name = S.user.username ? "@" + S.user.username : (S.user.first_name || "Игрок");
   $("#uname").textContent = name; $("#sideName").textContent = name;
   $("#ava").textContent = $("#sideAva").textContent = (name.replace("@","")[0] || "?").toUpperCase();
-  $("#statsBox").innerHTML = `Кейсов открыто: <b>${fmt(S.stats.casesOpened)}</b> · Апгрейдов: <b>${fmt(S.stats.upgrades)}</b><br>Виртуальных монет заработано: <b>${fmt(S.stats.coinsEarned)} 🪙</b>`;
+  $("#statsBox").innerHTML = `Кейсов открыто: <b>${fmt(S.stats.casesOpened)}</b> · Апгрейдов: <b>${fmt(S.stats.upgrades)}</b><br>Виртуальных монет заработано: <b>${fmt(S.stats.coinsEarned)} 🪙</b><br>Отыгрыш перед выводом: <b>${fmt(S.depositWagerRemaining)} 🪙</b>`;
   $("#adminNav").style.display=S.isAdmin?"flex":"none";
   if($("#v-cases").classList.contains("on")) renderCases();
   if($("#v-bonus").classList.contains("on")) renderBonuses();
@@ -689,7 +697,7 @@ function renderPartner(){
   if(!p) return;
   $("#partnerCode").textContent=`Код: ${p.code}`;
   $("#partnerReferrals").textContent=fmt(p.referralCount);
-  $("#partnerStars").textContent=`${fmt(p.referralStars)} ⭐`;
+  $("#partnerStars").textContent=`${fmt(p.referralStars)} ⭐ / ${fmt(p.referralBrainrotCoins||0)} 🪙`;
   $("#partnerDue").textContent=`${fmt(p.availableCoins)} 🪙`;
   $("#partnerWithdrawn").textContent=`${fmt(p.withdrawnCoins)} 🪙`;
   $("#partnerWithdraw").disabled=!p.availableCoins;
@@ -899,6 +907,7 @@ $("#withdrawInventory").onclick=inventoryAction;
 let withdrawIndex=-1, selectedWithdrawItems={};
 const WITHDRAW_KEYS=["dragon","garama","cerberus","capitano"];
 function renderWithdrawalPage(){
+  $("#withdrawWagerNote").textContent=S.depositWagerRemaining>0?`Перед выводом нужно открыть кейсы на сумму депозита. Осталось отыграть: ${fmt(S.depositWagerRemaining)} 🪙.`:"Отыгрыш депозитов завершён — можно подавать заявку на вывод.";
   $("#withdrawCatalog").innerHTML=WITHDRAW_KEYS.map(key=>`<article class="deposit-option">${card(key)}<strong>${fmt(item(key).value)} 🪙 за штуку</strong><small>Выдача по заявке</small></article>`).join("");
   $("#withdrawInventory").innerHTML=S.inv.length?S.inv.map((key,index)=>`<div class="inventory-entry">${card(key)}<div class="inventory-actions"><button class="btn alt" data-inventory-action="sell" data-index="${index}">Продать</button><button class="btn" data-inventory-action="withdraw" data-index="${index}">Вывести</button></div></div>`).join(""):'<div class="empty" style="grid-column:1/-1">В инвентаре пока нет предметов для вывода.</div>';
   const labels={pending:"Ждёт решения",accepted:"Принята, ждёт выдачи",rejected:"Отклонена, предмет возвращён",completed:"Выдано"};
@@ -1189,6 +1198,21 @@ $("#sellAllConfirm").onclick=async()=>{
   finally{ $("#sellAllConfirm").disabled=false; }
 };
 
+const STREAMER_WORDS_KEY="braincase-streamer-words-v1";
+const DEFAULT_STREAMER_WORDS=["бляд","бля","сука","хуй","пизд","еба","нахуй","fuck","shit","bitch","asshole"];
+let streamerWords=(()=>{try{return JSON.parse(localStorage.getItem(STREAMER_WORDS_KEY))||DEFAULT_STREAMER_WORDS}catch{return DEFAULT_STREAMER_WORDS}})();
+const streamerToggle=$("#streamerToggle");
+let streamerMode=localStorage.getItem("braincase-streamer-mode")==="1";
+function syncStreamerMode(){document.body.classList.toggle("streamer-mode",streamerMode);streamerToggle.setAttribute("aria-pressed",String(streamerMode));streamerToggle.textContent=streamerMode?"СТРИМ ✓":"СТРИМ";streamerToggle.title=streamerMode?"Стример-мод включён. Нажмите Alt+клик, чтобы изменить список слов.":"Включить размытие баланса и запрещённых слов. Alt+клик — настроить слова."}
+streamerToggle.addEventListener("click",e=>{if(e.altKey){const next=prompt("Слова для размытия (через запятую):",streamerWords.join(", "));if(next!==null){streamerWords=next.split(",").map(w=>w.trim()).filter(Boolean);localStorage.setItem(STREAMER_WORDS_KEY,JSON.stringify(streamerWords));scanStreamerWords()}return}streamerMode=!streamerMode;localStorage.setItem("braincase-streamer-mode",streamerMode?"1":"0");syncStreamerMode()});
+function scanStreamerWords(){
+  if(!streamerWords.length)return;
+  const escaped=streamerWords.filter(Boolean).sort((a,b)=>b.length-a.length).map(w=>w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|");if(!escaped)return;
+  const re=new RegExp(escaped,"giu"), walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode:n=>n.parentElement?.closest("script,style,textarea,input,option,.streamer-word")?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});let node;
+  while(node=walker.nextNode()){if(!re.test(node.nodeValue)){re.lastIndex=0;continue}re.lastIndex=0;const text=node.nodeValue,frag=document.createDocumentFragment();let last=0,match;while((match=re.exec(text))){frag.append(document.createTextNode(text.slice(last,match.index)));const span=document.createElement("span");span.className="streamer-word";span.tabIndex=0;span.textContent=match[0];frag.append(span);last=match.index+match[0].length}frag.append(document.createTextNode(text.slice(last)));node.replaceWith(frag)}
+}
+syncStreamerMode();scanStreamerWords();
+new MutationObserver(()=>{if(!document.body.dataset.streamerScan){document.body.dataset.streamerScan="1";queueMicrotask(()=>{delete document.body.dataset.streamerScan;scanStreamerWords()})}}).observe(document.body,{childList:true,subtree:true,characterData:true});
 renderCases(); render(); sync();
 </script>
 </body>
