@@ -114,6 +114,19 @@ h2.t{font-size:18px;margin:0 0 12px}
 .me b{font-size:18px;display:block}.me span{color:var(--muted)}
 .inv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .batch-wins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%;max-height:55vh;overflow:auto}.batch-win .it{width:100%;box-sizing:border-box}.batch-num{display:block;margin-bottom:4px;font-size:11px;color:var(--acc)}.sheet .big.batch-openings{height:auto;max-height:55vh;overflow:auto;width:100%;font-size:initial}
+.batch-rolls{position:absolute;inset:4px 7px;z-index:3;display:grid;grid-template-rows:repeat(5,minmax(0,1fr));gap:3px;pointer-events:none}
+.batch-roll-lane{position:relative;min-height:0;overflow:hidden;border:1px solid #ffffff22;border-radius:8px;background:#080b12c9;box-shadow:0 2px 8px #0008}
+.batch-roll-lane::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;background:#ffd366;box-shadow:0 0 9px #ffb52d;z-index:2;transform:translateX(-50%)}
+.batch-roll-strip{position:absolute;left:0;top:50%;display:flex;align-items:center;gap:5px;height:100%;will-change:transform;transform:translateY(-50%)}
+.batch-roll-card{width:58px;height:calc(100% - 4px);min-height:0;flex:none;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;border:1px solid #ffffff19;border-radius:7px;background:linear-gradient(155deg,#1a1d2b,#10121b);color:#fff}
+.batch-roll-card img{width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 2px 5px #0009)}.batch-roll-card b{max-width:54px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:8px}.batch-roll-card small{font-size:8px;color:#f8d777}
+.batch-roll-card.winner{border-color:#ffd366;box-shadow:0 0 15px #ffbf3d99;background:linear-gradient(145deg,#56401a,#171522)}
+.stage .roll-skip{position:absolute;right:8px;top:8px;z-index:5;padding:6px 10px;border:1px solid #ffffff55;border-radius:9px;background:#100e19e8;color:#fff;font:600 12px Rubik,sans-serif;cursor:pointer;display:none}
+.stage.is-spinning .roll-skip{display:block}
+.stage.bonus-stage .roll-skip{display:none!important}
+.win-actions .btn{min-width:0;padding:11px 6px;font-size:13px;line-height:1.15}
+.stage.batch-stage .strip{display:none!important}
+.batch-wins{grid-template-columns:repeat(auto-fit,minmax(100px,1fr))}.batch-win .it{padding:6px 4px}.batch-win .it .pic,.batch-win .it img{height:42px;max-width:64px}.batch-win .it b{font-size:10px}
 .inv .it{flex:none;width:auto;cursor:pointer}
 .inv .it.on{outline:2px solid var(--acc)}
 .empty{color:var(--muted);text-align:center;padding:32px 0}
@@ -420,7 +433,7 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
     <button class="back" id="back">‹ Все кейсы</button>
     <h2 class="t" id="oTitle"></h2>
     <div class="roll-heading"><span id="rollCaseName">Награды кейса</span><span id="rollSpinStatus">Готов к открытию</span></div>
-    <div class="stage"><div class="stage-flash" aria-hidden="true"></div><div class="strip" id="strip"></div></div>
+  <div class="stage"><div class="stage-flash" aria-hidden="true"></div><div class="strip" id="strip"></div><button type="button" class="roll-skip" id="rollSkip">Пропустить ⏩</button></div>
     <div id="batchBox" class="row" style="margin:12px 0"></div>
     <div class="row" style="margin:0 0 8px"><button class="btn fast-toggle" data-fast-animation type="button" aria-label="Быстрая анимация выключена" aria-pressed="false" title="Быстрая анимация">⚡</button></div>
     <div class="row"><button class="btn" id="openBtn"></button></div>
@@ -497,7 +510,7 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
 <div class="modal" id="mWin"><div class="sheet">
   <div class="win-burst" aria-hidden="true"><i>✦</i><i>✧</i><i>✦</i><i>✧</i><i>✦</i><i>✧</i></div>
   <div class="big" id="wPic"></div><h2 id="wName"></h2><div id="wVal" style="color:var(--muted)"></div>
-  <div class="row" style="margin-top:14px"><button class="btn" id="wOk">Отлично</button></div>
+  <div class="row win-actions" style="margin-top:14px"><button class="btn alt" id="wSell" style="display:none">Продать</button><button class="btn alt" id="wAgain" style="display:none">Ещё раз</button><button class="btn" id="wOk">Закрыть</button></div>
 </div></div>
 
 <div class="modal" id="mSettings"><div class="sheet">
@@ -1046,7 +1059,7 @@ $("#withdrawSubmit").onclick=async()=>{
   finally{renderWithdrawOptions();}
 };
 
-let cur=null, spinning=false, batchCount=1, fastAnimations=false;
+let cur=null, spinning=false, batchCount=1, fastAnimations=false, skipCurrentRoll=null, lastWinActions=null;
 try{ fastAnimations=localStorage.getItem("braincaseFastAnimations")==="1"; }catch{}
 function updateFastAnimationButtons(){ document.querySelectorAll("[data-fast-animation]").forEach(b=>{ b.textContent="⚡"; b.classList.toggle("on",fastAnimations); b.setAttribute("aria-pressed",String(fastAnimations)); b.setAttribute("aria-label",`Быстрая анимация ${fastAnimations?"включена":"выключена"}`); b.title=`Быстрая анимация ${fastAnimations?"включена":"выключена"}`; }); }
 document.querySelectorAll("[data-fast-animation]").forEach(b=>b.onclick=()=>{ fastAnimations=!fastAnimations; try{localStorage.setItem("braincaseFastAnimations",fastAnimations?"1":"0");}catch{} updateFastAnimationButtons(); });
@@ -1055,7 +1068,8 @@ $("#heroCases").onclick=()=>$("#cats").scrollIntoView({behavior:"smooth",block:"
 function openCase(id){
   cur = id;
   const strip = $("#strip"), stage=$(".stage"); strip.style.transition="none"; strip.style.transform="translateX(0)";
-  stage.classList.remove("bonus-stage","is-spinning","is-revealing");
+  stage.classList.remove("bonus-stage","batch-stage","is-spinning","is-revealing");
+  stage.querySelector(".batch-rolls")?.remove(); skipCurrentRoll=null;
   strip.querySelectorAll(".roll-winner").forEach(el=>el.classList.remove("roll-winner"));
   const c = (S.cfg.cases||{})[id];
   $("#rollCaseName").textContent=c?.name||"Бонусный кейс";
@@ -1095,6 +1109,7 @@ function openCase(id){
   if(id==="sub"){ $("#oRtp").textContent=""; $("#oDrops").innerHTML=""; }
   show("open");
 }
+$("#rollSkip").onclick=()=>{ if(skipCurrentRoll) skipCurrentRoll(); };
 function updateOpenButton(){ const c=(S.cfg.cases||{})[cur]; const total=(c?.price||0)*batchCount; $("#openBtn").textContent=`Открыть ${batchCount} за ${fmt(total)} 🪙`; }
 function rollCard(k){
   const i=item(k), rarity=i.rarity||"secret", labels={common:"обычный",rare:"редкий",epic:"эпик",legendary:"легенда",mythic:"мифик",god:"бог",secret:"секрет",og:"OG"};
@@ -1114,8 +1129,8 @@ $("#openBtn").onclick = async () => {
     const r = await api("/api/open", {case:cur, count:batchCount});
     const wins=r.wins||[r.win];
     if(cur!=="sub"){
-      if(wins.length>1 && fastAnimations){ for(let i=0;i<wins.length;i++) await animate(wins[i],i+1,wins.length); }
-      else await animate(wins[wins.length-1],wins.length,wins.length);
+      if(wins.length>1) await animateBatch(wins);
+      else await animate(wins[0]);
     }
     apply(r); if(cur==="sub") S.subClaimed = true; render();
     if(wins.length>1){
@@ -1123,6 +1138,7 @@ $("#openBtn").onclick = async () => {
       $("#wPic").classList.add("batch-openings"); $("#wPic").innerHTML=`<div class="batch-wins">${wins.map((k,i)=>`<div class="batch-win"><span class="batch-num">Открытие ${i+1}</span>${card(k)}</div>`).join("")}</div>`;
       $("#wName").textContent=`Результаты: ${wins.length} кейсов`;
       $("#wVal").textContent=`Если продать все: ${fmt(sellValue)} 🪙 · цена кейсов ${fmt(totalPrice)} 🪙 · ${net>=0?`выше цены на ${fmt(net)}`:`ниже цены на ${fmt(Math.abs(net))}`} 🪙`;
+      setWinActions(wins,cur,wins.length,false);
       $("#mWin").classList.add("on"); sndWin(false);
     }
     else showWin(cur==="sub"?r:{...r,win:wins[0],casePrice:(S.cfg.cases||{})[cur]?.price||0});
@@ -1141,7 +1157,22 @@ function animate(win,opening=1,total=1){
     sndSpin(duration,fastAnimations?10:34);
     const target = STOP*130 + 60 - stage.clientWidth/2 + (Math.random()-.5)*24;
     requestAnimationFrame(()=>requestAnimationFrame(()=>{ strip.style.transition=`transform ${duration}ms cubic-bezier(.1,.68,.08,1)`; strip.style.transform=`translateX(${-target}px)`; }));
-    setTimeout(()=>{stage.classList.remove("is-spinning");stage.classList.add("is-revealing");strip.children[STOP]?.classList.add("roll-winner");$("#rollSpinStatus").textContent="ОТКРЫТО";setTimeout(()=>stage.classList.remove("is-revealing"),fastAnimations?260:680);res();}, duration+140);
+    let done=false,timer;
+    const finish=skip=>{if(done)return;done=true;clearTimeout(timer);skipCurrentRoll=null;const settle=()=>{stage.classList.remove("is-spinning");stage.classList.add("is-revealing");strip.children[STOP]?.classList.add("roll-winner");$("#rollSpinStatus").textContent="ОТКРЫТО";setTimeout(()=>stage.classList.remove("is-revealing"),fastAnimations?260:680);res();};if(skip){strip.style.transition="transform 180ms ease-out";strip.style.transform=`translateX(${-target}px)`;setTimeout(settle,190);}else settle();};
+    skipCurrentRoll=()=>finish(true); timer=setTimeout(()=>finish(false),duration+140);
+  });
+}
+function batchRollCard(key){const i=item(key);return `<div class="batch-roll-card"><img src="${htmlSafe(i.img||"")}" alt="" onerror="this.style.display='none'"><b>${htmlSafe(i.name)}</b><small>${fmt(i.value)} 🪙</small></div>`;}
+function animateBatch(wins){
+  return new Promise(resolve=>{
+    const stage=$(".stage"),duration=fastAnimations?760:4100,N=24,STOP=20,STEP=63;
+    stage.querySelector(".batch-rolls")?.remove();const tracks=document.createElement("div");tracks.className="batch-rolls";
+    wins.forEach(win=>{const lane=document.createElement("div");lane.className="batch-roll-lane";const strip=document.createElement("div");strip.className="batch-roll-strip";const pool=((S.cfg.cases||{})[cur]||{}).pool||[win];strip.innerHTML=Array.from({length:N},(_,i)=>batchRollCard(i===STOP?win:pool[Math.floor(Math.random()*pool.length)])).join("");lane.appendChild(strip);tracks.appendChild(lane);});
+    stage.appendChild(tracks);stage.classList.add("batch-stage","is-spinning");stage.classList.remove("is-revealing");$("#rollSpinStatus").textContent=`ОТКРЫВАЕМ ${wins.length} КЕЙСОВ…`;sndSpin(duration,fastAnimations?10:34);
+    const targets=[...tracks.children].map(()=>STOP*STEP+29-stage.clientWidth/2+(Math.random()-.5)*10);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>[...tracks.children].forEach((lane,i)=>{const strip=lane.firstElementChild;strip.style.transition=`transform ${duration+i*100}ms cubic-bezier(.1,.68,.08,1)`;strip.style.transform=`translate(${-targets[i]}px,-50%)`;})));
+    let done=false,timer;const finish=skip=>{if(done)return;done=true;clearTimeout(timer);skipCurrentRoll=null;const reveal=()=>{stage.classList.remove("is-spinning");stage.classList.add("is-revealing");tracks.querySelectorAll(".batch-roll-card").forEach((el,i)=>{if(i%N===STOP)el.classList.add("winner");});$("#rollSpinStatus").textContent="ВСЕ ОТКРЫТИЯ ГОТОВЫ";setTimeout(()=>{stage.classList.remove("is-revealing","batch-stage");tracks.remove();resolve();},fastAnimations?300:720);};if(skip){[...tracks.children].forEach((lane,i)=>{const strip=lane.firstElementChild;strip.style.transition="transform 180ms ease-out";strip.style.transform=`translate(${-targets[i]}px,-50%)`;});setTimeout(reveal,190);}else reveal();};
+    skipCurrentRoll=()=>finish(true);timer=setTimeout(()=>finish(false),duration+500);
   });
 }
 function animateFreeCase(amount){
@@ -1169,12 +1200,16 @@ function showWin(r,silent){
   const prizeValue=r.win==="coin"||r.win==="coins"?0:item(r.win).value;
   const net=prizeValue-Number(r.casePrice||0);
   $("#wVal").textContent = r.win==="coin"||r.win==="coins" ? "Зачислено на баланс" : `${ITEMS_SELL(r.win)}${r.casePrice?` · ${net>=0?`выше цены открытия на ${fmt(net)}`:`ниже цены открытия на ${fmt(Math.abs(net))}`} 🪙`:""}`;
+  setWinActions(r.win==="coin"||r.win==="coins"?[]:[r.win],cur,1,r.win==="coin"||r.win==="coins");
   $("#mWin").classList.add("on");
   const bad = r.win==="coin"||r.ok===false;
   if(!silent){ bad ? sndFail() : sndWin(item(r.win).value>=1000); }
   if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred(bad?"warning":"success");
 }
-function ITEMS_SELL(k){ const i=item(k); return i.value ? `${fmt(i.value)} 🪙 · продать за ${fmt(i.value)} 🪙` : ""; }
+function setWinActions(wins,caseId,count,coins){const sell=$("#wSell"),again=$("#wAgain");lastWinActions={wins:[...wins],caseId,count,coins};const total=wins.reduce((sum,k)=>sum+Number(item(k).value||0),0);sell.style.display=!coins&&wins.length&&total>0?"block":"none";sell.textContent=wins.length>1?`Продать всё · ${fmt(total)} 🪙`:`Продать · ${fmt(total)} 🪙`;again.style.display=caseId&&caseId!=="sub"&&!String(caseId).startsWith("bonus-")?"block":"none";again.textContent=count>1?`Ещё ${count}`:"Ещё раз";}
+function ITEMS_SELL(k){ const i=item(k); return i.value ? `${fmt(i.value)} 🪙 · можно продать за ${fmt(i.value)} 🪙` : ""; }
+$("#wSell").onclick=async()=>{if(!lastWinActions||lastWinActions.coins)return;const n=lastWinActions.wins.length;try{for(let i=0;i<n;i++){if(!S.inv.length)break;apply(await api("/api/sell",{index:S.inv.length-1}));}$("#mWin").classList.remove("on");render();}catch(err){alert(err.message);}};
+$("#wAgain").onclick=()=>{if(!lastWinActions)return;const {caseId,count}=lastWinActions;$("#mWin").classList.remove("on");cur=caseId;batchCount=count;updateOpenButton();$("#openBtn").click();};
 $("#wOk").onclick = () => $("#mWin").classList.remove("on");
 
 let upI=-1, upT="", upSpin=false, needleAng=180;
