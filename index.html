@@ -233,6 +233,51 @@ h2.t{font-size:18px;margin:0 0 12px}
 .stage.is-spinning .strip{filter:saturate(1.12)}
 .stage.is-spinning::after{animation:pointerPulse .75s ease-in-out infinite alternate}
 @keyframes pointerPulse{to{box-shadow:0 0 15px #ffdf75,0 0 28px #ff921c;filter:brightness(1.35)}}
+.stage-flash{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;background:radial-gradient(ellipse at 50% 50%,#fff1bb99 0%,#ffc24744 24%,transparent 68%);mix-blend-mode:screen}
+.stage.is-spinning{border-color:#ffc15a;animation:caseStagePulse .72s ease-in-out infinite alternate;box-shadow:inset 0 0 36px #ffaf2a55,0 0 24px #ff9b2244,0 10px 28px #0008}
+.stage.is-spinning .roll-item:not(.roll-winner){animation:rollRattle .34s ease-in-out infinite alternate}
+.stage.is-revealing .stage-flash{animation:caseRevealFlash .78s ease-out both}
+.stage.is-revealing .roll-winner{z-index:2;animation:winnerCardPop .64s cubic-bezier(.16,1.4,.4,1) both;box-shadow:0 0 30px color-mix(in srgb,var(--rc) 65%,transparent),inset 0 1px #fff5}
+@keyframes caseStagePulse{to{filter:brightness(1.22);box-shadow:inset 0 0 44px #ffaf2a66,0 0 32px #ff9b2277,0 10px 28px #0008}}
+@keyframes rollRattle{to{transform:translateY(-3px) scale(1.015)}}
+@keyframes caseRevealFlash{0%{opacity:1;transform:scale(.35)}65%{opacity:.65}100%{opacity:0;transform:scale(1.8)}}
+@keyframes winnerCardPop{0%{transform:scale(.92);filter:brightness(1)}60%{transform:scale(1.14);filter:brightness(1.5)}100%{transform:scale(1.06);filter:brightness(1.18)}}
+.stage.bonus-stage{display:grid;place-items:center;border-color:#39d9a0;background:radial-gradient(ellipse at 50% 65%,#22d99b3d,transparent 57%),radial-gradient(ellipse at 50% 35%,#a855ff2b,transparent 70%),linear-gradient(145deg,#171329,#071713);box-shadow:inset 0 0 36px #24d99422,0 10px 28px #0008}
+.stage.bonus-stage::before{background:radial-gradient(circle at 50% 50%,transparent 35%,#070c10a8 100%)}
+.stage.bonus-stage::after{display:none}
+.stage.bonus-stage .strip{position:relative;left:auto;top:auto;width:100%;height:100%;padding:0;display:block;transform:none!important}
+.free-case-visual{position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;overflow:hidden}
+.free-case-aura{position:absolute;width:148px;height:148px;border-radius:50%;background:conic-gradient(from 0deg,transparent,#46ffd488,transparent,#bd77ff77,transparent);filter:blur(12px);opacity:.55;animation:freeAuraSpin 8s linear infinite}
+.free-case-orbit{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.free-case-orbit span{position:absolute;font-size:20px;filter:drop-shadow(0 0 8px #8bffdc);animation:freeCoinFloat 1.8s ease-in-out infinite alternate}
+.free-case-orbit span:nth-child(1){left:calc(50% - 62px);top:42px}.free-case-orbit span:nth-child(2){right:calc(50% - 67px);top:48px;animation-delay:.25s}.free-case-orbit span:nth-child(3){left:calc(50% - 51px);bottom:39px;animation-delay:.5s}.free-case-orbit span:nth-child(4){right:calc(50% - 57px);bottom:37px;animation-delay:.75s}
+.free-case-gift{position:relative;z-index:1;width:65px;height:55px;display:grid;place-items:center;border:1px solid #ffe7a1;border-radius:12px 12px 17px 17px;background:linear-gradient(145deg,#51edbb,#168b87);box-shadow:inset 0 3px #ffffff55,0 0 23px #40edb877,0 10px 18px #0007;font-size:40px;animation:giftHover 1.4s ease-in-out infinite alternate}
+.free-case-gift::before{content:"";position:absolute;left:25px;top:-5px;bottom:0;width:12px;background:linear-gradient(90deg,#ffd861,#fff0a2,#ffb52d);border-radius:5px;opacity:.94}
+.free-case-gift::after{content:"";position:absolute;left:-4px;right:-4px;top:-7px;height:13px;border:1px solid #fff0ae;border-radius:7px;background:linear-gradient(90deg,#ffc542,#ffe88a 45%,#ffad24);box-shadow:0 2px 8px #ffc84c88}
+.free-case-gift span{position:relative;z-index:1;filter:drop-shadow(0 2px 2px #003b35)}
+.free-case-title{position:relative;z-index:1;color:#c9ffe9;font:800 9px Unbounded,sans-serif;letter-spacing:.13em;text-shadow:0 0 9px #5affc5}
+.free-case-prize{position:relative;z-index:1;min-height:17px;color:#fff0ac;font:700 12px Rubik,sans-serif;text-shadow:0 0 10px #ffce59}
+.stage.bonus-stage.is-spinning .free-case-gift{animation:giftShake .42s ease-in-out infinite alternate}
+.stage.bonus-stage.is-spinning .free-case-aura{opacity:.95;animation-duration:1.3s}
+.stage.bonus-stage.is-spinning .free-case-orbit span{animation-duration:.42s}
+.stage.bonus-stage.is-revealing .free-case-gift{animation:giftBurst .6s cubic-bezier(.16,1.5,.4,1) both}
+.stage.bonus-stage.is-revealing .free-case-prize{animation:rewardRise .58s ease-out both}
+@keyframes freeAuraSpin{to{transform:rotate(360deg) scale(1.12)}}
+@keyframes freeCoinFloat{to{transform:translateY(-7px) rotate(18deg);filter:drop-shadow(0 0 13px #fff29a)}}
+@keyframes giftHover{to{transform:translateY(-5px) rotate(-3deg);box-shadow:inset 0 3px #ffffff55,0 0 30px #40edb8aa,0 13px 20px #0007}}
+@keyframes giftShake{to{transform:translateX(5px) rotate(7deg) scale(1.05)}}
+@keyframes giftBurst{0%{transform:scale(1) rotate(0)}45%{transform:scale(1.34) rotate(-12deg)}100%{transform:scale(.82) translateY(-12px);opacity:.65}}
+@keyframes rewardRise{from{opacity:0;transform:translateY(12px) scale(.7)}to{opacity:1;transform:translateY(0) scale(1)}}
+#mWin .sheet{position:relative;overflow:hidden}
+#mWin.on .sheet{animation:winSheetPop .42s cubic-bezier(.16,1.4,.4,1) both}
+#mWin.on #wPic{position:relative;z-index:1;animation:winPrizePop .58s cubic-bezier(.16,1.5,.4,1) both}
+#mWin.on #wName,#mWin.on #wVal,#mWin.on .row{position:relative;z-index:1}
+.win-burst{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.win-burst i{position:absolute;top:55%;left:50%;color:#ffe392;font-size:20px;font-style:normal;text-shadow:0 0 14px #ffb52d;opacity:0;animation:sparkFly .8s ease-out both}
+.win-burst i:nth-child(1){--dx:-128px;--dy:-82px;animation-delay:.03s}.win-burst i:nth-child(2){--dx:126px;--dy:-96px;animation-delay:.12s}.win-burst i:nth-child(3){--dx:-145px;--dy:10px;animation-delay:.19s}.win-burst i:nth-child(4){--dx:143px;--dy:12px;animation-delay:.08s}.win-burst i:nth-child(5){--dx:-92px;--dy:95px;animation-delay:.15s}.win-burst i:nth-child(6){--dx:101px;--dy:90px;animation-delay:.22s}
+@keyframes winSheetPop{from{opacity:0;transform:translateY(16px) scale(.92)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes winPrizePop{0%{transform:scale(.35) rotate(-12deg);filter:brightness(2)}65%{transform:scale(1.16) rotate(3deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes sparkFly{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}20%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1.25) rotate(60deg)}}
 .sheet:has(#wPic:not(.batch-openings)){border-color:#9d6a2b;background:radial-gradient(ellipse at 50% 0,#ff9d212b,transparent 55%),linear-gradient(160deg,#1d2232,#111521);box-shadow:0 24px 70px #000b,0 0 25px #ff9b2222}
 .sheet h2{color:#ffd080}
 .drop-scroller{margin:0;padding:2px 2px 9px;scrollbar-color:#ff9d21 transparent}.drop-card{border-radius:11px;background:linear-gradient(160deg,#262a3c,#141725);border-color:#3d4359;border-bottom:2px solid #ffb733}.drop-card:hover{border-color:#ffcf77;box-shadow:0 7px 22px #ff9d2126}
@@ -257,7 +302,7 @@ button,.it,.bonus-card,.drop-card{transition:transform .18s ease,box-shadow .18s
 button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
 .it:hover{transform:translateY(-3px) scale(1.025);box-shadow:0 8px 20px #0008}
 .bonus-card:hover,.drop-card:hover{transform:translateY(-3px);border-color:#a36cd0;box-shadow:0 10px 24px #0007}
-@media (prefers-reduced-motion:reduce){.strip,.sidebar,button,.it,.bonus-card,.drop-card,.case{transition:none!important;animation:none!important}}
+@media (prefers-reduced-motion:reduce){.strip,.sidebar,button,.it,.bonus-card,.drop-card,.case,.stage,.stage-flash,.free-case-aura,.free-case-orbit span,.free-case-gift,#mWin .sheet,#mWin #wPic,.win-burst i{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
@@ -375,7 +420,7 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
     <button class="back" id="back">‹ Все кейсы</button>
     <h2 class="t" id="oTitle"></h2>
     <div class="roll-heading"><span id="rollCaseName">Награды кейса</span><span id="rollSpinStatus">Готов к открытию</span></div>
-    <div class="stage"><div class="strip" id="strip"></div></div>
+    <div class="stage"><div class="stage-flash" aria-hidden="true"></div><div class="strip" id="strip"></div></div>
     <div id="batchBox" class="row" style="margin:12px 0"></div>
     <div class="row" style="margin:0 0 8px"><button class="btn fast-toggle" data-fast-animation type="button" aria-label="Быстрая анимация выключена" aria-pressed="false" title="Быстрая анимация">⚡</button></div>
     <div class="row"><button class="btn" id="openBtn"></button></div>
@@ -450,6 +495,7 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
   <div class="row"><button class="btn alt" id="withdrawCancel">Отмена</button><button class="btn" id="withdrawSubmit">Создать заявку</button></div>
 </div></div>
 <div class="modal" id="mWin"><div class="sheet">
+  <div class="win-burst" aria-hidden="true"><i>✦</i><i>✧</i><i>✦</i><i>✧</i><i>✦</i><i>✧</i></div>
   <div class="big" id="wPic"></div><h2 id="wName"></h2><div id="wVal" style="color:var(--muted)"></div>
   <div class="row" style="margin-top:14px"><button class="btn" id="wOk">Отлично</button></div>
 </div></div>
@@ -1008,7 +1054,9 @@ updateFastAnimationButtons();
 $("#heroCases").onclick=()=>$("#cats").scrollIntoView({behavior:"smooth",block:"start"});
 function openCase(id){
   cur = id;
-  const strip = $("#strip"); strip.style.transition="none"; strip.style.transform="translateX(0)";
+  const strip = $("#strip"), stage=$(".stage"); strip.style.transition="none"; strip.style.transform="translateX(0)";
+  stage.classList.remove("bonus-stage","is-spinning","is-revealing");
+  strip.querySelectorAll(".roll-winner").forEach(el=>el.classList.remove("roll-winner"));
   const c = (S.cfg.cases||{})[id];
   $("#rollCaseName").textContent=c?.name||"Бонусный кейс";
   $("#rollSpinStatus").textContent="ГОТОВ К ОТКРЫТИЮ";
@@ -1027,7 +1075,8 @@ function openCase(id){
       const type=id.slice(6), isSub=type==="subscription", channel=S.cfg.bonusChannel||"@braincasegg", tag=S.cfg.bonusBotTag||"braincase_game";
       const claimed=!!S.bonusClaims[type];
       $("#oTitle").textContent=isSub?"КЕЙС ЗА ПОДПИСКУ":"КЕЙС ЗА НИК";
-      $("#batchBox").innerHTML=""; strip.innerHTML=Array(8).fill(card("coin")).join("");
+      $("#batchBox").innerHTML=""; stage.classList.add("bonus-stage");
+      strip.innerHTML=`<div class="free-case-visual" id="freeCaseVisual"><div class="free-case-aura"></div><div class="free-case-orbit" aria-hidden="true"><span>🪙</span><span>✨</span><span>🪙</span><span>✦</span></div><div class="free-case-gift" id="freeCaseGift"><span>🎁</span></div><b class="free-case-title">ПОДАРОЧНЫЙ КЕЙС</b><span class="free-case-prize" id="freeCasePrize">Награда от 1 до 10 🪙</span></div>`;
       $("#openBtn").textContent=claimed?"Бонус уже получен":"Повторить проверку и открыть"; $("#openBtn").disabled=claimed;
       $("#oInfo").innerHTML=isSub?`Подпишитесь на <a href="https://t.me/${channel.replace(/^@/,"")}" style="color:var(--acc2)" id="chLink">${channel}</a>, затем нажмите «Повторить проверку». Награда: от 1 до 10 🪙.`:`Добавьте <b>@${tag}</b> в имя профиля Telegram и нажмите проверку. <button class="btn alt" id="copyTagDetail" style="margin-top:8px">Скопировать @${tag}</button><br>Награда: от 1 до 10 🪙.`;
       const ch=$("#chLink"); if(ch) ch.onclick=e=>{if(tg){e.preventDefault();tg.openTelegramLink(`https://t.me/${channel.replace(/^@/,"")}`);}};
@@ -1060,7 +1109,7 @@ $("#openBtn").onclick = async () => {
   spinning = true; $("#openBtn").disabled = true;
   try{
     if(bonusType){
-      const r=await api("/api/bonus/claim",{type:bonusType}); apply(r); $("#openBtn").textContent="Бонус получен ✓"; $("#openBtn").disabled=true; $("#oInfo").textContent=`Вы получили ${r.amount} 🪙. Монеты добавлены на баланс.`; showWin({win:"coins",amount:r.amount}); return;
+      const r=await api("/api/bonus/claim",{type:bonusType}); await animateFreeCase(r.amount); apply(r); $("#openBtn").textContent="Бонус получен ✓"; $("#openBtn").disabled=true; $("#oInfo").textContent=`Вы получили ${r.amount} 🪙. Монеты добавлены на баланс.`; showWin({win:"coins",amount:r.amount}); return;
     }
     const r = await api("/api/open", {case:cur, count:batchCount});
     const wins=r.wins||[r.win];
@@ -1087,12 +1136,25 @@ function animate(win,opening=1,total=1){
     const seq = Array.from({length:N},(_,i)=> i===STOP ? win : pool[Math.floor(Math.random()*pool.length)]);
     const duration = fastAnimations ? 720 : 4600;
     $("#rollSpinStatus").textContent=total>1?`ОТКРЫТИЕ ${opening} ИЗ ${total}`:"КРУТИМ…";
-    stage.classList.add("is-spinning");
+    stage.classList.remove("is-revealing");strip.querySelectorAll(".roll-winner").forEach(el=>el.classList.remove("roll-winner"));stage.classList.add("is-spinning");
     strip.style.transition="none"; strip.style.transform="translateX(0)"; strip.innerHTML = seq.map(rollCard).join("");
     sndSpin(duration,fastAnimations?10:34);
     const target = STOP*130 + 60 - stage.clientWidth/2 + (Math.random()-.5)*24;
     requestAnimationFrame(()=>requestAnimationFrame(()=>{ strip.style.transition=`transform ${duration}ms cubic-bezier(.1,.68,.08,1)`; strip.style.transform=`translateX(${-target}px)`; }));
-    setTimeout(()=>{stage.classList.remove("is-spinning");$("#rollSpinStatus").textContent="ОТКРЫТО";res();}, duration+140);
+    setTimeout(()=>{stage.classList.remove("is-spinning");stage.classList.add("is-revealing");strip.children[STOP]?.classList.add("roll-winner");$("#rollSpinStatus").textContent="ОТКРЫТО";setTimeout(()=>stage.classList.remove("is-revealing"),fastAnimations?260:680);res();}, duration+140);
+  });
+}
+function animateFreeCase(amount){
+  return new Promise(resolve=>{
+    const stage=$(".stage"), duration=fastAnimations?560:1350;
+    stage.classList.remove("is-revealing");stage.classList.add("is-spinning");$("#rollSpinStatus").textContent="ПОДАРОК ОТКРЫВАЕТСЯ…";
+    sndSpin(duration,fastAnimations?10:22,true);
+    setTimeout(()=>{
+      stage.classList.remove("is-spinning");stage.classList.add("is-revealing");
+      $("#freeCasePrize").textContent=`+${fmt(amount)} 🪙`;
+      $("#rollSpinStatus").textContent="ПОДАРОК ОТКРЫТ!";
+      setTimeout(()=>{stage.classList.remove("is-revealing");resolve();},fastAnimations?260:580);
+    },duration);
   });
 }
 function showWin(r,silent){
