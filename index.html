@@ -510,7 +510,7 @@ button:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 5px 18px #0006}
 <div class="modal" id="mWin"><div class="sheet">
   <div class="win-burst" aria-hidden="true"><i>✦</i><i>✧</i><i>✦</i><i>✧</i><i>✦</i><i>✧</i></div>
   <div class="big" id="wPic"></div><h2 id="wName"></h2><div id="wVal" style="color:var(--muted)"></div>
-  <div class="row win-actions" style="margin-top:14px"><button class="btn alt" id="wSell" style="display:none">Продать</button><button class="btn alt" id="wAgain" style="display:none">Ещё раз</button><button class="btn" id="wOk">Закрыть</button></div>
+  <div class="row win-actions" style="margin-top:14px"><button class="btn alt" id="wSell" style="display:none">Продать</button><button class="btn" id="wOk">Закрыть</button></div>
 </div></div>
 
 <div class="modal" id="mSettings"><div class="sheet">
@@ -1206,10 +1206,9 @@ function showWin(r,silent){
   if(!silent){ bad ? sndFail() : sndWin(item(r.win).value>=1000); }
   if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred(bad?"warning":"success");
 }
-function setWinActions(wins,caseId,count,coins){const sell=$("#wSell"),again=$("#wAgain");lastWinActions={wins:[...wins],caseId,count,coins};const total=wins.reduce((sum,k)=>sum+Number(item(k).value||0),0);sell.style.display=!coins&&wins.length&&total>0?"block":"none";sell.textContent=wins.length>1?`Продать всё · ${fmt(total)} 🪙`:`Продать · ${fmt(total)} 🪙`;again.style.display=caseId&&caseId!=="sub"&&!String(caseId).startsWith("bonus-")?"block":"none";again.textContent=count>1?`Ещё ${count}`:"Ещё раз";}
+function setWinActions(wins,caseId,count,coins){const sell=$("#wSell");lastWinActions={wins:[...wins],caseId,count,coins};const total=wins.reduce((sum,k)=>sum+Number(item(k).value||0),0);sell.style.display=!coins&&wins.length&&total>0?"block":"none";sell.textContent=wins.length>1?`Продать всё · ${fmt(total)} 🪙`:`Продать · ${fmt(total)} 🪙`;}
 function ITEMS_SELL(k){ const i=item(k); return i.value ? `${fmt(i.value)} 🪙 · можно продать за ${fmt(i.value)} 🪙` : ""; }
 $("#wSell").onclick=async()=>{if(!lastWinActions||lastWinActions.coins)return;const n=lastWinActions.wins.length;try{for(let i=0;i<n;i++){if(!S.inv.length)break;apply(await api("/api/sell",{index:S.inv.length-1}));}$("#mWin").classList.remove("on");render();}catch(err){alert(err.message);}};
-$("#wAgain").onclick=()=>{if(!lastWinActions)return;const {caseId,count}=lastWinActions;$("#mWin").classList.remove("on");cur=caseId;batchCount=count;updateOpenButton();$("#openBtn").click();};
 $("#wOk").onclick = () => $("#mWin").classList.remove("on");
 
 let upI=-1, upT="", upSpin=false, needleAng=180;
