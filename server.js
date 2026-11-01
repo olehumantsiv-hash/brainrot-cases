@@ -1007,9 +1007,12 @@ async function poll() {
           await tgApi("sendMessage", {
             chat_id: upd.message.chat.id, parse_mode: "HTML",
             text: "👋 <b>Привет! Добро пожаловать в Braincase!</b>\n\n" +
-              "Здесь ты можешь собирать брейнротов, открывать кейсы и улучшать своих питомцев.\n" +
-              "Нажми кнопку ниже, чтобы начать.",
-            reply_markup: { inline_keyboard: [[{ text: "Открыть Braincase", web_app: { url: WEBAPP_URL } }]] },
+              "Здесь ты можешь собирать брейнротов, открывать кейсы и улучшать своих питомцев.\n\n" +
+              "Нажми «Войти в игру», чтобы открыть Braincase. Новости и обновления — в нашем канале.",
+            reply_markup: { inline_keyboard: [
+              [{ text: "🎮 Войти в игру", web_app: { url: WEBAPP_URL } }],
+              [{ text: "📢 Наш канал", url: `https://t.me/${CHANNEL.replace(/^@/, "")}` }],
+            ] },
           });
         }
         offset = upd.update_id + 1;
