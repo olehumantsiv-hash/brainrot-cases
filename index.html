@@ -269,7 +269,7 @@ h2.t{font-size:18px;margin:0 0 12px}
 .free-case-gift::after{content:"";position:absolute;left:-4px;right:-4px;top:-7px;height:13px;border:1px solid #fff0ae;border-radius:7px;background:linear-gradient(90deg,#ffc542,#ffe88a 45%,#ffad24);box-shadow:0 2px 8px #ffc84c88}
 .free-case-gift span{position:relative;z-index:1;filter:drop-shadow(0 2px 2px #003b35)}
 .free-case-title{position:relative;z-index:1;color:#c9ffe9;font:800 9px Unbounded,sans-serif;letter-spacing:.13em;text-shadow:0 0 9px #5affc5}
-.free-case-prize{position:relative;z-index:1;min-height:17px;color:#fff0ac;font:700 12px Rubik,sans-serif;text-shadow:0 0 10px #ffce59}
+.free-case-prize{position:relative;z-index:1;min-height:17px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#fff0ac;font:700 12px Rubik,sans-serif;text-shadow:0 0 10px #ffce59}.free-prize-pic{height:34px;display:grid;place-items:center}.free-prize-pic img{height:34px;max-width:54px;object-fit:contain;filter:drop-shadow(0 0 9px #ffe179)}
 .stage.bonus-stage.is-spinning .free-case-gift{animation:giftShake .42s ease-in-out infinite alternate}
 .stage.bonus-stage.is-spinning .free-case-aura{opacity:.95;animation-duration:1.3s}
 .stage.bonus-stage.is-spinning .free-case-orbit span{animation-duration:.42s}
@@ -630,8 +630,8 @@ function renderBonuses(){
   if(!$("#v-bonus").classList.contains("on")) return;
   const channel=S.cfg.bonusChannel||"@braincasegg", tag=S.cfg.bonusBotTag||"braincase_game";
   const tasks=[
-    {type:"subscription",title:"Кейс за подписку",description:`Подпишитесь на канал ${channel}. Откройте кейс и нажмите проверку.`,claimed:!!S.bonusClaims.subscription},
-    {type:"nickname",title:"Кейс за ник",description:`Добавьте ${tag} в имя профиля Telegram и откройте кейс.`,claimed:!!S.bonusClaims.nickname},
+    {type:"subscription",title:"Кейс за подписку",description:`Подпишитесь на канал ${channel}. Откройте кейс и нажмите проверку. Награда: 1–10 монет или редкий Кетчуру / Гарама.`,claimed:!!S.bonusClaims.subscription},
+    {type:"nickname",title:"Кейс за ник",description:`Добавьте ${tag} в имя профиля Telegram и откройте кейс. Награда: 1–10 монет или редкий Кетчуру / Гарама.`,claimed:!!S.bonusClaims.nickname},
   ];
   $("#bonusGrid").innerHTML=tasks.map(t=>`<article class="bonus-card">
     <h3>🎁 ${t.title}</h3><p>${t.description}${t.type==="subscription"?` <a href="https://t.me/${channel.replace(/^@/,"")}" data-bonus-channel>Открыть канал</a>.`:""}</p>
@@ -1090,9 +1090,9 @@ function openCase(id){
       const claimed=!!S.bonusClaims[type];
       $("#oTitle").textContent=isSub?"КЕЙС ЗА ПОДПИСКУ":"КЕЙС ЗА НИК";
       $("#batchBox").innerHTML=""; stage.classList.add("bonus-stage");
-      strip.innerHTML=`<div class="free-case-visual" id="freeCaseVisual"><div class="free-case-aura"></div><div class="free-case-orbit" aria-hidden="true"><span>🪙</span><span>✨</span><span>🪙</span><span>✦</span></div><div class="free-case-gift" id="freeCaseGift"><span>🎁</span></div><b class="free-case-title">ПОДАРОЧНЫЙ КЕЙС</b><span class="free-case-prize" id="freeCasePrize">Награда от 1 до 10 🪙</span></div>`;
+      strip.innerHTML=`<div class="free-case-visual" id="freeCaseVisual"><div class="free-case-aura"></div><div class="free-case-orbit" aria-hidden="true"><span>🪙</span><span>✨</span><span>🪙</span><span>✦</span></div><div class="free-case-gift" id="freeCaseGift"><span>🎁</span></div><b class="free-case-title">ПОДАРОЧНЫЙ КЕЙС</b><span class="free-case-prize" id="freeCasePrize">Монеты от 1 до 10 🪙 или редкий брейнрот</span></div>`;
       $("#openBtn").textContent=claimed?"Бонус уже получен":"Повторить проверку и открыть"; $("#openBtn").disabled=claimed;
-      $("#oInfo").innerHTML=isSub?`Подпишитесь на <a href="https://t.me/${channel.replace(/^@/,"")}" style="color:var(--acc2)" id="chLink">${channel}</a>, затем нажмите «Повторить проверку». Награда: от 1 до 10 🪙.`:`Добавьте <b>@${tag}</b> в имя профиля Telegram и нажмите проверку. <button class="btn alt" id="copyTagDetail" style="margin-top:8px">Скопировать @${tag}</button><br>Награда: от 1 до 10 🪙.`;
+      $("#oInfo").innerHTML=isSub?`Подпишитесь на <a href="https://t.me/${channel.replace(/^@/,"")}" style="color:var(--acc2)" id="chLink">${channel}</a>, затем нажмите «Повторить проверку». Награда: от 1 до 10 🪙 или редкий брейнрот.`:`Добавьте <b>@${tag}</b> в имя профиля Telegram и нажмите проверку. <button class="btn alt" id="copyTagDetail" style="margin-top:8px">Скопировать @${tag}</button><br>Награда: от 1 до 10 🪙 или редкий брейнрот.`;
       const ch=$("#chLink"); if(ch) ch.onclick=e=>{if(tg){e.preventDefault();tg.openTelegramLink(`https://t.me/${channel.replace(/^@/,"")}`);}};
       const cp=$("#copyTagDetail"); if(cp) cp.onclick=copyBotTag;
       $("#oRtp").textContent="Все награды виртуальные."; $("#oDrops").innerHTML=""; show("open"); return;
@@ -1124,7 +1124,7 @@ $("#openBtn").onclick = async () => {
   spinning = true; $("#openBtn").disabled = true;
   try{
     if(bonusType){
-      const r=await api("/api/bonus/claim",{type:bonusType}); await animateFreeCase(r.amount); apply(r); $("#openBtn").textContent="Бонус получен ✓"; $("#openBtn").disabled=true; $("#oInfo").textContent=`Вы получили ${r.amount} 🪙. Монеты добавлены на баланс.`; showWin({win:"coins",amount:r.amount}); return;
+      const r=await api("/api/bonus/claim",{type:bonusType}); await animateFreeCase(r); apply(r); $("#openBtn").textContent="Бонус получен ✓"; $("#openBtn").disabled=true; if(r.win==="coins"){ $("#oInfo").textContent=`Вы получили ${r.amount} 🪙. Монеты добавлены на баланс.`; showWin({win:"coins",amount:r.amount}); } else { $("#oInfo").textContent=`Редкий брейнрот ${item(r.win).name} добавлен в инвентарь!`; showWin({...r,ok:true,casePrice:0}); } return;
     }
     const r = await api("/api/open", {case:cur, count:batchCount});
     const wins=r.wins||[r.win];
@@ -1175,14 +1175,15 @@ function animateBatch(wins){
     skipCurrentRoll=()=>finish(true);timer=setTimeout(()=>finish(false),duration+500);
   });
 }
-function animateFreeCase(amount){
+function animateFreeCase(reward){
   return new Promise(resolve=>{
     const stage=$(".stage"), duration=fastAnimations?560:1350;
     stage.classList.remove("is-revealing");stage.classList.add("is-spinning");$("#rollSpinStatus").textContent="ПОДАРОК ОТКРЫВАЕТСЯ…";
     sndSpin(duration,fastAnimations?10:22,true);
     setTimeout(()=>{
       stage.classList.remove("is-spinning");stage.classList.add("is-revealing");
-      $("#freeCasePrize").textContent=`+${fmt(amount)} 🪙`;
+      if(reward.win==="coins") $("#freeCasePrize").textContent=`+${fmt(reward.amount)} 🪙`;
+      else $("#freeCasePrize").innerHTML=`<span class="free-prize-pic">${pic(reward.win)}</span><span>${htmlSafe(item(reward.win).name)} · ${fmt(item(reward.win).value)} 🪙</span>`;
       $("#rollSpinStatus").textContent="ПОДАРОК ОТКРЫТ!";
       setTimeout(()=>{stage.classList.remove("is-revealing");resolve();},fastAnimations?260:580);
     },duration);

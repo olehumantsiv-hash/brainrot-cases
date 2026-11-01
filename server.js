@@ -864,14 +864,16 @@ const server = http.createServer(async (req, res) => {
         const profileName = `${user.first_name || ""} ${user.last_name || ""}`.toLowerCase();
         if (!profileName.includes(BOT_TAG)) return send(403, { error: `Добавьте ${BOT_TAG} в имя Telegram-профиля, затем закройте и снова откройте приложение.` });
       }
-      const amount = crypto.randomInt(BONUS_MIN, BONUS_MAX + 1);
+      const rareRoll = crypto.randomInt(100);
+      const rareWin = rareRoll === 0 ? "ketchuru" : rareRoll === 1 ? "garama" : null;
+      const amount = rareWin ? ITEMS[rareWin].value : crypto.randomInt(BONUS_MIN, BONUS_MAX + 1);
       u.bonusClaims[type] = true;
-      u.balance += amount;
+      if (rareWin) u.inv.push(rareWin);
+      else { u.balance += amount; u.stats.coinsEarned += amount; }
       u.stats.casesOpened += 1;
-      u.stats.coinsEarned += amount;
-      recordOpen(user, type === "subscription" ? "Бонус за подписку" : "Бонус за ник", `${amount} 🪙`, "coin");
+      recordOpen(user, type === "subscription" ? "Бонус за подписку" : "Бонус за ник", rareWin ? ITEMS[rareWin].name : `${amount} 🪙`, rareWin || "coin");
       if (!(await persistOrRespond(send))) return;
-      return send(200, { amount, type, balance: u.balance, inv: u.inv, stats: u.stats, bonusClaims: u.bonusClaims });
+      return send(200, { win: rareWin || "coins", amount, type, balance: u.balance, inv: u.inv, stats: u.stats, bonusClaims: u.bonusClaims });
     } finally { pendingBonus.delete(claimKey); }
   }
 
